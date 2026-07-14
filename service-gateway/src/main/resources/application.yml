@@ -1,0 +1,113 @@
+# ============================================================
+# service-gateway — application.yml
+# Connected Games Platform (PISSIR A.A. 2025/2026)
+# ============================================================
+# Il Gateway e' l'unico punto di ingresso REST pubblico.
+# Convalida i JWT rilasciati da Keycloak e instrada le
+# richieste verso service-core sulla rete interna backend-tier.
+# ============================================================
+
+server:
+  port: 8081
+
+spring:
+  application:
+    name: service-gateway
+
+  cloud:
+    gateway:
+      # ============================================================
+      # ROUTING — Proxy verso service-core
+      # ============================================================
+      # Tutte le richieste API vengono inoltrate a service-core che
+      # risiede sulla rete interna backend-tier (porta 8082).
+      routes:
+        # --- Sincronizzazione massiva partite (Bulk Sync) ---
+        - id: partite-sincronizza
+          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          predicates:
+            - Path=/api/v1/locali/{localeId}/partite/sincronizza
+            - Method=POST
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                methods: POST
+
+        # --- Lista giochi installati in un locale ---
+        - id: locali-giochi
+          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          predicates:
+            - Path=/api/v1/locali/{localeId}/giochi
+            - Method=GET
+
+        # --- Lista tornei ---
+        - id: tornei-lista
+          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          predicates:
+            - Path=/api/v1/tornei
+            - Method=GET
+
+        # --- Classifica torneo in tempo reale ---
+        - id: tornei-classifica
+          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          predicates:
+            - Path=/api/v1/tornei/{torneoId}/classifica
+            - Method=GET
+
+        # --- Statistiche globali (Dashboard Admin) ---
+        - id: statistiche-globali
+          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          predicates:
+            - Path=/api/v1/statistiche
+            - Method=GET
+
+      # ============================================================
+      # GLOBAL CORS — Permette le chiamate dagli Edge Node
+      # ============================================================
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "GET, POST, PUT, DELETE, OPTIONS"
+            allowedHeaders: "*"
+            allowCredentials: false
+
+  # ============================================================
+  # SECURITY — Validazione JWT (Keycloak Resource Server)
+  # ============================================================
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://keycloak:8080/realms/pissir-realm}
+          jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://keycloak:8080/realms/pissir-realm}/protocol/openid-connect/certs
+
+# ============================================================
+# ACTUATOR — Health check per Docker
+# ============================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
+
+# ============================================================
+# LOGGING — Livello informativo per debugging
+# ============================================================
+logging:
+  level:
+    com.connectedgames.gateway: DEBUG
+    org.springframework.cloud.gateway: INFO
+    org.springframework.security: INFO

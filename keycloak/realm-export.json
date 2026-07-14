@@ -1,0 +1,157 @@
+{
+  "id": "pissir-realm",
+  "realm": "pissir-realm",
+  "displayName": "Connected Games Platform",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "accessTokenLifespan": 3600,
+  "ssoSessionIdleTimeout": 3600,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "giocatore",
+        "description": "Ruolo base per i giocatori della piattaforma"
+      },
+      {
+        "name": "admin_locale",
+        "description": "Amministratore di un locale fisico"
+      },
+      {
+        "name": "admin_gioco",
+        "description": "Amministratore delle tipologie di gioco"
+      },
+      {
+        "name": "admin_piattaforma",
+        "description": "Amministratore globale della piattaforma"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "edge-app",
+      "name": "Edge Gateway Application",
+      "description": "Client OIDC per gli Edge Node locali",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "edge-app-secret-dev",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "redirectUris": [
+        "http://localhost:3001/*",
+        "http://localhost:3002/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3001",
+        "http://localhost:3002"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:3001/*##http://localhost:3002/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "claim.name": "realm_roles",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "giocatore1",
+      "email": "giocatore1@test.com",
+      "firstName": "Mario",
+      "lastName": "Rossi",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "giocatore",
+        "default-roles-pissir-realm"
+      ]
+    },
+    {
+      "username": "giocatore2",
+      "email": "giocatore2@test.com",
+      "firstName": "Luigi",
+      "lastName": "Verdi",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "giocatore",
+        "default-roles-pissir-realm"
+      ]
+    },
+    {
+      "username": "admin_locale1",
+      "email": "admin.belvedere@test.com",
+      "firstName": "Admin",
+      "lastName": "Belvedere",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin_locale",
+        "default-roles-pissir-realm"
+      ]
+    },
+    {
+      "username": "admin_piattaforma",
+      "email": "admin.platform@test.com",
+      "firstName": "Super",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin_piattaforma",
+        "default-roles-pissir-realm"
+      ]
+    }
+  ]
+}

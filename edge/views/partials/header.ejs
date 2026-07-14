@@ -1,0 +1,194 @@
+<%# Header partial — included by all pages %>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Connected Games Platform — Edge Gateway per <%= localeId %>">
+    <title><%= typeof title !== 'undefined' ? title + ' | ' : '' %>Connected Games — <%= localeId %></title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --bg-card-hover: #1f2b3d;
+            --border-color: rgba(99, 179, 237, 0.15);
+            --border-glow: rgba(99, 179, 237, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #06b6d4;
+            --accent-gradient: linear-gradient(135deg, #3b82f6, #06b6d4);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 30px rgba(59, 130, 246, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .navbar-logo {
+            width: 36px;
+            height: 36px;
+            background: var(--accent-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .navbar-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
+        .navbar-locale { font-size: 0.75rem; color: var(--accent-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .navbar-actions { display: flex; align-items: center; gap: 16px; }
+        .navbar-user { display: flex; align-items: center; gap: 10px; font-size: 0.875rem; color: var(--text-secondary); }
+
+        .user-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 0.8rem; color: white;
+        }
+
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.25); }
+        .badge-warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.25); }
+        .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.25); }
+        .badge-info { background: rgba(59, 130, 246, 0.15); color: var(--accent-primary); border: 1px solid rgba(59, 130, 246, 0.25); }
+        .badge-guest { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-success { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+        .dot-danger { background: var(--danger); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+        .main-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 10px 24px; border-radius: var(--radius-sm);
+            font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600;
+            text-decoration: none; cursor: pointer; border: none;
+            transition: all 0.2s ease; letter-spacing: -0.01em;
+        }
+
+        .btn-primary { background: var(--accent-gradient); color: white; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4); }
+        .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--bg-card-hover); border-color: var(--border-glow); }
+        .btn-warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .btn-warning:hover { background: rgba(245, 158, 11, 0.25); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+        .btn-sm { padding: 6px 16px; font-size: 0.8rem; }
+        .btn-lg { padding: 14px 32px; font-size: 1rem; }
+        .btn-block { width: 100%; }
+
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 1.5rem;
+            box-shadow: var(--shadow-card); transition: all 0.3s ease;
+        }
+
+        .card:hover { border-color: var(--border-glow); box-shadow: var(--shadow-glow); }
+        .card-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+        .card-subtitle { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+
+        .alert { padding: 1rem 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; font-size: 0.875rem; }
+        .alert-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); color: var(--warning); }
+        .alert-danger { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: var(--danger); }
+
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+
+        .text-center { text-align: center; }
+        .text-muted { color: var(--text-muted); }
+        .text-sm { font-size: 0.8rem; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mt-3 { margin-top: 1.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .mb-3 { margin-bottom: 1.5rem; }
+
+        code {
+            color: var(--accent-secondary);
+            background: rgba(6, 182, 212, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        pre { color: var(--text-secondary); white-space: pre-wrap; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <div class="navbar-logo">CG</div>
+            <div>
+                <div class="navbar-title">Connected Games</div>
+                <div class="navbar-locale"><%= localeId %></div>
+            </div>
+        </a>
+        <div class="navbar-actions">
+            <% if (user) { %>
+                <div class="navbar-user">
+                    <div class="user-avatar"><%= user.username.charAt(0).toUpperCase() %></div>
+                    <span><%= user.username %></span>
+                    <% if (user.isGuest) { %>
+                        <span class="badge badge-guest">⚡ Ospite</span>
+                    <% } else { %>
+                        <span class="badge badge-success">● Online</span>
+                    <% } %>
+                </div>
+                <a href="/auth/logout" class="btn btn-sm btn-danger">Esci</a>
+            <% } %>
+        </div>
+    </nav>
+
+    <% if (user && user.isGuest) { %>
+        <div class="alert alert-warning" style="border-radius: 0; margin: 0; justify-content: center;">
+            ⚠️ <strong>Modalità Ospite</strong> — Le partite giocate in questa sessione non verranno salvate.
+        </div>
+    <% } %>
+
+    <main class="main-content">

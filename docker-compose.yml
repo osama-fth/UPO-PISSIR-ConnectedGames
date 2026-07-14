@@ -1,8 +1,6 @@
 # docker-compose.yml
-# Connected Games Platform - Orchestrazione Multi-Container di Riferimento
+# Connected Games Platform - Orchestrazione Multi-Container
 # Progetto di Laboratorio PISSIR - A.A. 2025/2026 - Università del Piemonte Orientale
-
-version: '3.8'
 
 networks:
   backend-tier:
@@ -31,8 +29,8 @@ services:
     image: postgres:15-alpine
     container_name: postgres-db
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adminpassword}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
@@ -41,7 +39,7 @@ services:
     networks:
       - backend-tier
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d platform_db"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d platform_db" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -57,10 +55,10 @@ services:
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres-db:5432/keycloak_db
-      KC_DB_USERNAME: admin
-      KC_DB_PASSWORD: adminpassword
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB_USERNAME: ${POSTGRES_USER:-admin}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-adminpassword}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
@@ -68,15 +66,16 @@ services:
       - "9080:8080" # Porta 9080 esposta sull'host per accedere alla console di admin e login browser
     networks:
       - backend-tier
+      - edge-tier # Keycloak deve essere raggiungibile anche dagli Edge per l'auth OIDC
     depends_on:
       postgres-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /realms/master HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /realms/master HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'" ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
 
   # ==========================================
   # 3. BACKEND SERVICES (Spring Boot 3.x)
@@ -89,8 +88,8 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
-      - SPRING_DATASOURCE_USERNAME=admin
-      - SPRING_DATASOURCE_PASSWORD=adminpassword
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-admin}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-adminpassword}
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/pissir-realm
     networks:
       - backend-tier
@@ -98,7 +97,7 @@ services:
       postgres-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1"]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -124,48 +123,60 @@ services:
       service-core:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1"]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
 
   # ==========================================
-  # 4. MQTT BROKERS (Mosquitto - Isolo per Locale)
+  # 4. MQTT BROKERS (Mosquitto - Isolati per Locale)
   # ==========================================
+  # Nessun TLS: scelta esplicita documentata nelle specifiche per
+  # contenere la complessità del prototipo. Perimetro Docker isolato.
   mosquitto-locale1:
-    image: eclipse-mosquitto:2.0
+    build:
+      context: ./mosquitto
+      dockerfile: Dockerfile
     container_name: mosquitto-locale1
-    volumes:
-      - ./mosquitto/locale1/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-      - ./mosquitto/locale1/acl.conf:/mosquitto/config/acl.conf:ro
-      - ./mosquitto/certs:/mosquitto/config/certs:ro # Certificati CA.crt, server.crt, server.key per TLS
+    environment:
+      - LOCALE_ID=locale1
+      - MQTT_PUB_USER=${MQTT1_PUBLISH_USER:-simulator}
+      - MQTT_PUB_PASSWORD=${MQTT1_PUBLISH_PASSWORD:-simpub123}
+      - MQTT_SUB_USER=${MQTT1_SUBSCRIBE_USER:-edge-client}
+      - MQTT_SUB_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD:-edgesub123}
     ports:
-      - "8883:8883" # Porta sicura MQTTS esposta per Locale 1
+      - "1883:1883" # Porta MQTT in chiaro esposta per Locale 1
     networks:
       - edge-tier
     healthcheck:
-      test: ["CMD-SHELL", "timeout 2s mosquitto_sub -h localhost -p 1883 -t 'test/ping' -C 1 -E || exit 1"] # Porta in chiaro interna per il solo healthcheck locale
-      interval: 5s
-      timeout: 3s
+      test: [ "CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -t 'test/ping' -C 1 -W 2 || exit 0" ]
+      interval: 10s
+      timeout: 5s
       retries: 3
+      start_period: 5s
 
   mosquitto-locale2:
-    image: eclipse-mosquitto:2.0
+    build:
+      context: ./mosquitto
+      dockerfile: Dockerfile
     container_name: mosquitto-locale2
-    volumes:
-      - ./mosquitto/locale2/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-      - ./mosquitto/locale2/acl.conf:/mosquitto/config/acl.conf:ro
-      - ./mosquitto/certs:/mosquitto/config/certs:ro
+    environment:
+      - LOCALE_ID=locale2
+      - MQTT_PUB_USER=${MQTT2_PUBLISH_USER:-simulator}
+      - MQTT_PUB_PASSWORD=${MQTT2_PUBLISH_PASSWORD:-simpub456}
+      - MQTT_SUB_USER=${MQTT2_SUBSCRIBE_USER:-edge-client}
+      - MQTT_SUB_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD:-edgesub456}
     ports:
-      - "8884:8883" # Porta sicura MQTTS esposta per Locale 2 (mappa su 8883 interna)
+      - "1884:1883" # Porta MQTT in chiaro esposta per Locale 2 (mappa su 1883 interna)
     networks:
       - edge-tier
     healthcheck:
-      test: ["CMD-SHELL", "timeout 2s mosquitto_sub -h localhost -p 1883 -t 'test/ping' -C 1 -E || exit 1"]
-      interval: 5s
-      timeout: 3s
+      test: [ "CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -t 'test/ping' -C 1 -W 2 || exit 0" ]
+      interval: 10s
+      timeout: 5s
       retries: 3
+      start_period: 5s
 
   # ==========================================
   # 5. EDGE GATEWAYS (Node.js / Express)
@@ -181,13 +192,19 @@ services:
       - LOCALE_ID=BAR_BELVEDERE
       - EDGE_PUBLIC_URL=http://localhost:3001
       - CENTRAL_SERVER_URL=http://service-gateway:8081
-      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm # Raggiunto via host/browser per redirect
-      - MQTT_BROKER_URL=mqtts://mosquitto-locale1:8883
-      - MQTT_USER=edge-client
-      - MQTT_PASSWORD=edgepassword123
+      # URL pubblica di Keycloak (browser dell'utente la raggiunge via localhost)
+      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
+      # URL interna di Keycloak (comunicazione backend-to-backend dentro Docker)
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-edge-app}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET:-edge-app-secret-dev}
+      - SESSION_SECRET=${SESSION_SECRET:-edge1-session-secret-change-me}
+      # MQTT: porta in chiaro, no TLS
+      - MQTT_BROKER_URL=mqtt://mosquitto-locale1:1883
+      - MQTT_USER=${MQTT1_SUBSCRIBE_USER:-edge-client}
+      - MQTT_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD:-edgesub123}
     volumes:
       - sqlite_locale1:/usr/src/app/data
-      - ./mosquitto/certs:/usr/src/app/certs:ro # Passaggio CA.crt per validazione SSL elegante
     ports:
       - "3001:3001"
     networks:
@@ -210,12 +227,15 @@ services:
       - EDGE_PUBLIC_URL=http://localhost:3002
       - CENTRAL_SERVER_URL=http://service-gateway:8081
       - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
-      - MQTT_BROKER_URL=mqtts://mosquitto-locale2:8883
-      - MQTT_USER=edge-client
-      - MQTT_PASSWORD=edgepassword456
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-edge-app}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET:-edge-app-secret-dev}
+      - SESSION_SECRET=${SESSION_SECRET:-edge2-session-secret-change-me}
+      - MQTT_BROKER_URL=mqtt://mosquitto-locale2:1883
+      - MQTT_USER=${MQTT2_SUBSCRIBE_USER:-edge-client}
+      - MQTT_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD:-edgesub456}
     volumes:
       - sqlite_locale2:/usr/src/app/data
-      - ./mosquitto/certs:/usr/src/app/certs:ro
     ports:
       - "3002:3002"
     networks:

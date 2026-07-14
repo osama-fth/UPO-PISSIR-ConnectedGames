@@ -20,7 +20,7 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-COPY --from=builder /build/target/*.jar app.jar
+COPY --from=builder /build/target/service-core-1.0.0.jar app.jar
 
 EXPOSE 8082
 

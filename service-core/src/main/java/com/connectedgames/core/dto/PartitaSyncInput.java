@@ -13,8 +13,8 @@ public record PartitaSyncInput(
     @NotBlank String localeId,
     UUID giocatore1Id,
     UUID giocatore2Id,
-    @NotNull @Min(0) @Max(999) int punteggio1,
-    @NotNull @Min(0) @Max(999) int punteggio2,
+    @NotNull @Min(0) @Max(999) Integer punteggio1,
+    @NotNull @Min(0) @Max(999) Integer punteggio2,
     @NotNull OffsetDateTime dataInizio,
     @NotNull OffsetDateTime dataFine,
     UUID torneoId

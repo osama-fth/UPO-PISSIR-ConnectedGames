@@ -21,7 +21,7 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Copia il jar prodotto dalla build
-COPY --from=builder /build/target/*.jar app.jar
+COPY --from=builder /build/target/service-gateway-1.0.0.jar app.jar
 
 # Porta esposta per il gateway
 EXPOSE 8081

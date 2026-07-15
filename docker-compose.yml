@@ -29,8 +29,8 @@ services:
     image: postgres:15-alpine
     container_name: postgres-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adminpassword}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
@@ -39,7 +39,7 @@ services:
     networks:
       - backend-tier
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d platform_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d platform_db" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -55,10 +55,10 @@ services:
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres-db:5432/keycloak_db
-      KC_DB_USERNAME: ${POSTGRES_USER:-admin}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-adminpassword}
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
@@ -88,8 +88,8 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-admin}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-adminpassword}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/pissir-realm
     networks:
       - backend-tier
@@ -138,13 +138,14 @@ services:
     build:
       context: ./mosquitto
       dockerfile: Dockerfile
+    image: connectedgames-mosquitto
     container_name: mosquitto-locale1
     environment:
       - LOCALE_ID=locale1
-      - MQTT_PUB_USER=${MQTT1_PUBLISH_USER:-simulator}
-      - MQTT_PUB_PASSWORD=${MQTT1_PUBLISH_PASSWORD:-simpub123}
-      - MQTT_SUB_USER=${MQTT1_SUBSCRIBE_USER:-edge-client}
-      - MQTT_SUB_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD:-edgesub123}
+      - MQTT_PUB_USER=${MQTT1_PUBLISH_USER}
+      - MQTT_PUB_PASSWORD=${MQTT1_PUBLISH_PASSWORD}
+      - MQTT_SUB_USER=${MQTT1_SUBSCRIBE_USER}
+      - MQTT_SUB_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
     ports:
       - "1883:1883" # Porta MQTT in chiaro esposta per Locale 1
     networks:
@@ -160,13 +161,14 @@ services:
     build:
       context: ./mosquitto
       dockerfile: Dockerfile
+    image: connectedgames-mosquitto
     container_name: mosquitto-locale2
     environment:
       - LOCALE_ID=locale2
-      - MQTT_PUB_USER=${MQTT2_PUBLISH_USER:-simulator}
-      - MQTT_PUB_PASSWORD=${MQTT2_PUBLISH_PASSWORD:-simpub456}
-      - MQTT_SUB_USER=${MQTT2_SUBSCRIBE_USER:-edge-client}
-      - MQTT_SUB_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD:-edgesub456}
+      - MQTT_PUB_USER=${MQTT2_PUBLISH_USER}
+      - MQTT_PUB_PASSWORD=${MQTT2_PUBLISH_PASSWORD}
+      - MQTT_SUB_USER=${MQTT2_SUBSCRIBE_USER}
+      - MQTT_SUB_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
     ports:
       - "1884:1883" # Porta MQTT in chiaro esposta per Locale 2 (mappa su 1883 interna)
     networks:
@@ -185,6 +187,7 @@ services:
     build:
       context: ./edge
       dockerfile: Dockerfile
+    image: connectedgames-edge
     container_name: edge-locale1
     environment:
       - NODE_ENV=development
@@ -196,13 +199,13 @@ services:
       - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
       # URL interna di Keycloak (comunicazione backend-to-backend dentro Docker)
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-edge-app}
-      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET:-edge-app-secret-dev}
-      - SESSION_SECRET=${SESSION_SECRET:-edge1-session-secret-change-me}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
       # MQTT: porta in chiaro, no TLS
       - MQTT_BROKER_URL=mqtt://mosquitto-locale1:1883
-      - MQTT_USER=${MQTT1_SUBSCRIBE_USER:-edge-client}
-      - MQTT_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD:-edgesub123}
+      - MQTT_USER=${MQTT1_SUBSCRIBE_USER}
+      - MQTT_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
     volumes:
       - sqlite_locale1:/usr/src/app/data
     ports:
@@ -219,6 +222,7 @@ services:
     build:
       context: ./edge
       dockerfile: Dockerfile
+    image: connectedgames-edge
     container_name: edge-locale2
     environment:
       - NODE_ENV=development
@@ -228,12 +232,12 @@ services:
       - CENTRAL_SERVER_URL=http://service-gateway:8081
       - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-edge-app}
-      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET:-edge-app-secret-dev}
-      - SESSION_SECRET=${SESSION_SECRET:-edge2-session-secret-change-me}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
       - MQTT_BROKER_URL=mqtt://mosquitto-locale2:1883
-      - MQTT_USER=${MQTT2_SUBSCRIBE_USER:-edge-client}
-      - MQTT_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD:-edgesub456}
+      - MQTT_USER=${MQTT2_SUBSCRIBE_USER}
+      - MQTT_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
     volumes:
       - sqlite_locale2:/usr/src/app/data
     ports:

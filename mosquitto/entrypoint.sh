@@ -40,7 +40,7 @@ mosquitto_passwd -b "$PASSWORD_FILE" "$MQTT_SUB_USER" "$MQTT_SUB_PASSWORD"
 echo "Password file generato in $PASSWORD_FILE con utenti: $MQTT_PUB_USER, $MQTT_SUB_USER"
 
 # Determina il file di configurazione in base al locale
-CONFIG_FILE="/mosquitto/config/mosquitto-${LOCALE_ID:-locale1}.conf"
+CONFIG_FILE="/mosquitto/config/mosquitto-${LOCALE_ID}.conf"
 
 # Avvia Mosquitto con la configurazione
 exec mosquitto -c "$CONFIG_FILE"

@@ -64,17 +64,112 @@
     </div>
 </div>
 
-<!-- Game Section Placeholder -->
-<div class="card" style="text-align: center; padding: 3rem 2rem;">
-    <div style="font-size: 3rem; margin-bottom: 1rem;">🎮</div>
-    <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em;">
-        Area Giochi
-    </h2>
-    <p class="text-muted" style="max-width: 400px; margin: 0 auto; font-size: 0.875rem;">
-        La sezione giochi (Calciobalilla e Freccette) sarà implementata nella prossima fase.
-        Per ora il flusso di autenticazione e la connessione MQTT sono operativi.
-    </p>
-</div>
+<% if (user.roles && user.roles.includes('giocatore')) { %>
+    <!-- ============================================== -->
+    <!-- VISTA GIOCATORE -->
+    <!-- ============================================== -->
+    <div class="card mb-3" style="border-top: 4px solid var(--accent-primary); background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);">
+        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Benvenuto in campo, <%= user.username %>! 🎮</h2>
+        <p class="text-muted mb-3" style="font-size: 0.95rem;">Scegli il tavolo o il bersaglio dal quale vuoi giocare per associare il tuo profilo alla partita e registrare le statistiche.</p>
+        
+        <div class="grid-3" style="gap: 1.5rem;">
+            <div class="card" style="text-align: center; border: 1px dashed var(--accent-secondary); background: transparent;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">📱</div>
+                <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Scansiona QR Code</h3>
+                <p class="text-muted text-sm mb-2">Avvicina la fotocamera al QR sul tavolo per loggarti istantaneamente.</p>
+                <button class="btn btn-primary btn-block">Apri Fotocamera</button>
+            </div>
+            <div class="card" style="background: var(--bg-secondary);">
+                <h3 style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">Partite Recenti</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                    <div><span class="badge badge-success">VITTORIA</span></div>
+                    <div style="font-weight: 600;">Calciobalilla</div>
+                    <div class="text-muted text-sm">Ieri</div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0;">
+                    <div><span class="badge badge-danger">SCONFITTA</span></div>
+                    <div style="font-weight: 600;">Freccette</div>
+                    <div class="text-muted text-sm">3gg fa</div>
+                </div>
+            </div>
+        </div>
+    </div>
+<% } %>
+
+<% if (user.roles && user.roles.includes('admin_locale')) { %>
+    <!-- ============================================== -->
+    <!-- VISTA ADMIN LOCALE -->
+    <!-- ============================================== -->
+    <div class="card mb-3" style="border-top: 4px solid var(--warning); background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);">
+        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--warning);">Console Amministratore Locale 🔧</h2>
+        <p class="text-muted mb-3" style="font-size: 0.95rem;">Gestisci i tavoli e i dispositivi del locale <strong><%= localeId %></strong>.</p>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; text-align: left; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary);">
+                        <th style="padding: 12px;">Dispositivo (Installazione)</th>
+                        <th style="padding: 12px;">Stato Sensori MQTT</th>
+                        <th style="padding: 12px;">Partita in corso</th>
+                        <th style="padding: 12px;">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 12px; font-weight: 600;">⚽ Calciobalilla 1</td>
+                        <td style="padding: 12px;"><span class="dot dot-success"></span> Online (Porta A/B)</td>
+                        <td style="padding: 12px;"><span class="badge badge-warning">IN CORSO</span> (2-1)</td>
+                        <td style="padding: 12px;">
+                            <button class="btn btn-secondary btn-sm">Sospendi</button>
+                            <button class="btn btn-danger btn-sm">Riavvia</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; font-weight: 600;">🎯 Freccette Bersaglio A</td>
+                        <td style="padding: 12px;"><span class="dot dot-success"></span> Online</td>
+                        <td style="padding: 12px;"><span class="text-muted">Libero</span></td>
+                        <td style="padding: 12px;">
+                            <button class="btn btn-secondary btn-sm">Sospendi</button>
+                            <button class="btn btn-danger btn-sm">Riavvia</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<% } %>
+
+<% if (user.roles && user.roles.includes('admin_piattaforma')) { %>
+    <!-- ============================================== -->
+    <!-- VISTA ADMIN PIATTAFORMA -->
+    <!-- ============================================== -->
+    <div class="card mb-3" style="border-top: 4px solid var(--danger); background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, transparent 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--danger);">Supervisione Globale Piattaforma 🌍</h2>
+            <span class="badge badge-danger">SUPER ADMIN ACCESSO</span>
+        </div>
+        
+        <div class="grid-3" style="margin-bottom: 1.5rem;">
+            <div class="card" style="background: var(--bg-secondary); border-color: rgba(239, 68, 68, 0.3);">
+                <div class="card-subtitle">METRICHE LIVE</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: white;">24</div>
+                <div class="text-muted text-sm">Partite in corso nei locali</div>
+            </div>
+            <div class="card" style="background: var(--bg-secondary); border-color: rgba(239, 68, 68, 0.3);">
+                <div class="card-subtitle">TRAFFICO MQTT</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: white;">128/s</div>
+                <div class="text-muted text-sm">Eventi sensori al secondo</div>
+            </div>
+            <div class="card" style="background: var(--bg-secondary); border-color: rgba(239, 68, 68, 0.3);">
+                <div class="card-subtitle">SINK DATABASE</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: var(--success);">OK</div>
+                <div class="text-muted text-sm">Tutti gli Edge sincronizzati</div>
+            </div>
+        </div>
+        
+        <button class="btn btn-secondary">Apri Grafana / Statistiche Avanzate 📈</button>
+    </div>
+<% } %>
 
 <!-- Session Info (Debug) -->
 <details class="mt-3" style="color: var(--text-muted); font-size: 0.75rem;">

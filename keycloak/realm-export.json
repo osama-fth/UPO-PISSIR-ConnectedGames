@@ -55,7 +55,11 @@
   ],
   "users": [
     {
-      "username": "mario",
+      "id": "a0000000-0000-0000-0000-000000000001",
+      "username": "SuperMario",
+      "firstName": "Mario",
+      "lastName": "Rossi",
+      "email": "mario.rossi@example.com",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
@@ -70,7 +74,30 @@
       ]
     },
     {
-      "username": "admin_test",
+      "id": "a0000000-0000-0000-0000-000000000002",
+      "username": "Gigio",
+      "firstName": "Luigi",
+      "lastName": "Bianchi",
+      "email": "luigi.bianchi@example.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "giocatore"
+      ]
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000003",
+      "username": "admin_belvedere",
+      "firstName": "Admin",
+      "lastName": "Belvedere",
+      "email": "admin.belvedere@example.com",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
@@ -82,6 +109,44 @@
       ],
       "realmRoles": [
         "admin_locale"
+      ]
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000004",
+      "username": "admin_roma",
+      "firstName": "Admin",
+      "lastName": "Roma",
+      "email": "admin.roma@example.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin_locale"
+      ]
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000005",
+      "username": "admin_piattaforma",
+      "firstName": "Super",
+      "lastName": "Admin",
+      "email": "admin.platform@example.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin_piattaforma"
       ]
     }
   ]

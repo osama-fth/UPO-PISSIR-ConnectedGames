@@ -188,12 +188,28 @@ async function exchangeCode(params, state, nonce, code_verifier) {
  */
 function getUserInfoFromToken(tokenSet) {
     const claims = tokenSet.claims();
+    
+    // Decodifica manuale dell'Access Token per estrarre i realm_roles
+    let accessRoles = [];
+    if (tokenSet.access_token) {
+        try {
+            const payloadBase64 = tokenSet.access_token.split('.')[1];
+            const decoded = Buffer.from(payloadBase64, 'base64').toString('utf8');
+            const accessClaims = JSON.parse(decoded);
+            accessRoles = accessClaims.realm_access?.roles || [];
+        } catch (err) {
+            console.error("Errore decodifica Access Token:", err.message);
+        }
+    }
+
+    const roles = claims.realm_roles || claims.realm_access?.roles || accessRoles;
+
     return {
         id: claims.sub,
         username: claims.preferred_username || claims.sub,
         email: claims.email || '',
         name: `${claims.given_name || ''} ${claims.family_name || ''}`.trim(),
-        roles: claims.realm_roles || claims.realm_access?.roles || [],
+        roles: roles,
         isGuest: false,
         accessToken: tokenSet.access_token,
         idToken: tokenSet.id_token

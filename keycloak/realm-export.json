@@ -3,7 +3,7 @@
   "realm": "pissir-realm",
   "displayName": "Connected Games Platform",
   "enabled": true,
-  "sslRequired": "none",
+  "sslRequired": "external",
   "registrationAllowed": true,
   "registrationEmailAsUsername": false,
   "loginWithEmailAllowed": true,
@@ -11,9 +11,6 @@
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "bruteForceProtected": false,
-  "accessTokenLifespan": 3600,
-  "ssoSessionIdleTimeout": 3600,
-  "ssoSessionMaxLifespan": 36000,
   "roles": {
     "realm": [
       {
@@ -36,121 +33,55 @@
   },
   "clients": [
     {
-      "clientId": "edge-app",
+      "clientId": "edge-client",
       "name": "Edge Gateway Application",
       "description": "Client OIDC per gli Edge Node locali",
       "enabled": true,
       "protocol": "openid-connect",
-      "publicClient": false,
-      "secret": "edge-app-secret-dev",
+      "publicClient": true,
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "authorizationServicesEnabled": false,
+      "directAccessGrantsEnabled": true,
       "redirectUris": [
-        "http://localhost:3001/*",
-        "http://localhost:3002/*"
+        "http://localhost:*"
       ],
       "webOrigins": [
-        "http://localhost:3001",
-        "http://localhost:3002"
+        "*"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:3001/*##http://localhost:3002/*"
-      },
-      "protocolMappers": [
-        {
-          "name": "realm-roles-mapper",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "multivalued": "true",
-            "claim.name": "realm_roles",
-            "jsonType.label": "String",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        }
-      ]
+        "post.logout.redirect.uris": "+",
+        "_comment": "SOLO DEV \u2014 restringere redirectUris e webOrigins in produzione"
+      }
     }
   ],
   "users": [
     {
-      "username": "giocatore1",
-      "email": "giocatore1@test.com",
-      "firstName": "Mario",
-      "lastName": "Rossi",
+      "username": "mario",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "value": "password123",
+          "value": "password",
           "temporary": false
         }
       ],
       "realmRoles": [
-        "giocatore",
-        "default-roles-pissir-realm"
+        "giocatore"
       ]
     },
     {
-      "username": "giocatore2",
-      "email": "giocatore2@test.com",
-      "firstName": "Luigi",
-      "lastName": "Verdi",
+      "username": "admin_test",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "value": "password123",
+          "value": "password",
           "temporary": false
         }
       ],
       "realmRoles": [
-        "giocatore",
-        "default-roles-pissir-realm"
-      ]
-    },
-    {
-      "username": "admin_locale1",
-      "email": "admin.belvedere@test.com",
-      "firstName": "Admin",
-      "lastName": "Belvedere",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "password123",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "admin_locale",
-        "default-roles-pissir-realm"
-      ]
-    },
-    {
-      "username": "admin_piattaforma",
-      "email": "admin.platform@test.com",
-      "firstName": "Super",
-      "lastName": "Admin",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "admin123",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "admin_piattaforma",
-        "default-roles-pissir-realm"
+        "admin_locale"
       ]
     }
   ]

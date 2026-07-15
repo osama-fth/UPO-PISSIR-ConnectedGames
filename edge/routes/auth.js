@@ -17,7 +17,7 @@ const router = express.Router();
 
 const {
     checkKeycloakHealth,
-    getAuthorizationUrl,
+    generateAuthData,
     getRegistrationUrl,
     exchangeCode,
     getUserInfoFromToken,
@@ -67,18 +67,17 @@ router.get('/start', async (req, res) => {
             return res.redirect('/auth/login?error=keycloak_unreachable');
         }
 
-        // Genera state e nonce anti-CSRF/replay
-        const state = crypto.randomBytes(32).toString('hex');
-        const nonce = crypto.randomBytes(32).toString('hex');
+        // Genera dati di auth (state, nonce, url PKCE con code_challenge)
+        const authData = generateAuthData();
 
         // Salva in sessione per la verifica nel callback
-        req.session.oidcState = state;
-        req.session.oidcNonce = nonce;
+        req.session.oidcState = authData.state;
+        req.session.oidcNonce = authData.nonce;
+        req.session.oidcCodeVerifier = authData.code_verifier; // PKCE verifier
 
-        const authUrl = getAuthorizationUrl(state, nonce);
-        console.log(`[Auth ${LOCALE_ID}] Redirect a Keycloak per autenticazione`);
+        console.log(`[Auth ${LOCALE_ID}] Redirect a Keycloak per autenticazione (PKCE attivo)`);
 
-        return res.redirect(authUrl);
+        return res.redirect(authData.url);
     } catch (err) {
         console.error(`[Auth ${LOCALE_ID}] Errore avvio OIDC:`, err.message);
         return res.redirect('/auth/login?error=oidc_error');
@@ -128,14 +127,21 @@ router.get('/callback', async (req, res) => {
         // Verifica state anti-CSRF
         const savedState = req.session.oidcState;
         const savedNonce = req.session.oidcNonce;
+        const savedCodeVerifier = req.session.oidcCodeVerifier;
 
         if (!savedState || state !== savedState) {
             console.error(`[Auth ${LOCALE_ID}] State mismatch: atteso ${savedState}, ricevuto ${state}`);
             return res.redirect('/auth/login?error=state_mismatch');
         }
+        
+        if (!savedCodeVerifier) {
+            console.error(`[Auth ${LOCALE_ID}] Code Verifier mancante in sessione per PKCE`);
+            return res.redirect('/auth/login?error=pkce_error');
+        }
 
         // Scambio authorization code → token (backend-to-backend via rete Docker)
-        const tokenSet = await exchangeCode(code, savedState, savedNonce);
+        // Passiamo req.query completo a openid-client (incluso 'iss' e altri parametri previsti da Keycloak)
+        const tokenSet = await exchangeCode(req.query, savedState, savedNonce, savedCodeVerifier);
         console.log(`[Auth ${LOCALE_ID}] Token ottenuto, scadenza: ${tokenSet.expires_at}`);
 
         // Estrai informazioni utente dal token JWT
@@ -149,9 +155,10 @@ router.get('/callback', async (req, res) => {
             expiresAt: tokenSet.expires_at
         };
 
-        // Pulisci state/nonce dalla sessione
+        // Pulisci state/nonce/verifier dalla sessione
         delete req.session.oidcState;
         delete req.session.oidcNonce;
+        delete req.session.oidcCodeVerifier;
 
         console.log(`[Auth ${LOCALE_ID}] Utente autenticato: ${userInfo.username} (${userInfo.roles.join(', ')})`);
 

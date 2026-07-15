@@ -200,7 +200,6 @@ services:
       # URL interna di Keycloak (comunicazione backend-to-backend dentro Docker)
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
       - SESSION_SECRET=${SESSION_SECRET}
       # MQTT: porta in chiaro, no TLS
       - MQTT_BROKER_URL=mqtt://mosquitto-locale1:1883
@@ -233,7 +232,6 @@ services:
       - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
       - SESSION_SECRET=${SESSION_SECRET}
       - MQTT_BROKER_URL=mqtt://mosquitto-locale2:1883
       - MQTT_USER=${MQTT2_SUBSCRIBE_USER}

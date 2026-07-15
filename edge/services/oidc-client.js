@@ -3,10 +3,10 @@
 // Connected Games Platform (PISSIR A.A. 2025/2026)
 // ============================================================
 // Gestisce la discovery e la configurazione del client OIDC
-// per l'Authorization Code Flow con Keycloak.
+// per l'Authorization Code Flow con PKCE.
 // ============================================================
 
-const { Issuer } = require('openid-client');
+const { Issuer, generators } = require('openid-client');
 
 let oidcClient = null;
 let oidcAvailable = false;
@@ -25,8 +25,7 @@ const KEYCLOAK_INTERNAL_URL = process.env.KEYCLOAK_INTERNAL_URL
 const KEYCLOAK_PUBLIC_URL = process.env.KEYCLOAK_URL
     || 'http://localhost:9080/realms/pissir-realm';
 
-const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'edge-app';
-const CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || 'edge-app-secret-dev';
+const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'edge-client';
 const EDGE_PUBLIC_URL = process.env.EDGE_PUBLIC_URL || 'http://localhost:3001';
 
 /**
@@ -35,14 +34,35 @@ const EDGE_PUBLIC_URL = process.env.EDGE_PUBLIC_URL || 'http://localhost:3001';
  */
 async function initOidcClient() {
     try {
-        const issuer = await Issuer.discover(KEYCLOAK_INTERNAL_URL);
+        // Fetch manuale del discovery document
+        const response = await fetch(`${KEYCLOAK_INTERNAL_URL}/.well-known/openid-configuration`);
+        if (!response.ok) {
+            throw new Error(`Impossibile recuperare OIDC config: ${response.statusText}`);
+        }
+        const metadata = await response.json();
+
+        // ------------------------------------------------------------
+        // TRUCCO PER DOCKER (Split-Brain DNS)
+        // L'issuer per la validazione JWT deve corrispondere a quello
+        // pubblico (localhost:9080), perché Keycloak usa l'host del
+        // browser. Ma gli endpoint backend (token, jwks) devono 
+        // rimanere su keycloak:8080 per funzionare dentro Docker.
+        // ------------------------------------------------------------
+        metadata.issuer = KEYCLOAK_PUBLIC_URL;
+        metadata.authorization_endpoint = metadata.authorization_endpoint.replace(KEYCLOAK_INTERNAL_URL, KEYCLOAK_PUBLIC_URL);
+        metadata.end_session_endpoint = metadata.end_session_endpoint.replace(KEYCLOAK_INTERNAL_URL, KEYCLOAK_PUBLIC_URL);
+        if (metadata.registration_endpoint) {
+            metadata.registration_endpoint = metadata.registration_endpoint.replace(KEYCLOAK_INTERNAL_URL, KEYCLOAK_PUBLIC_URL);
+        }
+
+        const issuer = new Issuer(metadata);
 
         oidcClient = new issuer.Client({
             client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
             redirect_uris: [`${EDGE_PUBLIC_URL}/auth/callback`],
             response_types: ['code'],
-            post_logout_redirect_uris: [`${EDGE_PUBLIC_URL}/`]
+            post_logout_redirect_uris: [`${EDGE_PUBLIC_URL}/`],
+            token_endpoint_auth_method: 'none' // Essenziale per Public Clients
         });
 
         oidcAvailable = true;
@@ -81,33 +101,38 @@ async function checkKeycloakHealth() {
 }
 
 /**
- * Genera l'URL di autorizzazione Keycloak.
- * NOTA: usa la URL pubblica per il redirect nel browser dell'utente,
- * ma il client openid-client usa internamente la URL interna per
- * le chiamate server-to-server (token exchange).
+ * Genera l'URL di autorizzazione Keycloak con PKCE.
+ * @returns {Object} Oggetto con { url, state, nonce, code_verifier }
  */
-function getAuthorizationUrl(state, nonce) {
+function generateAuthData() {
     if (!oidcClient) {
         throw new Error('Client OIDC non inizializzato');
     }
 
-    // Costruiamo la URL di auth manualmente usando la URL pubblica
-    // perché il browser dell'utente deve raggiungere Keycloak
-    // tramite localhost:9080, non tramite il nome Docker interno.
-    const authUrl = new URL(`${KEYCLOAK_PUBLIC_URL}/protocol/openid-connect/auth`);
-    authUrl.searchParams.set('client_id', CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', `${EDGE_PUBLIC_URL}/auth/callback`);
-    authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set('scope', 'openid profile email');
-    authUrl.searchParams.set('state', state);
-    authUrl.searchParams.set('nonce', nonce);
+    const state = generators.state();
+    const nonce = generators.nonce();
+    const code_verifier = generators.codeVerifier();
+    const code_challenge = generators.codeChallenge(code_verifier);
 
-    return authUrl.toString();
+    // Ora la libreria ha gli endpoint già configurati correttamente
+    const authUrl = oidcClient.authorizationUrl({
+        scope: 'openid profile email',
+        state: state,
+        nonce: nonce,
+        code_challenge: code_challenge,
+        code_challenge_method: 'S256',
+    });
+
+    return {
+        url: authUrl,
+        state,
+        nonce,
+        code_verifier
+    };
 }
 
 /**
  * Genera l'URL di registrazione Keycloak.
- * Keycloak espone un endpoint dedicato per la registrazione.
  */
 function getRegistrationUrl() {
     const regUrl = new URL(`${KEYCLOAK_PUBLIC_URL}/protocol/openid-connect/registrations`);
@@ -120,16 +145,14 @@ function getRegistrationUrl() {
 }
 
 /**
- * Scambia l'authorization code per i token (backend-to-backend).
- * Questa chiamata avviene internamente tramite la rete Docker.
+ * Scambia l'authorization code per i token usando PKCE.
  */
-async function exchangeCode(code, state, nonce) {
+async function exchangeCode(params, state, nonce, code_verifier) {
     if (!oidcClient) {
         throw new Error('Client OIDC non inizializzato');
     }
 
-    const params = { code, state };
-    const checks = { state, nonce };
+    const checks = { state, nonce, code_verifier };
 
     const tokenSet = await oidcClient.callback(
         `${EDGE_PUBLIC_URL}/auth/callback`,
@@ -157,13 +180,20 @@ function getUserInfoFromToken(tokenSet) {
     };
 }
 
+/**
+ * Genera l'URL per la fine sessione a norma OIDC.
+ */
 function getLogoutUrl(idTokenHint) {
-    const logoutUrl = new URL(`${KEYCLOAK_PUBLIC_URL}/protocol/openid-connect/logout`);
-    if (idTokenHint) {
-        logoutUrl.searchParams.set('id_token_hint', idTokenHint);
+    if (!oidcClient) {
+        throw new Error('Client OIDC non inizializzato');
     }
-    logoutUrl.searchParams.set('post_logout_redirect_uri', `${EDGE_PUBLIC_URL}/`);
-    return logoutUrl.toString();
+    
+    const logoutUrl = oidcClient.endSessionUrl({
+        id_token_hint: idTokenHint,
+        post_logout_redirect_uri: `${EDGE_PUBLIC_URL}/`
+    });
+    
+    return logoutUrl;
 }
 
 function isOidcAvailable() {
@@ -173,7 +203,7 @@ function isOidcAvailable() {
 module.exports = {
     initOidcClient,
     checkKeycloakHealth,
-    getAuthorizationUrl,
+    generateAuthData,
     getRegistrationUrl,
     exchangeCode,
     getUserInfoFromToken,

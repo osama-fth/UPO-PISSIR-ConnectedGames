@@ -95,9 +95,15 @@ router.get('/register', async (req, res) => {
             return res.redirect('/auth/login?error=keycloak_unreachable');
         }
 
-        const regUrl = getRegistrationUrl();
-        console.log(`[Auth ${LOCALE_ID}] Redirect a Keycloak per registrazione`);
-        return res.redirect(regUrl);
+        const authData = getRegistrationUrl();
+        
+        // Salva in sessione per la verifica nel callback (come nel login)
+        req.session.oidcState = authData.state;
+        req.session.oidcNonce = authData.nonce;
+        req.session.oidcCodeVerifier = authData.code_verifier; // PKCE verifier
+
+        console.log(`[Auth ${LOCALE_ID}] Redirect a Keycloak per registrazione (PKCE attivo)`);
+        return res.redirect(authData.url);
     } catch (err) {
         console.error(`[Auth ${LOCALE_ID}] Errore redirect registrazione:`, err.message);
         return res.redirect('/auth/login?error=oidc_error');

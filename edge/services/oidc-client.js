@@ -135,13 +135,33 @@ function generateAuthData() {
  * Genera l'URL di registrazione Keycloak.
  */
 function getRegistrationUrl() {
-    const regUrl = new URL(`${KEYCLOAK_PUBLIC_URL}/protocol/openid-connect/registrations`);
-    regUrl.searchParams.set('client_id', CLIENT_ID);
-    regUrl.searchParams.set('redirect_uri', `${EDGE_PUBLIC_URL}/auth/callback`);
-    regUrl.searchParams.set('response_type', 'code');
-    regUrl.searchParams.set('scope', 'openid profile email');
+    if (!oidcClient) {
+        throw new Error('Client OIDC non inizializzato');
+    }
 
-    return regUrl.toString();
+    const state = generators.state();
+    const nonce = generators.nonce();
+    const code_verifier = generators.codeVerifier();
+    const code_challenge = generators.codeChallenge(code_verifier);
+
+    // Generiamo i parametri completi PKCE usando l'authorizationUrl
+    const authUrl = new URL(oidcClient.authorizationUrl({
+        scope: 'openid profile email',
+        state: state,
+        nonce: nonce,
+        code_challenge: code_challenge,
+        code_challenge_method: 'S256',
+    }));
+
+    // Sostituiamo l'endpoint di login con quello di registrazione di Keycloak
+    authUrl.pathname = authUrl.pathname.replace('/protocol/openid-connect/auth', '/protocol/openid-connect/registrations');
+
+    return {
+        url: authUrl.toString(),
+        state,
+        nonce,
+        code_verifier
+    };
 }
 
 /**

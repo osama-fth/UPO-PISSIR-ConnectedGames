@@ -36,7 +36,7 @@ const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 router.get('/login', async (req, res) => {
     // Se già autenticato, redirect alla dashboard
     if (req.session.user) {
-        return res.redirect('/');
+        return res.redirect('/dashboard');
     }
 
     let keycloakOnline = false;
@@ -188,7 +188,7 @@ router.get('/callback', async (req, res) => {
 
         console.log(`[Auth ${LOCALE_ID}] Utente autenticato: ${userInfo.username} (${userInfo.roles.join(', ')})`);
 
-        return res.redirect('/');
+        return res.redirect('/dashboard');
 
     } catch (err) {
         console.error(`[Auth ${LOCALE_ID}] Errore callback OIDC:`, err.message);
@@ -215,7 +215,7 @@ router.post('/guest', (req, res) => {
     };
 
     console.log(`[Auth ${LOCALE_ID}] Accesso come Ospite (Guest Mode)`);
-    return res.redirect('/');
+    return res.redirect('/dashboard');
 });
 
 /**

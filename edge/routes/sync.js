@@ -22,12 +22,12 @@ const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
  */
 router.post('/now', requireAuth, requireAdminAccess, async (req, res) => {
     try {
-        // Usa il token JWT dell'utente corrente per l'autenticazione
-        const accessToken = req.session.tokenSet?.accessToken || null;
-
         console.log(`[Sync ${LOCALE_ID}] Sincronizzazione manuale avviata da ${req.session.user.username}`);
 
-        const result = await sincronizzaAdesso(accessToken);
+        // Usiamo sempre il token di servizio (edge_sync_service) invece di quello
+        // dell'utente per evitare errori 401 dovuti al mismatch dell'issuer JWT
+        // tra l'accesso da localhost (browser) e keycloak:8080 (backend)
+        const result = await sincronizzaAdesso(null);
 
         if (result.inProgress) {
             return res.status(409).json({

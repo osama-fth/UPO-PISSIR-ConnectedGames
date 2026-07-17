@@ -6,7 +6,7 @@
 // locale verso il Server Centrale (Spring Boot) via REST.
 // Implementa:
 //   - Semaforo in-memory anti race-condition
-//   - Cron-job automatico ogni 5 minuti
+//   - Cron-job automatico ogni 2 minuti
 //   - Trigger manuale via API
 // ============================================================
 
@@ -15,7 +15,7 @@ const { directPasswordAuth } = require('./oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
-const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minuti
+const SYNC_INTERVAL_MS = 2 * 60 * 1000; // 2 minuti
 
 // Semaforo booleano in-memory per evitare sync simultanee
 let isSyncing = false;

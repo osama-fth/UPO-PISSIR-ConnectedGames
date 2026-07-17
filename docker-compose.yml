@@ -6,7 +6,7 @@ networks:
   backend-tier:
     name: platform-backend-tier
     driver: bridge
-    # internal: true # Disabilitato temporaneamente per permettere l'accesso da DBeaver sull'host
+    internal: true # Rete completamente isolata senza accesso a internet per massima sicurezza
   edge-tier:
     name: platform-edge-tier
     driver: bridge
@@ -31,8 +31,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    ports:
-      - "5432:5432" # Esposta solo sull'host di sviluppo per ispezione / debug DB
+
     networks:
       - backend-tier
     healthcheck:
@@ -109,8 +108,7 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/pissir-realm
       - SERVICE_CORE_URL=http://service-core:8082
-    ports:
-      - "8081:8081" # Unico punto di ingresso REST pubblico per tutti gli Edge Node locali
+
     networks:
       - backend-tier
       - edge-tier # Il gateway è l'unico ponte che collega l'infrastruttura locale e il backend-tier
@@ -143,8 +141,7 @@ services:
       - MQTT_PUB_PASSWORD=${MQTT1_PUBLISH_PASSWORD}
       - MQTT_SUB_USER=${MQTT1_SUBSCRIBE_USER}
       - MQTT_SUB_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
-    ports:
-      - "1883:1883" # Porta MQTT in chiaro esposta per Locale 1
+
     networks:
       - edge-tier
     healthcheck:
@@ -166,8 +163,7 @@ services:
       - MQTT_PUB_PASSWORD=${MQTT2_PUBLISH_PASSWORD}
       - MQTT_SUB_USER=${MQTT2_SUBSCRIBE_USER}
       - MQTT_SUB_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
-    ports:
-      - "1884:1883" # Porta MQTT in chiaro esposta per Locale 2 (mappa su 1883 interna)
+
     networks:
       - edge-tier
     healthcheck:

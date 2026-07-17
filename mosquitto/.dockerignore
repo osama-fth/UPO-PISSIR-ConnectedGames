@@ -1,0 +1,15 @@
+# ============================================================
+# .dockerignore — mosquitto
+# ============================================================
+
+.git/
+.gitignore
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# File Markdown o log non necessari nel container
+*.md
+*.log

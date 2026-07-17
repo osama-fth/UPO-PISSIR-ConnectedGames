@@ -67,6 +67,22 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "platform-client",
+      "name": "Platform Dashboard",
+      "description": "Client OIDC per la Dashboard Super Admin",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:*"
+      ],
+      "webOrigins": [
+        "*"
+      ]
     }
   ],
   "users": [

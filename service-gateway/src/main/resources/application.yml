@@ -24,7 +24,7 @@ spring:
       routes:
         # --- Sincronizzazione massiva partite (Bulk Sync) ---
         - id: partite-sincronizza
-          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          uri: ${PARTITA_SERVICE_URL:http://partita-service:8082}
           predicates:
             - Path=/api/v1/locali/{localeId}/partite/sincronizza
             - Method=POST
@@ -37,28 +37,28 @@ spring:
 
         # --- Lista giochi installati in un locale ---
         - id: locali-giochi
-          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          uri: ${PARTITA_SERVICE_URL:http://partita-service:8082}
           predicates:
             - Path=/api/v1/locali/{localeId}/giochi
             - Method=GET
 
         # --- Lista tornei ---
         - id: tornei-lista
-          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          uri: ${TORNEO_SERVICE_URL:http://torneo-service:8083}
           predicates:
             - Path=/api/v1/tornei
             - Method=GET
 
         # --- Classifica torneo in tempo reale ---
         - id: tornei-classifica
-          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          uri: ${TORNEO_SERVICE_URL:http://torneo-service:8083}
           predicates:
             - Path=/api/v1/tornei/{torneoId}/classifica
             - Method=GET
 
         # --- Statistiche globali (Dashboard Admin) ---
         - id: statistiche-globali
-          uri: ${SERVICE_CORE_URL:http://service-core:8082}
+          uri: ${PARTITA_SERVICE_URL:http://partita-service:8082}
           predicates:
             - Path=/api/v1/statistiche
             - Method=GET

@@ -76,11 +76,11 @@ services:
   # ==========================================
   # 3. BACKEND SERVICES (Spring Boot 3.x)
   # ==========================================
-  service-core:
+  partita-service:
     build:
-      context: ./service-core
+      context: ./partita-service
       dockerfile: Dockerfile
-    container_name: service-core
+    container_name: partita-service
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
@@ -99,6 +99,29 @@ services:
       retries: 5
       start_period: 15s
 
+  torneo-service:
+    build:
+      context: ./torneo-service
+      dockerfile: Dockerfile
+    container_name: torneo-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/pissir-realm
+    networks:
+      - backend-tier
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8083/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   service-gateway:
     build:
       context: ./service-gateway
@@ -107,15 +130,17 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/pissir-realm
-      - SERVICE_CORE_URL=http://service-core:8082
-
+      - PARTITA_SERVICE_URL=http://partita-service:8082
+      - TORNEO_SERVICE_URL=http://torneo-service:8083
     networks:
       - backend-tier
       - edge-tier # Il gateway è l'unico ponte che collega l'infrastruttura locale e il backend-tier
     depends_on:
       keycloak:
         condition: service_healthy
-      service-core:
+      partita-service:
+        condition: service_healthy
+      torneo-service:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1" ]
@@ -237,6 +262,31 @@ services:
       - edge-tier
     depends_on:
       mosquitto-locale2:
+        condition: service_healthy
+      service-gateway:
+        condition: service_healthy
+
+  # ==========================================
+  # 6. DASHBOARD PIATTAFORMA (Kiosk Super Admin)
+  # ==========================================
+  platform-dashboard:
+    build:
+      context: ./platform-dashboard
+      dockerfile: Dockerfile
+    container_name: platform-dashboard
+    environment:
+      - DASHBOARD_URL=http://localhost:3000
+      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
+      - CLIENT_ID=platform-client
+      - SESSION_SECRET=segreto_super_sicuro_dashboard
+      - CENTRAL_SERVER_URL=http://service-gateway:8081
+    ports:
+      - "3000:3000"
+    networks:
+      - edge-tier
+    depends_on:
+      keycloak:
         condition: service_healthy
       service-gateway:
         condition: service_healthy

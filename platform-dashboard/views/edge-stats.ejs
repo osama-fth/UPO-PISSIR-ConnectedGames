@@ -1,0 +1,153 @@
+<%- include('partials/header') %>
+
+<!-- Page Header -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+        <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;">
+            📊 Statistiche Locale
+        </h1>
+        <p class="text-muted" style="font-size: 0.9rem;">
+            Dati dettagliati dal buffer SQLite — <strong><%= localeId %></strong>
+        </p>
+    </div>
+    <a href="/" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<!-- Overview Cards -->
+<div class="grid-3 mb-3">
+    <div class="card" style="text-align: center; border-top: 3px solid var(--accent-primary);">
+        <div class="card-subtitle">PARTITE TOTALI</div>
+        <div style="font-size: 3rem; font-weight: 900; color: var(--accent-primary);"><%= stats.totalePartite %></div>
+        <p class="text-muted text-sm">Su questo locale</p>
+    </div>
+    <div class="card" style="text-align: center; border-top: 3px solid var(--warning);">
+        <div class="card-subtitle">IN ATTESA DI SYNC</div>
+        <div style="font-size: 3rem; font-weight: 900; color: <%= stats.inAttesaDiSync > 0 ? 'var(--warning)' : 'var(--success)' %>;"><%= stats.inAttesaDiSync %></div>
+        <p class="text-muted text-sm">Da sincronizzare con il cloud</p>
+    </div>
+    <div class="card" style="text-align: center; border-top: 3px solid var(--success);">
+        <div class="card-subtitle">SINCRONIZZATE</div>
+        <div style="font-size: 3rem; font-weight: 900; color: var(--success);"><%= stats.sincronizzate %></div>
+        <p class="text-muted text-sm">Inviate al Server Centrale</p>
+    </div>
+</div>
+
+<!-- Stats per Gioco -->
+<% if (stats.perGioco && stats.perGioco.length > 0) { %>
+<div class="card mb-3" style="border-top: 4px solid var(--accent-secondary);">
+    <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.25rem;">🎮 Statistiche per Gioco</h2>
+    <div class="grid-3" style="gap: 1rem;">
+        <% stats.perGioco.forEach(function(g) { %>
+            <div class="card" style="background: var(--bg-secondary);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
+                    <span style="font-size: 1.5rem;"><%= g.gioco_id === 'calciobalilla' ? '⚽' : '🎯' %></span>
+                    <span style="font-weight: 700; font-size: 1.1rem; text-transform: capitalize;"><%= g.gioco_id %></span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div>
+                        <div class="text-muted text-sm">Partite</div>
+                        <div style="font-weight: 700; font-size: 1.25rem;"><%= g.count %></div>
+                    </div>
+                    <div>
+                        <div class="text-muted text-sm">Punteggio Medio</div>
+                        <div style="font-weight: 700; font-size: 1.25rem;">
+                            <%= Math.round(g.avg_p1 * 10) / 10 %> — <%= Math.round(g.avg_p2 * 10) / 10 %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+</div>
+<% } %>
+
+<!-- Partite Attive -->
+<% if (activeGames && activeGames.length > 0) { %>
+<div class="card mb-3" style="border-top: 4px solid var(--danger);">
+    <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--danger);">🔴 Partite in Corso</h2>
+    <% activeGames.forEach(function(game) { %>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.25rem;"><%= game.giocoId === 'calciobalilla' ? '⚽' : '🎯' %></span>
+                <div>
+                    <div style="font-weight: 600;"><%= game.giocatore1.username %> vs <%= game.giocatore2.username %></div>
+                    <div class="text-muted text-sm"><%= game.installazioneId %></div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.25rem; font-weight: 800;"><%= game.punteggio1 %> — <%= game.punteggio2 %></span>
+                <span class="badge badge-warning">LIVE</span>
+            </div>
+        </div>
+    <% }); %>
+</div>
+<% } %>
+
+<!-- Ultime Partite -->
+<% if (stats.ultimePartite && stats.ultimePartite.length > 0) { %>
+<div class="card mb-3">
+    <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.25rem;">📋 Ultime 10 Partite</h2>
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; text-align: left; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary);">
+                    <th style="padding: 10px;">Gioco</th>
+                    <th style="padding: 10px;">Giocatore 1</th>
+                    <th style="padding: 10px;">Giocatore 2</th>
+                    <th style="padding: 10px;">Punteggio</th>
+                    <th style="padding: 10px;">Data</th>
+                    <th style="padding: 10px;">Sync</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% stats.ultimePartite.forEach(function(p) { %>
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 10px; font-weight: 600;">
+                            <%= p.gioco_id === 'calciobalilla' ? '⚽' : '🎯' %> <%= p.gioco_id %>
+                        </td>
+                        <td style="padding: 10px;"><%= p.giocatore_1_id ? p.giocatore_1_id.substring(0, 8) + '...' : 'Ospite' %></td>
+                        <td style="padding: 10px;"><%= p.giocatore_2_id ? p.giocatore_2_id.substring(0, 8) + '...' : 'Ospite' %></td>
+                        <td style="padding: 10px; font-weight: 700;"><%= p.punteggio_1 %> — <%= p.punteggio_2 %></td>
+                        <td style="padding: 10px;" class="text-muted text-sm"><%= new Date(p.data_fine).toLocaleString('it-IT') %></td>
+                        <td style="padding: 10px;">
+                            <% if (p.sincronizzata) { %>
+                                <span class="badge badge-success">✓</span>
+                            <% } else { %>
+                                <span class="badge badge-warning">⏳</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
+<% } else { %>
+<div class="card mb-3" style="text-align: center; padding: 3rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+    <p class="text-muted">Nessuna partita ancora giocata su questo locale.</p>
+</div>
+<% } %>
+
+<!-- Installazioni -->
+<div class="card mb-3">
+    <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.25rem;">🎯 Installazioni Gioco</h2>
+    <div class="grid-3" style="gap: 1rem;">
+        <% installazioni.forEach(function(inst) { %>
+            <div class="card" style="background: var(--bg-secondary);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 2rem;"><%= inst.icona %></span>
+                    <div>
+                        <div style="font-weight: 700;"><%= inst.nome %></div>
+                        <div class="text-muted text-sm">ID: <code><%= inst.id %></code></div>
+                    </div>
+                </div>
+                <div class="mt-1">
+                    <span class="badge badge-success"><span class="dot dot-success"></span> ATTIVO</span>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

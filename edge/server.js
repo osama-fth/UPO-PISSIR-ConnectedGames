@@ -44,6 +44,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Sessione in-memory (sufficiente per un prototipo single-instance)
 app.use(session({
+    name: `edge.${LOCALE_ID.toLowerCase()}.sid`,
     secret: process.env.SESSION_SECRET || 'dev-session-secret-change-me',
     resave: false,
     saveUninitialized: false,

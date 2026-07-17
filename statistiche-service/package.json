@@ -1,5 +1,5 @@
 {
-  "name": "platform-dashboard",
+  "name": "statistiche-service",
   "version": "1.0.0",
   "description": "Kiosk Super Admin Dashboard per la Connected Games Platform",
   "main": "server.js",

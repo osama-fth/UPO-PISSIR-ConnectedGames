@@ -16,6 +16,10 @@ volumes:
     driver: local
   keycloak_data:
     driver: local
+  edge-locale1-data:
+    driver: local
+  edge-locale2-data:
+    driver: local
 
 
 services:
@@ -224,7 +228,7 @@ services:
       - MQTT_USER=${MQTT1_SUBSCRIBE_USER}
       - MQTT_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
     volumes:
-      - ./edge/data/locale1:/usr/src/app/data
+      - edge-locale1-data:/usr/src/app/data
     ports:
       - "3001:3001"
     networks:
@@ -255,7 +259,7 @@ services:
       - MQTT_USER=${MQTT2_SUBSCRIBE_USER}
       - MQTT_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
     volumes:
-      - ./edge/data/locale2:/usr/src/app/data
+      - edge-locale2-data:/usr/src/app/data
     ports:
       - "3002:3002"
     networks:
@@ -267,13 +271,13 @@ services:
         condition: service_healthy
 
   # ==========================================
-  # 6. DASHBOARD PIATTAFORMA (Kiosk Super Admin)
+  # 6. STATISTICHE SERVICE (Kiosk Super Admin)
   # ==========================================
-  platform-dashboard:
+  statistiche-service:
     build:
-      context: ./platform-dashboard
+      context: ./statistiche-service
       dockerfile: Dockerfile
-    container_name: platform-dashboard
+    container_name: statistiche-service
     environment:
       - DASHBOARD_URL=http://localhost:3000
       - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm

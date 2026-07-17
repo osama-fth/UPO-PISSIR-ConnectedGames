@@ -50,7 +50,23 @@
       "attributes": {
         "post.logout.redirect.uris": "+",
         "_comment": "SOLO DEV \u2014 restringere redirectUris e webOrigins in produzione"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "locale_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "locale_id",
+            "claim.name": "locale_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "users": [
@@ -108,8 +124,12 @@
         }
       ],
       "realmRoles": [
-        "admin_locale"
-      ]
+        "admin_locale",
+        "giocatore"
+      ],
+      "attributes": {
+        "locale_id": ["BAR_BELVEDERE"]
+      }
     },
     {
       "id": "a0000000-0000-0000-0000-000000000004",
@@ -127,8 +147,12 @@
         }
       ],
       "realmRoles": [
-        "admin_locale"
-      ]
+        "admin_locale",
+        "giocatore"
+      ],
+      "attributes": {
+        "locale_id": ["SALA_GIOCHI_ROMA"]
+      }
     },
     {
       "id": "a0000000-0000-0000-0000-000000000005",
@@ -142,6 +166,26 @@
         {
           "type": "password",
           "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin_piattaforma",
+        "giocatore"
+      ]
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000006",
+      "username": "edge_sync_service",
+      "firstName": "Edge",
+      "lastName": "Sync Service",
+      "email": "sync.service@example.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "syncpassword",
           "temporary": false
         }
       ],

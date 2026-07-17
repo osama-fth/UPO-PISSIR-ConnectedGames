@@ -1,0 +1,148 @@
+<%- include('partials/header') %>
+
+<!-- Page Header -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+        <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;">
+            🎮 Seleziona Gioco
+        </h1>
+        <p class="text-muted" style="font-size: 0.9rem;">
+            Scegli il gioco e autentica entrambi i giocatori per iniziare una partita su <strong><%= localeId %></strong>
+        </p>
+    </div>
+    <div>
+        <a href="/dashboard" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color);">
+            Accedi alla Dashboard
+        </a>
+    </div>
+</div>
+
+<% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-danger" style="margin-bottom: 1.5rem;">
+        ⚠️ <%= error %>
+    </div>
+<% } %>
+
+<form action="/game/start" method="POST" id="game-start-form">
+
+    <!-- Game Selection -->
+    <div class="grid-3" style="margin-bottom: 2rem; gap: 1.5rem;">
+        <!-- Calciobalilla Card -->
+        <label class="card game-card" style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;" id="card-calciobalilla">
+            <input type="radio" name="giocoId" value="calciobalilla" style="display: none;" required>
+            <div style="font-size: 3.5rem; margin-bottom: 0.75rem;">⚽</div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Calciobalilla</h3>
+            <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">
+                Partita a <strong>10 gol</strong>. Vince chi segna per primo 10 reti.
+            </p>
+            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                <span class="badge badge-info">2 Giocatori</span>
+                <span class="badge badge-success">IoT Sensori</span>
+            </div>
+            <div class="game-check" style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;">✓</div>
+        </label>
+
+        <!-- Freccette Card -->
+        <label class="card game-card" style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;" id="card-freccette">
+            <input type="radio" name="giocoId" value="freccette" style="display: none;" required>
+            <div style="font-size: 3.5rem; margin-bottom: 0.75rem;">🎯</div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Freccette</h3>
+            <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">
+                Regola <strong>301</strong>. Sottrai punti fino a raggiungere esattamente 0.
+            </p>
+            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                <span class="badge badge-info">2 Giocatori</span>
+                <span class="badge badge-warning">Simulatore SVG</span>
+            </div>
+            <div class="game-check" style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;">✓</div>
+        </label>
+    </div>
+
+    <!-- Players Authentication -->
+    <div class="card" style="border-top: 4px solid var(--accent-primary); margin-bottom: 2rem; background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);">
+        <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;">👥 Autenticazione Giocatori</h2>
+
+        <div class="grid-3" style="gap: 1.5rem;">
+            <!-- Giocatore 1 -->
+            <div class="card" style="background: var(--bg-secondary); border-color: rgba(16, 185, 129, 0.3);">
+                <div class="card-subtitle" style="color: var(--success);">GIOCATORE 1</div>
+                <p class="text-muted text-sm" style="margin-bottom: 1rem;">
+                    Inserisci le tue credenziali
+                </p>
+                <div style="margin-bottom: 1rem;">
+                    <label for="player1Username" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Username</label>
+                    <input type="text" id="player1Username" name="player1Username" required autocomplete="off"
+                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='var(--success)'" onblur="this.style.borderColor='var(--border-color)'"
+                        placeholder="es. giocatore_1">
+                </div>
+                <div>
+                    <label for="player1Password" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Password</label>
+                    <input type="password" id="player1Password" name="player1Password" required autocomplete="off"
+                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='var(--success)'" onblur="this.style.borderColor='var(--border-color)'"
+                        placeholder="••••••••">
+                </div>
+            </div>
+
+            <!-- Giocatore 2 (da autenticare) -->
+            <div class="card" style="background: var(--bg-secondary); border-color: rgba(59, 130, 246, 0.3);">
+                <div class="card-subtitle" style="color: var(--accent-primary);">GIOCATORE 2</div>
+                <p class="text-muted text-sm" style="margin-bottom: 1rem;">
+                    Inserisci le credenziali dell'avversario
+                </p>
+                <div style="margin-bottom: 1rem;">
+                    <label for="player2Username" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Username</label>
+                    <input type="text" id="player2Username" name="player2Username" required autocomplete="off"
+                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='var(--accent-primary)'" onblur="this.style.borderColor='var(--border-color)'"
+                        placeholder="es. giocatore_2">
+                </div>
+                <div>
+                    <label for="player2Password" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Password</label>
+                    <input type="password" id="player2Password" name="player2Password" required autocomplete="off"
+                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='var(--accent-primary)'" onblur="this.style.borderColor='var(--border-color)'"
+                        placeholder="••••••••">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div style="text-align: center;">
+        <button type="submit" class="btn btn-primary btn-lg" id="btn-start-game"
+            style="min-width: 280px; font-size: 1.1rem; padding: 16px 40px;">
+            🚀 Inizia Partita
+        </button>
+    </div>
+</form>
+
+<style>
+    .game-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 8px 30px rgba(59, 130, 246, 0.15) !important;
+    }
+    .game-card.selected {
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 0 0 2px var(--accent-primary), 0 8px 30px rgba(59, 130, 246, 0.2) !important;
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, var(--bg-card) 100%) !important;
+    }
+    .game-card.selected .game-check {
+        display: block !important;
+    }
+</style>
+
+<script>
+    document.querySelectorAll('.game-card').forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            radio.checked = true;
+        });
+    });
+</script>
+
+<%- include('partials/footer') %>

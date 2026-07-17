@@ -18,6 +18,8 @@ COPY entrypoint.sh /mosquitto/config/entrypoint.sh
 # ufficiale o il nostro script gestiranno l'avvio come mosquitto
 USER root
 RUN chmod +x /mosquitto/config/entrypoint.sh
+RUN chown -R mosquitto:mosquitto /mosquitto/config
+RUN chmod 0700 /mosquitto/config/*.conf
 RUN mkdir -p /mosquitto/data && chown mosquitto:mosquitto /mosquitto/data
 
 USER mosquitto

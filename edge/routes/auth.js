@@ -153,6 +153,26 @@ router.get('/callback', async (req, res) => {
         // Estrai informazioni utente dal token JWT
         const userInfo = getUserInfoFromToken(tokenSet);
 
+        // Controllo Sicurezza: Isolamento Amministratore Locale
+        if (userInfo.roles.includes('admin_locale') && userInfo.localeId !== LOCALE_ID) {
+            console.error(`[Auth ${LOCALE_ID}] Accesso negato: admin_locale del locale ${userInfo.localeId} ha tentato accesso su ${LOCALE_ID}`);
+            
+            // Distruggiamo la sessione Single Sign-On (SSO) su Keycloak
+            // in modo che l'utente non rimanga bloccato con l'account sbagliato
+            const edgePublicUrl = process.env.EDGE_PUBLIC_URL || `http://localhost:${process.env.PORT || 3001}`;
+            const logoutUrl = getLogoutUrl(
+                tokenSet.id_token,
+                `${edgePublicUrl}/auth/login?error=unauthorized_locale`
+            );
+            
+            // Pulisci state/nonce/verifier dalla sessione per sicurezza
+            delete req.session.oidcState;
+            delete req.session.oidcNonce;
+            delete req.session.oidcCodeVerifier;
+            
+            return res.redirect(logoutUrl);
+        }
+
         // Salva in sessione
         req.session.user = userInfo;
         req.session.tokenSet = {

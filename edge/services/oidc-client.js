@@ -189,14 +189,16 @@ async function exchangeCode(params, state, nonce, code_verifier) {
 function getUserInfoFromToken(tokenSet) {
     const claims = tokenSet.claims();
     
-    // Decodifica manuale dell'Access Token per estrarre i realm_roles
+    // Decodifica manuale dell'Access Token per estrarre i realm_roles e attributi custom
     let accessRoles = [];
+    let localeId = null;
     if (tokenSet.access_token) {
         try {
             const payloadBase64 = tokenSet.access_token.split('.')[1];
             const decoded = Buffer.from(payloadBase64, 'base64').toString('utf8');
             const accessClaims = JSON.parse(decoded);
             accessRoles = accessClaims.realm_access?.roles || [];
+            localeId = accessClaims.locale_id || null;
         } catch (err) {
             console.error("Errore decodifica Access Token:", err.message);
         }
@@ -210,6 +212,7 @@ function getUserInfoFromToken(tokenSet) {
         email: claims.email || '',
         name: `${claims.given_name || ''} ${claims.family_name || ''}`.trim(),
         roles: roles,
+        localeId: localeId || claims.locale_id || null,
         isGuest: false,
         accessToken: tokenSet.access_token,
         idToken: tokenSet.id_token
@@ -218,15 +221,17 @@ function getUserInfoFromToken(tokenSet) {
 
 /**
  * Genera l'URL per la fine sessione a norma OIDC.
+ * @param {string} idTokenHint - Il token ID dell'utente
+ * @param {string} [customRedirectUri] - URL di redirect personalizzato opzionale
  */
-function getLogoutUrl(idTokenHint) {
+function getLogoutUrl(idTokenHint, customRedirectUri) {
     if (!oidcClient) {
         throw new Error('Client OIDC non inizializzato');
     }
     
     const logoutUrl = oidcClient.endSessionUrl({
         id_token_hint: idTokenHint,
-        post_logout_redirect_uri: `${EDGE_PUBLIC_URL}/`
+        post_logout_redirect_uri: customRedirectUri || `${EDGE_PUBLIC_URL}/`
     });
     
     return logoutUrl;
@@ -234,6 +239,48 @@ function getLogoutUrl(idTokenHint) {
 
 function isOidcAvailable() {
     return oidcAvailable;
+}
+
+/**
+ * Autentica un utente usando il Direct Access Grant (Password Flow).
+ * Usato per il login del giocatore 2 o per utenti di servizio (cron sync).
+ */
+async function directPasswordAuth(username, password) {
+    const tokenUrl = `${KEYCLOAK_INTERNAL_URL}/protocol/openid-connect/token`;
+
+    const body = new URLSearchParams({
+        grant_type: 'password',
+        client_id: CLIENT_ID,
+        username: username,
+        password: password,
+        scope: 'openid profile email'
+    });
+
+    const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+    });
+
+    if (!response.ok) {
+        throw new Error(`Credenziali non valide per ${username}`);
+    }
+
+    const tokenData = await response.json();
+
+    // Decodifica il token per estrarre le info utente
+    const payloadBase64 = tokenData.access_token.split('.')[1];
+    const decoded = Buffer.from(payloadBase64, 'base64').toString('utf8');
+    const claims = JSON.parse(decoded);
+    const roles = claims.realm_access?.roles || [];
+
+    return {
+        id: claims.sub,
+        username: claims.preferred_username || username,
+        email: claims.email || '',
+        roles: roles,
+        accessToken: tokenData.access_token
+    };
 }
 
 module.exports = {
@@ -244,5 +291,6 @@ module.exports = {
     exchangeCode,
     getUserInfoFromToken,
     getLogoutUrl,
-    isOidcAvailable
+    isOidcAvailable,
+    directPasswordAuth
 };

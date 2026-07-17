@@ -6,7 +6,7 @@ networks:
   backend-tier:
     name: platform-backend-tier
     driver: bridge
-    internal: true # Rete completamente isolata senza accesso a internet per massima sicurezza
+    # internal: true # Disabilitato temporaneamente per permettere l'accesso da DBeaver sull'host
   edge-tier:
     name: platform-edge-tier
     driver: bridge
@@ -16,10 +16,7 @@ volumes:
     driver: local
   keycloak_data:
     driver: local
-  sqlite_locale1:
-    driver: local
-  sqlite_locale2:
-    driver: local
+
 
 services:
   # ==========================================
@@ -206,7 +203,7 @@ services:
       - MQTT_USER=${MQTT1_SUBSCRIBE_USER}
       - MQTT_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
     volumes:
-      - sqlite_locale1:/usr/src/app/data
+      - ./edge/data/locale1:/usr/src/app/data
     ports:
       - "3001:3001"
     networks:
@@ -237,7 +234,7 @@ services:
       - MQTT_USER=${MQTT2_SUBSCRIBE_USER}
       - MQTT_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
     volumes:
-      - sqlite_locale2:/usr/src/app/data
+      - ./edge/data/locale2:/usr/src/app/data
     ports:
       - "3002:3002"
     networks:

@@ -32,6 +32,7 @@ yarn-error.log*
 *.db
 *.sqlite
 *.sqlite3
+edge/data/
 
 # --- Docker ---
 docker-compose.override.yml

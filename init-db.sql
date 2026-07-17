@@ -123,8 +123,8 @@ INSERT INTO platform_db.locale (id, nome, tipo, indirizzo) VALUES
 
 -- Utenti (Mappati da Keycloak)
 INSERT INTO platform_db.utente (id, username, email) VALUES
-    ('a0000000-0000-0000-0000-000000000001', 'giocatore_1', 'mario.rossi@example.com'),
-    ('a0000000-0000-0000-0000-000000000002', 'giocatore_2', 'luigi.bianchi@example.com'),
+    ('a0000000-0000-0000-0000-000000000001', 'SuperMario', 'mario.rossi@example.com'),
+    ('a0000000-0000-0000-0000-000000000002', 'Gigio', 'luigi.bianchi@example.com'),
     ('a0000000-0000-0000-0000-000000000003', 'admin_belvedere', 'admin.belvedere@example.com'),
     ('a0000000-0000-0000-0000-000000000004', 'admin_roma', 'admin.roma@example.com'),
     ('a0000000-0000-0000-0000-000000000005', 'admin_piattaforma', 'admin.platform@example.com');

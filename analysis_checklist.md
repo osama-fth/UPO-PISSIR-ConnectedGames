@@ -1,8 +1,5 @@
 # 🔍 Analisi Gap — Connected Games Platform
 
-Confronto tra le specifiche ([specifiche-progetto.md](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/doc/specifiche-progetto.md), [connected-games-platform-spec.md](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/doc/connected-games-platform-spec.md), [openapi-spec.yaml](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/doc/openapi-spec.yaml)) e il codice realmente presente.
-
----
 
 ## ❌ Funzionalità Mancanti
 

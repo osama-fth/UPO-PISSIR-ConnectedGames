@@ -10,9 +10,9 @@
 - [ ] **Seed torneo di test in `init-db.sql`** — Nessun torneo di esempio nel database, quindi le API tornei non restituiranno dati utili alla demo.
 
 ### Edge — Guest Mode / Fallback Offline (UC1.1)
-- [ ] **Pulsante "Accedi come Ospite"** — La specifica prevede un fallback esplicito con pulsante "Accedi come Ospite" quando Keycloak è irraggiungibile (timeout > 1s). Attualmente non implementato nelle views.
-- [ ] **Partita come Ospite dalla UI** — Non c'è un flusso che permetta di giocare con `player_id = NULL` (la rotta `/game/start` richiede sempre credenziali).
-- [ ] **Banner "partita non salvata"** — In Guest Mode, la specifica richiede un banner persistente per avvertire che la partita non verrà salvata su SQLite.
+- [x] **Pulsante "Accedi come Ospite"** — La specifica prevede un fallback esplicito con pulsante "Accedi come Ospite" quando Keycloak è irraggiungibile (timeout > 1s). Attualmente non implementato nelle views.
+- [x] **Partita come Ospite dalla UI** — Non c'è un flusso che permetta di giocare con `player_id = NULL` (la rotta `/game/start` richiede sempre credenziali).
+- [x] **Banner "partita non salvata"** — In Guest Mode, la specifica richiede un banner persistente per avvertire che la partita non verrà salvata su SQLite.
 
 ### Edge — ACL MQTT
 - [ ] **ACL `edge-client` con permesso `readwrite`** — In [acl.conf](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/mosquitto/locale1/acl.conf#L17) l'edge ha `readwrite`, ma la specifica §4 dice: "*uno `publish` (usato dai simulatori), uno `subscribe` (usato dall'Edge)*". Il simulatore pubblica dall'Edge stesso (`publishEvent`), quindi l'Edge ha bisogno di `readwrite`, ma questo viola le ACL come specificate. Va chiarito o separato il flusso.

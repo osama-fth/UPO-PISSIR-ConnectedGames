@@ -91,6 +91,62 @@ router.post('/start', async (req, res) => {
 });
 
 /**
+ * POST /game/start-guest
+ * Avvia una nuova partita in modalità Ospite.
+ * Non richiede autenticazione Keycloak: i giocatori inseriscono
+ * solo un nome di visualizzazione. I player_id sono NULL,
+ * quindi la partita NON verrà salvata su SQLite (UC1.1).
+ */
+router.post('/start-guest', (req, res) => {
+    try {
+        const { giocoId, guest1Name, guest2Name } = req.body;
+
+        if (!giocoId || !['calciobalilla', 'freccette'].includes(giocoId)) {
+            return res.status(400).render('error', {
+                title: 'Errore',
+                message: 'Gioco non valido. Scegli tra calciobalilla o freccette.'
+            });
+        }
+
+        // Sanitizza i nomi: rimuovi tag HTML e trim
+        const nome1 = (guest1Name || '').replace(/<[^>]*>/g, '').trim();
+        const nome2 = (guest2Name || '').replace(/<[^>]*>/g, '').trim();
+
+        if (!nome1 || !nome2) {
+            return res.status(400).render('game-select', {
+                title: 'Seleziona Gioco',
+                localeId: LOCALE_ID,
+                error: 'Inserisci il nome per entrambi i giocatori.'
+            });
+        }
+
+        if (nome1.toLowerCase() === nome2.toLowerCase()) {
+            return res.status(400).render('game-select', {
+                title: 'Seleziona Gioco',
+                localeId: LOCALE_ID,
+                error: 'I due giocatori devono avere nomi diversi.'
+            });
+        }
+
+        // Crea giocatori ospite con id NULL (partita non salvata su SQLite)
+        const giocatore1 = { id: null, username: nome1 };
+        const giocatore2 = { id: null, username: nome2 };
+
+        const match = creaPartita(giocoId, giocatore1, giocatore2);
+
+        console.log(`[Game ${LOCALE_ID}] Partita ospite ${match.id} avviata: ${nome1} vs ${nome2}`);
+        return res.redirect(`/game/${match.id}`);
+
+    } catch (err) {
+        console.error(`[Game ${LOCALE_ID}] Errore avvio partita ospite:`, err.message);
+        return res.status(500).render('error', {
+            title: 'Errore',
+            message: `Impossibile avviare la partita: ${err.message}`
+        });
+    }
+});
+
+/**
  * GET /game/:matchId
  * Mostra la pagina di gioco attiva con l'interfaccia per
  * Calciobalilla o Freccette.

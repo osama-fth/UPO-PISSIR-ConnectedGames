@@ -11,7 +11,7 @@
                 Connected Games
             </h1>
             <p class="text-muted" style="font-size: 0.9rem;">
-                <%= localeId %> — Accedi per iniziare a giocare
+                <%= localeId %> — Accedi per gestire la dashboard
             </p>
         </div>
 
@@ -27,6 +27,8 @@
                     Errore nello scambio del token. Riprova.
                 <% } else if (error === 'missing_code') { %>
                     Risposta incompleta dal server di autenticazione.
+                <% } else if (error === 'unauthorized_locale') { %>
+                    Non hai i permessi per accedere a questo locale.
                 <% } else { %>
                     Si è verificato un errore durante l'accesso.
                 <% } %>
@@ -54,25 +56,30 @@
                     <span class="badge badge-success"><span class="dot dot-success"></span> Keycloak Online</span>
                 </div>
             <% } else { %>
-                <!-- Keycloak NON raggiungibile: mostra Guest Mode -->
-                <div class="alert alert-warning" style="margin-bottom: 1.5rem;">
-                    ⚠️ Il server di autenticazione non è raggiungibile. Puoi accedere in modalità Ospite.
+                <!-- Keycloak NON raggiungibile -->
+                <div class="alert alert-warning" style="margin-bottom: 1rem;">
+                    ⚠️ Il server di autenticazione non è raggiungibile. La dashboard non è accessibile.
                 </div>
 
-                <form action="/auth/guest" method="POST">
-                    <button type="submit" class="btn btn-warning btn-lg btn-block" id="btn-guest">
-                        👤 Accedi come Ospite
-                    </button>
-                </form>
+                <a href="/" class="btn btn-warning btn-lg btn-block" id="btn-back-play">
+                    🎮 Torna a giocare
+                </a>
 
                 <p class="text-muted text-sm text-center mt-2">
-                    In modalità Ospite puoi giocare liberamente, ma i risultati delle partite non verranno salvati.
+                    Puoi giocare come ospite dalla pagina principale.
                 </p>
 
                 <div class="mt-3 text-center" style="padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
                     <span class="badge badge-danger"><span class="dot dot-danger"></span> Keycloak Offline</span>
                 </div>
             <% } %>
+        </div>
+
+        <!-- Link to play -->
+        <div class="text-center mt-2">
+            <a href="/" style="color: var(--text-muted); font-size: 0.85rem; text-decoration: none;">
+                🎮 Vuoi solo giocare? Torna alla pagina principale
+            </a>
         </div>
 
         <!-- Footer info -->

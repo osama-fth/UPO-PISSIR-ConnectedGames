@@ -16,6 +16,13 @@
     </span>
 </div>
 
+<% if (!match.giocatore1.id && !match.giocatore2.id) { %>
+<!-- Banner Guest Mode — partita non salvata -->
+<div class="alert alert-warning" style="margin-bottom: 1.5rem; border-radius: var(--radius-md); font-size: 0.85rem;" id="guest-match-banner">
+    ⚠️ <strong>Partita Ospite</strong> — Questa partita non verrà salvata nel database e non comparirà nelle statistiche.
+</div>
+<% } %>
+
 <!-- Scoreboard -->
 <div class="card" style="margin-bottom: 2rem; padding: 2rem; text-align: center; border-top: 4px solid var(--accent-primary); background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);" id="scoreboard">
     <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap;">

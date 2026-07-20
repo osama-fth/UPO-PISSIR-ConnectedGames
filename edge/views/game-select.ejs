@@ -7,12 +7,12 @@
             🎮 Seleziona Gioco
         </h1>
         <p class="text-muted" style="font-size: 0.9rem;">
-            Scegli il gioco e autentica entrambi i giocatori per iniziare una partita su <strong><%= localeId %></strong>
+            Scegli il gioco e la modalità di accesso per iniziare una partita su <strong><%= localeId %></strong>
         </p>
     </div>
     <div>
-        <a href="/dashboard" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color);">
-            Accedi alla Dashboard
+        <a href="/auth/login" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color);">
+            🔐 Accedi alla Dashboard
         </a>
     </div>
 </div>
@@ -23,9 +23,11 @@
     </div>
 <% } %>
 
-<form action="/game/start" method="POST" id="game-start-form">
+<form id="game-start-form" action="/game/start" method="POST">
 
-    <!-- Game Selection -->
+    <!-- ============================================== -->
+    <!-- SELEZIONE GIOCO (condivisa tra le due modalità) -->
+    <!-- ============================================== -->
     <div class="grid-3" style="margin-bottom: 2rem; gap: 1.5rem;">
         <!-- Calciobalilla Card -->
         <label class="card game-card" style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;" id="card-calciobalilla">
@@ -58,8 +60,24 @@
         </label>
     </div>
 
-    <!-- Players Authentication -->
-    <div class="card" style="border-top: 4px solid var(--accent-primary); margin-bottom: 2rem; background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);">
+    <!-- ============================================== -->
+    <!-- TOGGLE MODALITÀ: Con Account / Come Ospite     -->
+    <!-- ============================================== -->
+    <div style="display: flex; gap: 0; margin-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; overflow: hidden; border: 1px solid var(--border-color); border-bottom: none;">
+        <button type="button" class="mode-tab active-tab" id="tab-auth" onclick="switchMode('auth')"
+            style="flex: 1; padding: 14px 20px; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            🔐 Con Account
+        </button>
+        <button type="button" class="mode-tab" id="tab-guest" onclick="switchMode('guest')"
+            style="flex: 1; padding: 14px 20px; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            👤 Gioca come Ospite
+        </button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- PANEL: Autenticazione Keycloak                 -->
+    <!-- ============================================== -->
+    <div id="panel-auth" class="card" style="border-top: 4px solid var(--accent-primary); margin-bottom: 2rem; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);">
         <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;">👥 Autenticazione Giocatori</h2>
 
         <div class="grid-3" style="gap: 1.5rem;">
@@ -71,21 +89,23 @@
                 </p>
                 <div style="margin-bottom: 1rem;">
                     <label for="player1Username" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Username</label>
-                    <input type="text" id="player1Username" name="player1Username" required autocomplete="off"
+                    <input type="text" id="player1Username" name="player1Username" autocomplete="off"
+                        class="auth-field"
                         style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
                         onfocus="this.style.borderColor='var(--success)'" onblur="this.style.borderColor='var(--border-color)'"
                         placeholder="es. giocatore_1">
                 </div>
                 <div>
                     <label for="player1Password" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Password</label>
-                    <input type="password" id="player1Password" name="player1Password" required autocomplete="off"
+                    <input type="password" id="player1Password" name="player1Password" autocomplete="off"
+                        class="auth-field"
                         style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
                         onfocus="this.style.borderColor='var(--success)'" onblur="this.style.borderColor='var(--border-color)'"
                         placeholder="••••••••">
                 </div>
             </div>
 
-            <!-- Giocatore 2 (da autenticare) -->
+            <!-- Giocatore 2 -->
             <div class="card" style="background: var(--bg-secondary); border-color: rgba(59, 130, 246, 0.3);">
                 <div class="card-subtitle" style="color: var(--accent-primary);">GIOCATORE 2</div>
                 <p class="text-muted text-sm" style="margin-bottom: 1rem;">
@@ -93,17 +113,61 @@
                 </p>
                 <div style="margin-bottom: 1rem;">
                     <label for="player2Username" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Username</label>
-                    <input type="text" id="player2Username" name="player2Username" required autocomplete="off"
+                    <input type="text" id="player2Username" name="player2Username" autocomplete="off"
+                        class="auth-field"
                         style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
                         onfocus="this.style.borderColor='var(--accent-primary)'" onblur="this.style.borderColor='var(--border-color)'"
                         placeholder="es. giocatore_2">
                 </div>
                 <div>
                     <label for="player2Password" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Password</label>
-                    <input type="password" id="player2Password" name="player2Password" required autocomplete="off"
+                    <input type="password" id="player2Password" name="player2Password" autocomplete="off"
+                        class="auth-field"
                         style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
                         onfocus="this.style.borderColor='var(--accent-primary)'" onblur="this.style.borderColor='var(--border-color)'"
                         placeholder="••••••••">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- PANEL: Modalità Ospite (nascosto di default)   -->
+    <!-- ============================================== -->
+    <div id="panel-guest" class="card" style="display: none; border-top: 4px solid var(--warning); margin-bottom: 2rem; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.3rem; font-weight: 700;">👤 Nomi Giocatori</h2>
+            <span class="badge badge-guest">Modalità Ospite</span>
+        </div>
+
+        <div class="alert alert-warning" style="margin-bottom: 1.5rem; font-size: 0.8rem;">
+            ⚠️ <strong>Attenzione</strong> — Stai giocando come ospite. La partita <strong>non verrà salvata</strong> nel database e non apparirà nelle statistiche.
+        </div>
+
+        <div class="grid-3" style="gap: 1.5rem;">
+            <!-- Giocatore 1 -->
+            <div class="card" style="background: var(--bg-secondary); border-color: rgba(16, 185, 129, 0.3);">
+                <div class="card-subtitle" style="color: var(--success);">GIOCATORE 1</div>
+                <div style="margin-bottom: 0;">
+                    <label for="guest1Name" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Nome</label>
+                    <input type="text" id="guest1Name" name="guest1Name" autocomplete="off"
+                        class="guest-field"
+                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='var(--success)'" onblur="this.style.borderColor='var(--border-color)'"
+                        placeholder="es. Marco" maxlength="30">
+                </div>
+            </div>
+
+            <!-- Giocatore 2 -->
+            <div class="card" style="background: var(--bg-secondary); border-color: rgba(59, 130, 246, 0.3);">
+                <div class="card-subtitle" style="color: var(--accent-primary);">GIOCATORE 2</div>
+                <div style="margin-bottom: 0;">
+                    <label for="guest2Name" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Nome</label>
+                    <input type="text" id="guest2Name" name="guest2Name" autocomplete="off"
+                        class="guest-field"
+                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='var(--accent-primary)'" onblur="this.style.borderColor='var(--border-color)'"
+                        placeholder="es. Luca" maxlength="30">
                 </div>
             </div>
         </div>
@@ -132,9 +196,32 @@
     .game-card.selected .game-check {
         display: block !important;
     }
+
+    /* Tab styles */
+    .mode-tab {
+        background: var(--bg-secondary);
+        color: var(--text-muted);
+    }
+    .mode-tab:hover {
+        background: var(--bg-card-hover);
+        color: var(--text-primary);
+    }
+    .mode-tab.active-tab {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        box-shadow: inset 0 2px 0 var(--accent-primary);
+    }
+    .mode-tab.active-tab-guest {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        box-shadow: inset 0 2px 0 var(--warning);
+    }
 </style>
 
 <script>
+    // ============================================
+    // Game card selection
+    // ============================================
     document.querySelectorAll('.game-card').forEach(card => {
         const radio = card.querySelector('input[type="radio"]');
         card.addEventListener('click', () => {
@@ -143,6 +230,57 @@
             radio.checked = true;
         });
     });
+
+    // ============================================
+    // Mode toggle: Auth ↔ Guest
+    // ============================================
+    let currentMode = 'auth';
+
+    function switchMode(mode) {
+        currentMode = mode;
+        const form = document.getElementById('game-start-form');
+        const panelAuth = document.getElementById('panel-auth');
+        const panelGuest = document.getElementById('panel-guest');
+        const tabAuth = document.getElementById('tab-auth');
+        const tabGuest = document.getElementById('tab-guest');
+        const submitBtn = document.getElementById('btn-start-game');
+
+        if (mode === 'auth') {
+            // Mostra form autenticato
+            form.action = '/game/start';
+            panelAuth.style.display = '';
+            panelGuest.style.display = 'none';
+            submitBtn.textContent = '🚀 Inizia Partita';
+            submitBtn.className = 'btn btn-primary btn-lg';
+
+            // Tab styles
+            tabAuth.className = 'mode-tab active-tab';
+            tabGuest.className = 'mode-tab';
+
+            // Toggle required attributes
+            document.querySelectorAll('.auth-field').forEach(f => f.required = true);
+            document.querySelectorAll('.guest-field').forEach(f => f.required = false);
+
+        } else {
+            // Mostra form guest
+            form.action = '/game/start-guest';
+            panelAuth.style.display = 'none';
+            panelGuest.style.display = '';
+            submitBtn.textContent = '👤 Inizia Partita Ospite';
+            submitBtn.className = 'btn btn-warning btn-lg';
+
+            // Tab styles
+            tabAuth.className = 'mode-tab';
+            tabGuest.className = 'mode-tab active-tab-guest';
+
+            // Toggle required attributes
+            document.querySelectorAll('.auth-field').forEach(f => f.required = false);
+            document.querySelectorAll('.guest-field').forEach(f => f.required = true);
+        }
+    }
+
+    // Inizializza lo stato dei campi required
+    switchMode('auth');
 </script>
 
 <%- include('partials/footer') %>

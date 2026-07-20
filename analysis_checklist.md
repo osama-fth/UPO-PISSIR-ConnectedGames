@@ -15,7 +15,7 @@
 - [x] **Banner "partita non salvata"** — In Guest Mode, la specifica richiede un banner persistente per avvertire che la partita non verrà salvata su SQLite.
 
 ### Edge — ACL MQTT
-- [ ] **ACL `edge-client` con permesso `readwrite`** — In [acl.conf](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/mosquitto/locale1/acl.conf#L17) l'edge ha `readwrite`, ma la specifica §4 dice: "*uno `publish` (usato dai simulatori), uno `subscribe` (usato dall'Edge)*". Il simulatore pubblica dall'Edge stesso (`publishEvent`), quindi l'Edge ha bisogno di `readwrite`, ma questo viola le ACL come specificate. Va chiarito o separato il flusso.
+- [x] **ACL `edge-client` con permesso `readwrite`** — In [acl.conf](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/mosquitto/locale1/acl.conf#L17) l'edge aveva `readwrite`. Risolto: implementato il pattern a due utenti come da specifiche. `edge-client` ora ha solo `read` (subscribe), mentre `simulator` ha solo `write` (publish). L'Edge Node ora apre 2 connessioni MQTT distinte per gestire correttamente questo flusso.
 
 ### Statistiche — Dashboard Globale (UC8)
 - [ ] **Statistiche globali incomplete** — L'API `GET /api/v1/statistiche` restituisce solo conteggi grezzi (`count`). L'OpenAPI spec richiede `localiPiuAttivi` e `giochiPiuUtilizzati` come array aggregati. [StatisticheService.java](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/partita-service/src/main/java/com/connectedgames/core/service/StatisticheService.java) fa solo `count()`.

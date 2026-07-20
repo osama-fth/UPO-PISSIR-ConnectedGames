@@ -21,7 +21,6 @@ volumes:
   edge-locale2-data:
     driver: local
 
-
 services:
   # ==========================================
   # 1. DATABASE LAYER (PostgreSQL)
@@ -225,8 +224,10 @@ services:
       - SESSION_SECRET=${SESSION_SECRET}
       # MQTT: porta in chiaro, no TLS
       - MQTT_BROKER_URL=mqtt://mosquitto-locale1:1883
-      - MQTT_USER=${MQTT1_SUBSCRIBE_USER}
-      - MQTT_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
+      - MQTT_SUB_USER=${MQTT1_SUBSCRIBE_USER}
+      - MQTT_SUB_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
+      - MQTT_PUB_USER=${MQTT1_PUBLISH_USER}
+      - MQTT_PUB_PASSWORD=${MQTT1_PUBLISH_PASSWORD}
     volumes:
       - edge-locale1-data:/usr/src/app/data
     ports:
@@ -256,8 +257,10 @@ services:
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - SESSION_SECRET=${SESSION_SECRET}
       - MQTT_BROKER_URL=mqtt://mosquitto-locale2:1883
-      - MQTT_USER=${MQTT2_SUBSCRIBE_USER}
-      - MQTT_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
+      - MQTT_SUB_USER=${MQTT2_SUBSCRIBE_USER}
+      - MQTT_SUB_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
+      - MQTT_PUB_USER=${MQTT2_PUBLISH_USER}
+      - MQTT_PUB_PASSWORD=${MQTT2_PUBLISH_PASSWORD}
     volumes:
       - edge-locale2-data:/usr/src/app/data
     ports:

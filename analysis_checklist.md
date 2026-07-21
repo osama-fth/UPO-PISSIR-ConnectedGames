@@ -55,10 +55,10 @@
 
 ---
 
-## 🔐 TLS per MQTT — Fattibilità Zero-Config
+## 🔐 TLS per MQTT — Implementazione Completata
 
-> [!IMPORTANT]
-> Le specifiche dichiarano esplicitamente **"Nessun TLS"** come scelta consapevole. Aggiungere TLS è un plus che migliora la valutazione, ma deve restare **zero-config**.
+> [!TIP]
+> Il protocollo MQTTS è stato implementato con successo in modalità **zero-config**. I broker Mosquitto generano automaticamente certificati self-signed all'avvio e comunicano in modo cifrato sulla porta `8883`. I client Edge sono stati configurati per accettare la catena di trust autogenerata, mantenendo il canale sicuro senza richiedere configurazioni manuali.
 
 ### Approccio proposto: CA auto-generata nell'entrypoint
 

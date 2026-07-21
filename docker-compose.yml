@@ -1,14 +1,17 @@
 # docker-compose.yml
-# Connected Games Platform - Orchestrazione Multi-Container
-# Progetto di Laboratorio PISSIR - A.A. 2025/2026 - Università del Piemonte Orientale
+# Connected Games Platform — Orchestrazione Multi-Container
+# Progetto di Laboratorio PISSIR — A.A. 2025/2026 — UPO
 
 networks:
   backend-tier:
     name: platform-backend-tier
     driver: bridge
-    internal: true # Rete completamente isolata senza accesso a internet per massima sicurezza
-  edge-tier:
-    name: platform-edge-tier
+    internal: true
+  locale1-tier:
+    name: platform-locale1-tier
+    driver: bridge
+  locale2-tier:
+    name: platform-locale2-tier
     driver: bridge
 
 volumes:
@@ -22,9 +25,7 @@ volumes:
     driver: local
 
 services:
-  # ==========================================
-  # 1. DATABASE LAYER (PostgreSQL)
-  # ==========================================
+  # 1. DATABASE
   postgres-db:
     image: postgres:15-alpine
     container_name: postgres-db
@@ -34,7 +35,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-
     networks:
       - backend-tier
     healthcheck:
@@ -44,9 +44,7 @@ services:
       retries: 5
       start_period: 10s
 
-  # ==========================================
-  # 2. IDENTITY PROVIDER (Keycloak)
-  # ==========================================
+  # 2. IDENTITY PROVIDER
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.0
     container_name: keycloak
@@ -63,10 +61,11 @@ services:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     ports:
-      - "9080:8080" # Porta 9080 esposta sull'host per accedere alla console di admin e login browser
+      - "${KEYCLOAK_HOST_PORT}:8080"
     networks:
       - backend-tier
-      - edge-tier # Keycloak deve essere raggiungibile anche dagli Edge per l'auth OIDC
+      - locale1-tier
+      - locale2-tier
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -77,9 +76,7 @@ services:
       retries: 5
       start_period: 30s
 
-  # ==========================================
-  # 3. BACKEND SERVICES (Spring Boot 3.x)
-  # ==========================================
+  # 3. BACKEND SERVICES
   partita-service:
     build:
       context: ./partita-service
@@ -138,7 +135,8 @@ services:
       - TORNEO_SERVICE_URL=http://torneo-service:8083
     networks:
       - backend-tier
-      - edge-tier # Il gateway è l'unico ponte che collega l'infrastruttura locale e il backend-tier
+      - locale1-tier
+      - locale2-tier
     depends_on:
       keycloak:
         condition: service_healthy
@@ -153,11 +151,7 @@ services:
       retries: 5
       start_period: 15s
 
-  # ==========================================
-  # 4. MQTT BROKERS (Mosquitto - Isolati per Locale)
-  # ==========================================
-  # Nessun TLS: scelta esplicita documentata nelle specifiche per
-  # contenere la complessità del prototipo. Perimetro Docker isolato.
+  # 4. MQTT BROKERS (MQTTS, certificati self-signed)
   mosquitto-locale1:
     build:
       context: ./mosquitto
@@ -170,11 +164,10 @@ services:
       - MQTT_PUB_PASSWORD=${MQTT1_PUBLISH_PASSWORD}
       - MQTT_SUB_USER=${MQTT1_SUBSCRIBE_USER}
       - MQTT_SUB_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
-
     networks:
-      - edge-tier
+      - locale1-tier
     healthcheck:
-      test: [ "CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -t 'test/ping' -C 1 -W 2 || exit 0" ]
+      test: [ "CMD-SHELL", "mosquitto_sub -h localhost -p 8883 --cafile /mosquitto/config/server.crt -t 'test/ping' -C 1 -W 2 || exit 0" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -192,19 +185,16 @@ services:
       - MQTT_PUB_PASSWORD=${MQTT2_PUBLISH_PASSWORD}
       - MQTT_SUB_USER=${MQTT2_SUBSCRIBE_USER}
       - MQTT_SUB_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
-
     networks:
-      - edge-tier
+      - locale2-tier
     healthcheck:
-      test: [ "CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -t 'test/ping' -C 1 -W 2 || exit 0" ]
+      test: [ "CMD-SHELL", "mosquitto_sub -h localhost -p 8883 --cafile /mosquitto/config/server.crt -t 'test/ping' -C 1 -W 2 || exit 0" ]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 5s
 
-  # ==========================================
-  # 5. EDGE GATEWAYS (Node.js / Express)
-  # ==========================================
+  # 5. EDGE GATEWAYS
   edge-locale1:
     build:
       context: ./edge
@@ -215,16 +205,13 @@ services:
       - NODE_ENV=development
       - PORT=3001
       - LOCALE_ID=BAR_BELVEDERE
-      - EDGE_PUBLIC_URL=http://localhost:3001
+      - EDGE_PUBLIC_URL=http://localhost:${EDGE1_HOST_PORT}
       - CENTRAL_SERVER_URL=http://service-gateway:8081
-      # URL pubblica di Keycloak (browser dell'utente la raggiunge via localhost)
-      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
-      # URL interna di Keycloak (comunicazione backend-to-backend dentro Docker)
+      - KEYCLOAK_URL=http://localhost:${KEYCLOAK_HOST_PORT}/realms/pissir-realm
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - SESSION_SECRET=${SESSION_SECRET}
-      # MQTT: porta in chiaro, no TLS
-      - MQTT_BROKER_URL=mqtt://mosquitto-locale1:1883
+      - MQTT_BROKER_URL=mqtts://mosquitto-locale1:8883
       - MQTT_SUB_USER=${MQTT1_SUBSCRIBE_USER}
       - MQTT_SUB_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
       - MQTT_PUB_USER=${MQTT1_PUBLISH_USER}
@@ -232,9 +219,9 @@ services:
     volumes:
       - edge-locale1-data:/usr/src/app/data
     ports:
-      - "3001:3001"
+      - "${EDGE1_HOST_PORT}:3001"
     networks:
-      - edge-tier
+      - locale1-tier
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1" ]
       interval: 10s
@@ -257,13 +244,13 @@ services:
       - NODE_ENV=development
       - PORT=3002
       - LOCALE_ID=SALA_GIOCHI_ROMA
-      - EDGE_PUBLIC_URL=http://localhost:3002
+      - EDGE_PUBLIC_URL=http://localhost:${EDGE2_HOST_PORT}
       - CENTRAL_SERVER_URL=http://service-gateway:8081
-      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
+      - KEYCLOAK_URL=http://localhost:${KEYCLOAK_HOST_PORT}/realms/pissir-realm
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - SESSION_SECRET=${SESSION_SECRET}
-      - MQTT_BROKER_URL=mqtt://mosquitto-locale2:1883
+      - MQTT_BROKER_URL=mqtts://mosquitto-locale2:8883
       - MQTT_SUB_USER=${MQTT2_SUBSCRIBE_USER}
       - MQTT_SUB_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
       - MQTT_PUB_USER=${MQTT2_PUBLISH_USER}
@@ -271,9 +258,9 @@ services:
     volumes:
       - edge-locale2-data:/usr/src/app/data
     ports:
-      - "3002:3002"
+      - "${EDGE2_HOST_PORT}:3002"
     networks:
-      - edge-tier
+      - locale2-tier
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3002/health || exit 1" ]
       interval: 10s
@@ -286,25 +273,23 @@ services:
       service-gateway:
         condition: service_healthy
 
-  # ==========================================
-  # 6. STATISTICHE SERVICE (Kiosk Super Admin)
-  # ==========================================
+  # 6. STATISTICHE SERVICE
   statistiche-service:
     build:
       context: ./statistiche-service
       dockerfile: Dockerfile
     container_name: statistiche-service
     environment:
-      - DASHBOARD_URL=http://localhost:3000
-      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
+      - DASHBOARD_URL=http://localhost:${STATS_HOST_PORT}
+      - KEYCLOAK_URL=http://localhost:${KEYCLOAK_HOST_PORT}/realms/pissir-realm
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
       - CLIENT_ID=platform-client
-      - SESSION_SECRET=segreto_super_sicuro_dashboard
+      - SESSION_SECRET=${STATS_SESSION_SECRET}
       - CENTRAL_SERVER_URL=http://service-gateway:8081
     ports:
-      - "3000:3000"
+      - "${STATS_HOST_PORT}:3000"
     networks:
-      - edge-tier
+      - backend-tier
     depends_on:
       keycloak:
         condition: service_healthy

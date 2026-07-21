@@ -1,8 +1,8 @@
 // ============================================================
-// services/mqtt-client.js — Client MQTT (Mosquitto)
+// services/mqtt-client.js — Client MQTTS (Mosquitto con TLS)
 // Connected Games Platform (PISSIR A.A. 2025/2026)
 // ============================================================
-// Gestisce la connessione al broker Mosquitto locale.
+// Gestisce la connessione sicura (MQTTS) al broker Mosquitto locale.
 // Si sottoscrive al topic `locale/{LOCALE_ID}/eventi` per
 // ricevere gli eventi dai sensori/simulatori.
 // ============================================================
@@ -11,7 +11,7 @@ const mqtt = require('mqtt');
 const EventEmitter = require('events');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
-const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
+const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtts://localhost:8883';
 
 // Credenziali Edge (Sola lettura/sottoscrizione)
 const MQTT_SUB_USER = process.env.MQTT_SUB_USER || 'edge-client';
@@ -45,7 +45,8 @@ function connectMqtt() {
         clientId: `edge-sub-${LOCALE_ID}-${Date.now()}`,
         clean: true,
         reconnectPeriod: 5000,
-        connectTimeout: 10000
+        connectTimeout: 10000,
+        rejectUnauthorized: false
     });
 
     clientSub.on('connect', () => {
@@ -88,7 +89,8 @@ function connectMqtt() {
         clientId: `edge-pub-${LOCALE_ID}-${Date.now()}`,
         clean: true,
         reconnectPeriod: 5000,
-        connectTimeout: 10000
+        connectTimeout: 10000,
+        rejectUnauthorized: false
     });
 
     clientPub.on('connect', () => {

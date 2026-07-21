@@ -9,7 +9,7 @@
 // ============================================================
 
 const { v4: uuidv4 } = require('uuid');
-const { publishEvent } = require('./mqtt-client');
+const { publishEvent, getMqttEvents } = require('./mqtt-client');
 const { salvaPartita } = require('./sqlite-db');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
@@ -299,3 +299,17 @@ module.exports = {
     removeMatch,
     calcolaValoreTiro
 };
+
+// ============================================================
+// Sottoscrizione eventi MQTT reali
+// ============================================================
+getMqttEvents().on('evento', ({ topic, payload }) => {
+    try {
+        if (payload && payload.matchId && payload.tipo) {
+            console.log(`[GameEngine ${LOCALE_ID}] Elaborazione evento MQTT reale per match ${payload.matchId}`);
+            processaEvento(payload.matchId, payload);
+        }
+    } catch (err) {
+        console.error(`[GameEngine ${LOCALE_ID}] Errore elaborazione evento MQTT:`, err.message);
+    }
+});

@@ -49,7 +49,7 @@
 | Funzionalità | Stato | Note |
 |:---|:---|:---|
 | Sync Edge→Cloud | ✅ Funzionante | Ma `torneoId` hardcoded a `null` |
-| MQTT event loop | ✅ Connessione OK | Ma gli eventi vengono processati in-line (`processaEvento`), non tramite callback MQTT reale |
+| MQTT event loop | ✅ Funzionante | Gli eventi vengono ora elaborati tramite reale callback MQTT asincrona |
 | Dashboard Admin Locale | ✅ Vista presente | Manca il pulsante "Sincronizza Ora" collegato alla rotta esistente? (verificare nella view) |
 | Freccette SVG | ✅ Logica backend OK | Il tabellone SVG interattivo è nel template `game-play.ejs` |
 

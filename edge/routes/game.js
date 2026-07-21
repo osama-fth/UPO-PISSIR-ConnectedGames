@@ -194,26 +194,11 @@ router.post('/:matchId/event', (req, res) => {
 
         const evento = req.body;
 
-        // Simula il percorso MQTT: pubblica l'evento, poi processalo
-        // In un setup reale, il publish su Mosquitto trigger la subscription
-        // che a sua volta chiama processaEvento. Qui lo facciamo in-line
-        // per semplicità, ma manteniamo la semantica.
+        // Pubblica l'evento su Mosquitto (Simula il sensore IoT hardware).
+        // Il GameEngine ascolta l'evento in background sul topic MQTT.
         pubblicaEventoMqtt(req.params.matchId, evento);
 
-        // Processa l'evento direttamente (simula la ricezione via MQTT)
-        const updatedMatch = processaEvento(req.params.matchId, evento);
-
-        return res.json({
-            stato: updatedMatch.stato,
-            punteggio1: updatedMatch.punteggio1,
-            punteggio2: updatedMatch.punteggio2,
-            giocatore1: updatedMatch.giocatore1,
-            giocatore2: updatedMatch.giocatore2,
-            turnoCorrente: updatedMatch.turnoCorrente || null,
-            tiriNelTurno: updatedMatch.tiriNelTurno || 0,
-            vincitore: updatedMatch.vincitore || null,
-            giocoId: updatedMatch.giocoId
-        });
+        return res.json({ success: true, message: 'Evento inviato al broker MQTT' });
 
     } catch (err) {
         console.error(`[Game ${LOCALE_ID}] Errore evento:`, err.message);

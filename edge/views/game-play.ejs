@@ -221,12 +221,10 @@
                 return;
             }
 
-            updateScoreboard(data);
-            logEvent(formatEvent(evento, data));
+            // Non aggiorniamo più il tabellone qui: aspettiamo che l'evento
+            // MQTT venga processato e il polling aggiorni la UI in background.
+            logEvent(formatEvent(evento));
 
-            if (data.stato === 'TERMINATA') {
-                showMatchEnded(data);
-            }
         } catch (err) {
             logEvent('❌ Errore di rete: ' + err.message);
         } finally {
@@ -260,15 +258,15 @@
     }
 
     // Formatta un evento per il log
-    function formatEvent(evento, data) {
+    function formatEvent(evento) {
         const ts = new Date().toLocaleTimeString('it-IT');
         if (evento.tipo === 'GOAL') {
-            return ts + ' — ⚽ GOL Team ' + evento.team + ' → ' + data.punteggio1 + '-' + data.punteggio2;
+            return ts + ' — ⚽ Inviato GOL Team ' + evento.team + ' (in attesa di MQTT)';
         } else if (evento.tipo === 'TIRO') {
             const val = evento.settore === 'BULL' ? '25' : evento.settore === 'DBULL' ? '50' : (evento.settore + '×' + evento.moltiplicatore);
-            return ts + ' — 🎯 Tiro: ' + val + ' → G1=' + data.punteggio1 + ' G2=' + data.punteggio2;
+            return ts + ' — 🎯 Inviato Tiro: ' + val + ' (in attesa di MQTT)';
         }
-        return ts + ' — Evento: ' + JSON.stringify(evento);
+        return ts + ' — Evento inviato: ' + JSON.stringify(evento);
     }
 
     // Aggiungi un messaggio al log eventi
@@ -298,6 +296,30 @@
             btn.style.pointerEvents = 'none';
         });
     }
+
+    // Polling dello stato per sincronizzazione asincrona (ricezione via MQTT)
+    let pollInterval = setInterval(async () => {
+        try {
+            const res = await fetch('/game/' + MATCH_ID + '/status');
+            if (res.ok) {
+                const data = await res.json();
+                
+                // Aggiorna la UI solo se ci sono cambiamenti effettivi nel punteggio
+                const s1 = document.getElementById('score1');
+                const s2 = document.getElementById('score2');
+                if (s1.textContent.trim() !== String(data.punteggio1) || s2.textContent.trim() !== String(data.punteggio2)) {
+                    updateScoreboard(data);
+                }
+
+                if (data.stato === 'TERMINATA') {
+                    clearInterval(pollInterval);
+                    showMatchEnded(data);
+                }
+            }
+        } catch(err) {
+            console.error("Errore polling stato:", err);
+        }
+    }, 1000);
 </script>
 
 <%- include('partials/footer') %>

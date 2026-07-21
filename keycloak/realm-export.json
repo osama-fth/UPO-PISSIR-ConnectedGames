@@ -22,10 +22,6 @@
         "description": "Amministratore di un locale fisico"
       },
       {
-        "name": "admin_gioco",
-        "description": "Amministratore delle tipologie di gioco"
-      },
-      {
         "name": "admin_piattaforma",
         "description": "Amministratore globale della piattaforma"
       }
@@ -140,11 +136,12 @@
         }
       ],
       "realmRoles": [
-        "admin_locale",
-        "giocatore"
+        "admin_locale"
       ],
       "attributes": {
-        "locale_id": ["BAR_BELVEDERE"]
+        "locale_id": [
+          "BAR_BELVEDERE"
+        ]
       }
     },
     {
@@ -163,11 +160,12 @@
         }
       ],
       "realmRoles": [
-        "admin_locale",
-        "giocatore"
+        "admin_locale"
       ],
       "attributes": {
-        "locale_id": ["SALA_GIOCHI_ROMA"]
+        "locale_id": [
+          "SALA_GIOCHI_ROMA"
+        ]
       }
     },
     {
@@ -186,8 +184,7 @@
         }
       ],
       "realmRoles": [
-        "admin_piattaforma",
-        "giocatore"
+        "admin_piattaforma"
       ]
     },
     {
@@ -207,6 +204,82 @@
       ],
       "realmRoles": [
         "admin_piattaforma"
+      ]
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000007",
+      "username": "SantAnna",
+      "firstName": "Anna",
+      "lastName": "Verdi",
+      "email": "anna.verdi@example.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "giocatore"
+      ]
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000008",
+      "username": "Paul",
+      "firstName": "Paolo",
+      "lastName": "Neri",
+      "email": "paolo.neri@example.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "giocatore"
+      ]
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000009",
+      "username": "LukeSkywalker",
+      "firstName": "Luca",
+      "lastName": "Gialli",
+      "email": "luca.gialli@example.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "giocatore"
+      ]
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000010",
+      "username": "Saretta",
+      "firstName": "Sara",
+      "lastName": "Viola",
+      "email": "sara.viola@example.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "giocatore"
       ]
     }
   ]

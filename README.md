@@ -12,7 +12,7 @@ Il progetto si articola su un'architettura ibrida **Edge-to-Cloud**, orchestrata
 
 ### 1. Livello Centrale (Cloud / Platform)
 - **Service Gateway (Spring Boot 3 + Java 21)**: Punto di ingresso (API Gateway) per tutte le comunicazioni dall'Edge verso la piattaforma centrale.
-- **Service Core (Spring Boot 3 + Java 21)**: Il motore di business. Gestisce il salvataggio delle partite, la validazione, le statistiche e l'organizzazione dei tornei.
+- **Partita Service & Torneo Service (Spring Boot 3 + Java 21)**: I motori di business. Gestiscono il salvataggio delle partite, la validazione, le statistiche e l'organizzazione dei tornei.
 - **Keycloak (Identity Provider)**: Gestore centralizzato delle identità (SSO) tramite protocollo OIDC (OpenID Connect). Gestisce i ruoli (`giocatore`, `admin_locale`, `admin_piattaforma`).
 - **PostgreSQL Database**: Sede di due database logici isolati: `platform_db` per il dominio di business e `keycloak_db` per la sicurezza.
 
@@ -47,17 +47,22 @@ L'intero stack è containerizzato e facilmente avviabile con un solo comando.
 
 ## 👥 Credenziali di Test (Hardcoded Seed)
 
-Per facilitare lo sviluppo e testare la *Role-Based Dashboard*, il database (`init-db.sql`) e Keycloak (`realm-export.json`) sono pre-popolati con 5 utenti fissi i cui UUID coincidono perfettamente tra le due piattaforme.
+Per facilitare lo sviluppo e testare la *Role-Based Dashboard*, il database (`init-db.sql`) e Keycloak (`realm-export.json`) sono pre-popolati con vari utenti fissi i cui UUID coincidono perfettamente tra le due piattaforme.
 
-**La password per tutti gli account di test è:** `password`
+**La password per tutti gli account interattivi di test è:** `password` (mentre per `edge_sync_service` è `syncpassword`)
 
 | Username | Email | Ruolo Keycloak | Vista Dashboard |
 | :--- | :--- | :--- | :--- |
 | `SuperMario` | `mario.rossi@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
 | `Gigio` | `luigi.bianchi@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
+| `SantAnna` | `anna.verdi@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
+| `Paul` | `paolo.neri@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
+| `LukeSkywalker` | `luca.gialli@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
+| `Saretta` | `sara.viola@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
 | `admin_belvedere` | `admin.belvedere@example.com` | `admin_locale` | Console di monitoraggio e manutenzione tavoli (Bar Belvedere). |
 | `admin_roma` | `admin.roma@example.com` | `admin_locale` | Console di monitoraggio e manutenzione tavoli (Roma). |
 | `admin_piattaforma` | `admin.platform@example.com` | `admin_piattaforma` | Dashboard di supervisione globale (traffico MQTT, stato sink). |
+| `edge_sync_service` | `sync.service@example.com` | `admin_piattaforma` | Account di servizio interno per demone di sincronizzazione. |
 
 *(Per testare le varie Dashboard, fai semplicemente Login dall'Edge con gli username sopra elencati).*
 

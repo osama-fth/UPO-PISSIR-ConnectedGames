@@ -26,8 +26,8 @@
 - [ ] **Metrica normalizzata per calciobalilla** — La specifica richiede "% vittorie" o "media gol/partita" per non favorire chi gioca più partite. Attualmente usa solo conteggio raw.
 
 ### Sicurezza & Autorizzazione
-- [ ] **Autorizzazione role-based sulle rotte Gateway** — [SecurityConfig.java](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/service-gateway/src/main/java/com/connectedgames/gateway/config/SecurityConfig.java) non filtra per ruolo. Le statistiche globali dovrebbero essere accessibili solo a `admin_piattaforma` (403 Forbidden per altri ruoli come da OpenAPI).
-- [ ] **Utente `edge_sync_service` in Keycloak** — Il cron di sync usa `directPasswordAuth('edge_sync_service', 'syncpassword')` in [sync-service.js:L89](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/edge/services/sync-service.js#L89), ma non c'è evidenza che questo utente esista nel realm-export.json.
+- [x] **Autorizzazione role-based sulle rotte Gateway** — [SecurityConfig.java](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/service-gateway/src/main/java/com/connectedgames/gateway/config/SecurityConfig.java) non filtra per ruolo. Le statistiche globali dovrebbero essere accessibili solo a `admin_piattaforma` (403 Forbidden per altri ruoli come da OpenAPI).
+- [x] **Utente `edge_sync_service` in Keycloak** — Il cron di sync usa `directPasswordAuth('edge_sync_service', 'syncpassword')` in [sync-service.js:L89](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/edge/services/sync-service.js#L89), ma non c'è evidenza che questo utente esista nel realm-export.json.
 
 ### Testing (Piano di Test §11)
 - [ ] **Test idempotenza sync** — Stesso UUID inviato due volte → nessun duplicato. Non presente.
@@ -37,10 +37,10 @@
 - [ ] **Test scenario blackout** — `docker network disconnect` → gioco offline → buffer → riconnessione → no duplicati. Non testato.
 
 ### Documentazione / Delivery
-- [ ] **Healthcheck Keycloak** — Il [docker-compose.yml](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/docker-compose.yml#L74) usa un healthcheck con `exec 3<>/dev/tcp/...` che è fragile e documentato come "da definire" nelle specifiche §10.
-- [ ] **Healthcheck Edge** — Nessun `healthcheck` nel docker-compose per i container Edge.
+- [x] **Healthcheck Keycloak** — Il [docker-compose.yml](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/docker-compose.yml#L74) usa un healthcheck con `exec 3<>/dev/tcp/...` che è fragile e documentato come "da definire" nelle specifiche §10.
+- [x] **Healthcheck Edge** — Nessun `healthcheck` nel docker-compose per i container Edge.
 - [ ] **Piano di popolamento dati pre-demo** — Nessun script o seed di partite giocate per non avere dashboard vuote all'esame.
-- [ ] **README non aggiornato** — Menziona ancora `service-core` (ormai eliminato/sostituito da `partita-service` e `torneo-service`).
+- [x] **README non aggiornato** — Menziona ancora `service-core` (ormai eliminato/sostituito da `partita-service` e `torneo-service`).
 
 ---
 

@@ -16,7 +16,12 @@ public class DashboardController {
         this.statisticheService = statisticheService;
     }
 
-    @GetMapping({"/", "/dashboard"})
+    @GetMapping("/")
+    public String root() {
+        return "redirect:/dashboard";
+    }
+
+    @GetMapping("/dashboard")
     public String index(Model model, java.security.Principal principal) {
         if (principal != null) {
             model.addAttribute("nomeUtente", principal.getName());

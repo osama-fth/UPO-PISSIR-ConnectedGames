@@ -128,6 +128,8 @@ services:
       context: ./service-gateway
       dockerfile: Dockerfile
     container_name: service-gateway
+    ports:
+      - "8081:8081"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/pissir-realm

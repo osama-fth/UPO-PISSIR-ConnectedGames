@@ -38,6 +38,10 @@ public class SecurityConfig {
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/actuator/health/liveness"))
                 .permitAll()
 
+                // Swagger UI & OpenAPI spec
+                .matchers(ServerWebExchangeMatchers.pathMatchers("/docs", "/docs/**", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**", "/openapi-spec.yaml"))
+                .permitAll()
+
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/api/v1/statistiche/**"))
                 .hasRole("admin_piattaforma")
 

@@ -233,8 +233,6 @@ services:
     depends_on:
       mosquitto-locale1:
         condition: service_healthy
-      service-gateway:
-        condition: service_healthy
 
   edge-locale2:
     build:
@@ -271,8 +269,6 @@ services:
       start_period: 15s
     depends_on:
       mosquitto-locale2:
-        condition: service_healthy
-      service-gateway:
         condition: service_healthy
 
   # 6. STATISTICHE SERVICE

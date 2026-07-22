@@ -278,20 +278,30 @@ services:
     build:
       context: ./statistiche-service
       dockerfile: Dockerfile
+    image: connectedgames-statistiche-service
     container_name: statistiche-service
     environment:
-      - DASHBOARD_URL=http://localhost:${STATS_HOST_PORT}
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KEYCLOAK_URL=http://localhost:${KEYCLOAK_HOST_PORT}/realms/pissir-realm
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
-      - CLIENT_ID=platform-client
-      - SESSION_SECRET=${STATS_SESSION_SECRET}
-      - CENTRAL_SERVER_URL=http://service-gateway:8081
+      - GATEWAY_URL=http://localhost:8081
     ports:
-      - "${STATS_HOST_PORT}:3000"
+      - "${STATS_HOST_PORT}:8084"
     networks:
       - backend-tier
     depends_on:
+      postgres-db:
+        condition: service_healthy
       keycloak:
         condition: service_healthy
       service-gateway:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s

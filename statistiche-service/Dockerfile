@@ -1,37 +1,14 @@
-# ============================================================
-# Dockerfile — Edge Gateway (Node.js) - Multi-Stage
-# Connected Games Platform (PISSIR A.A. 2025/2026)
-# ============================================================
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
+WORKDIR /build
 
-# STAGE 1: Builder
-# Include i tool C++ necessari per compilare le dipendenze native (es. better-sqlite3)
-FROM node:20-alpine AS builder
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-WORKDIR /usr/src/app
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-RUN apk add --no-cache python3 make g++
-
-COPY package.json package-lock.json* ./
-RUN npm install --production
-
-# STAGE 2: Runtime
-# Immagine Alpine pulita, senza toolchain di compilazione, super leggera e sicura.
-FROM node:20-alpine
-
-WORKDIR /usr/src/app
-
-# Copiamo le dipendenze compilate dal builder
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY package.json ./
-
-# Copia il codice sorgente
-COPY . .
-
-# Crea la directory per il database SQLite
-RUN mkdir -p /usr/src/app/data
-
-
-HEALTHCHECK --interval=10s --timeout=5s --retries=3 --start-period=10s \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
-
-CMD ["node", "server.js"]
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=builder /build/target/statistiche-service-1.0.0.jar app.jar
+EXPOSE 8084
+ENTRYPOINT ["java", "-jar", "app.jar"]

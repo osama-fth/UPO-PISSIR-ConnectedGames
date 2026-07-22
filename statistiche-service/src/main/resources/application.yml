@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: statistiche-service
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/platform_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_INTERNAL_URL:http://localhost:8080/realms/pissir-realm}
+          jwk-set-uri: ${KEYCLOAK_INTERNAL_URL:http://localhost:8080/realms/pissir-realm}/protocol/openid-connect/certs
+
+app:
+  keycloak:
+    public-url: ${KEYCLOAK_URL:http://localhost:9080/realms/pissir-realm}
+    internal-url: ${KEYCLOAK_INTERNAL_URL:http://localhost:8080/realms/pissir-realm}
+    client-id: platform-client
+    redirect-uri: ${GATEWAY_URL:http://localhost:8081}/auth/callback
+
+server:
+  port: 8084
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
+
+logging:
+  level:
+    com.connectedgames: DEBUG
+    org.springframework.security: INFO

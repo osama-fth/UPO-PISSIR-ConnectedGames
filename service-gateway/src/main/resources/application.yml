@@ -56,12 +56,17 @@ spring:
             - Path=/api/v1/tornei/{torneoId}/classifica
             - Method=GET
 
-        # --- Statistiche globali (Dashboard Admin) ---
-        - id: statistiche-globali
-          uri: ${PARTITA_SERVICE_URL:http://partita-service:8082}
+        # --- Statistiche globali (Dashboard Admin API) ---
+        - id: statistiche-globali-api
+          uri: ${STATISTICHE_SERVICE_URL:http://statistiche-service:8084}
           predicates:
-            - Path=/api/v1/statistiche
-            - Method=GET
+            - Path=/api/v1/statistiche/**
+
+        # --- Statistiche UI ---
+        - id: statistiche-ui
+          uri: ${STATISTICHE_SERVICE_URL:http://statistiche-service:8084}
+          predicates:
+            - Path=/, /dashboard, /auth/**, /css/**, /js/**, /images/**
 
       # ============================================================
       # GLOBAL CORS — Permette le chiamate dagli Edge Node

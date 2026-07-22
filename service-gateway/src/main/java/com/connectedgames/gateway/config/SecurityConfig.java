@@ -39,17 +39,23 @@ public class SecurityConfig {
                 .permitAll()
 
                 // Swagger UI & OpenAPI spec
-                .matchers(ServerWebExchangeMatchers.pathMatchers("/docs", "/docs/**", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**", "/openapi-spec.yaml"))
-                .permitAll()
+                .matchers(ServerWebExchangeMatchers.pathMatchers(
+                    "/docs", "/docs/**", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**", "/openapi-spec.yaml", 
+                    "/swagger-resources/**", "/configuration/ui", "/configuration/security"
+                )).permitAll()
 
+                // Dashboard UI & Auth Flow (statistiche-service handles its own session)
+                .matchers(ServerWebExchangeMatchers.pathMatchers(
+                    "/", "/dashboard", "/auth/**", "/css/**", "/js/**", "/images/**"
+                )).permitAll()
+
+                // API statisitche requires admin role
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/api/v1/statistiche/**"))
                 .hasRole("admin_piattaforma")
 
-                .matchers(ServerWebExchangeMatchers.pathMatchers("/api/v1/**"))
-                .authenticated()
-
+                // Everything else requires a valid JWT Token
                 .anyExchange()
-                .denyAll()
+                .authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor()))

@@ -20,12 +20,12 @@ const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 // Giochi installati per locale (coerente con init-db.sql)
 const INSTALLAZIONI = {
     'BAR_BELVEDERE': [
-        { id: 'calciobalilla-1', giocoId: 'calciobalilla', nome: 'Calciobalilla', icona: '⚽' },
-        { id: 'freccette-1', giocoId: 'freccette', nome: 'Freccette', icona: '🎯' }
+        { id: 'calciobalilla-1', giocoId: 'calciobalilla', nome: 'Calciobalilla' },
+        { id: 'freccette-1', giocoId: 'freccette', nome: 'Freccette' }
     ],
     'SALA_GIOCHI_ROMA': [
-        { id: 'calciobalilla-2', giocoId: 'calciobalilla', nome: 'Calciobalilla', icona: '⚽' },
-        { id: 'freccette-2', giocoId: 'freccette', nome: 'Freccette', icona: '🎯' }
+        { id: 'calciobalilla-2', giocoId: 'calciobalilla', nome: 'Calciobalilla' },
+        { id: 'freccette-2', giocoId: 'freccette', nome: 'Freccette' }
     ]
 };
 
@@ -85,32 +85,6 @@ router.get('/dashboard', requireAuth, (req, res) => {
         stats,
         playerStats,
         isAdmin
-    });
-});
-
-/**
- * GET /stats
- * Pagina statistiche dettagliate del locale.
- * Accessibile solo ad admin_locale (del proprio locale) e admin_piattaforma.
- */
-router.get('/stats', requireAuth, requireAdminAccess, (req, res) => {
-    let stats;
-    try {
-        stats = getStatsLocale();
-    } catch (err) {
-        console.error(`[Dashboard ${LOCALE_ID}] Errore stats:`, err.message);
-        stats = { totalePartite: 0, inAttesaDiSync: 0, sincronizzate: 0, perGioco: [], ultimePartite: [] };
-    }
-
-    const installazioni = INSTALLAZIONI[LOCALE_ID] || [];
-    const activeGames = getActiveMatches();
-
-    res.render('edge-stats', {
-        title: `Statistiche — ${LOCALE_ID}`,
-        localeId: LOCALE_ID,
-        stats,
-        installazioni,
-        activeGames
     });
 });
 

@@ -4,22 +4,27 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
     <div>
         <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;">
-            <%= match.giocoId === 'calciobalilla' ? '⚽' : '🎯' %> Partita in Corso
+            <% if (match.giocoId === 'calciobalilla') { %>
+                <i class="bi bi-dribbble"></i>
+            <% } else { %>
+                <i class="bi bi-bullseye"></i>
+            <% } %>
+            Partita in Corso
         </h1>
         <p class="text-muted" style="font-size: 0.85rem;">
             <%= match.giocoId === 'calciobalilla' ? 'Calciobalilla — Primo a 10 gol' : 'Freccette — 301' %>
             · <%= localeId %>
         </p>
     </div>
-    <span class="badge badge-warning" style="font-size: 0.8rem; padding: 6px 14px;" id="match-status-badge">
-        🔴 LIVE
+    <span class="badge badge-danger" style="font-size: 0.8rem; padding: 6px 14px;" id="match-status-badge">
+        <i class="bi bi-broadcast"></i> LIVE
     </span>
 </div>
 
 <% if (!match.giocatore1.id && !match.giocatore2.id) { %>
 <!-- Banner Guest Mode — partita non salvata -->
 <div class="alert alert-warning" style="margin-bottom: 1.5rem; border-radius: var(--radius-md); font-size: 0.85rem;" id="guest-match-banner">
-    ⚠️ <strong>Partita Ospite</strong> — Questa partita non verrà salvata nel database e non comparirà nelle statistiche.
+    <i class="bi bi-exclamation-triangle"></i> <strong>Partita Ospite</strong> — Questa partita non verrà salvata nel database e non comparirà nelle statistiche.
 </div>
 <% } %>
 
@@ -58,14 +63,12 @@
 </div>
 
 <% if (match.giocoId === 'calciobalilla') { %>
-<!-- ============================================== -->
 <!-- CALCIOBALILLA CONTROLS -->
-<!-- ============================================== -->
 <div class="grid-3" style="gap: 1.5rem; margin-bottom: 2rem;">
     <button class="btn btn-primary btn-lg btn-block goal-btn" onclick="sendGoal('A')"
         style="padding: 2rem; font-size: 1.3rem; border-radius: var(--radius-lg); min-height: 120px; flex-direction: column; gap: 4px;"
         id="btn-goal-a">
-        <span style="font-size: 2.5rem;">⚽</span>
+        <i class="bi bi-dribbble" style="font-size: 2.5rem;"></i>
         <span>GOL <%= match.giocatore1.username %></span>
     </button>
 
@@ -79,15 +82,13 @@
     <button class="btn btn-lg btn-block goal-btn" onclick="sendGoal('B')"
         style="padding: 2rem; font-size: 1.3rem; border-radius: var(--radius-lg); min-height: 120px; flex-direction: column; gap: 4px; background: linear-gradient(135deg, #ef4444, #f59e0b); color: white; border: none; box-shadow: 0 2px 10px rgba(239, 68, 68, 0.3);"
         id="btn-goal-b">
-        <span style="font-size: 2.5rem;">⚽</span>
+        <i class="bi bi-dribbble" style="font-size: 2.5rem;"></i>
         <span>GOL <%= match.giocatore2.username %></span>
     </button>
 </div>
 
 <% } else if (match.giocoId === 'freccette') { %>
-<!-- ============================================== -->
 <!-- FRECCETTE CONTROLS (301) -->
-<!-- ============================================== -->
 
 <!-- Turn Indicator -->
 <div class="card" style="text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-secondary);" id="turn-indicator">
@@ -124,10 +125,10 @@
     <!-- Bull's Eye -->
     <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem;">
         <button class="btn btn-warning" onclick="sendDart('BULL')" style="min-width: 120px; font-weight: 700;">
-            🎯 Bull (25)
+            <i class="bi bi-bullseye"></i> Bull (25)
         </button>
         <button class="btn btn-danger" onclick="sendDart('DBULL')" style="min-width: 120px; font-weight: 700;">
-            🎯 D-Bull (50)
+            <i class="bi bi-bullseye"></i> D-Bull (50)
         </button>
     </div>
 </div>
@@ -136,23 +137,22 @@
 
 <!-- Event Log -->
 <details class="mt-2" style="color: var(--text-muted); font-size: 0.75rem;">
-    <summary style="cursor: pointer; user-select: none;">📋 Log Eventi</summary>
+    <summary style="cursor: pointer; user-select: none;"><i class="bi bi-journal-text"></i> Log Eventi</summary>
     <div class="card mt-1" style="font-family: monospace; font-size: 0.7rem; max-height: 200px; overflow-y: auto;" id="event-log">
         <div class="text-muted">In attesa di eventi...</div>
     </div>
 </details>
 
-<!-- Match Ended Overlay (nascosto) -->
-<div id="match-ended-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center;">
+<!-- Match Ended Overlay (nascosto) — card vincitore + pulsante torna alla home -->
+<div id="match-ended-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
     <div class="card" style="text-align: center; padding: 3rem; max-width: 500px; animation: fadeInUp 0.5s ease;">
-        <div style="font-size: 4rem; margin-bottom: 1rem;">🏆</div>
+        <i class="bi bi-trophy" style="font-size: 4rem; color: var(--warning); margin-bottom: 1rem; display: block;"></i>
         <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem;">Partita Terminata!</h2>
         <p style="font-size: 1.2rem; color: var(--accent-primary); font-weight: 700; margin-bottom: 0.5rem;" id="winner-text"></p>
         <p class="text-muted" style="margin-bottom: 1.5rem;" id="final-score-text"></p>
-        <div style="display: flex; gap: 1rem; justify-content: center;">
-            <a href="/game/<%= match.id %>/result" class="btn btn-primary btn-lg">📊 Vedi Risultato</a>
-            <a href="/" class="btn btn-secondary btn-lg">← Dashboard</a>
-        </div>
+        <a href="/" class="btn btn-primary btn-lg" style="min-width: 220px;">
+            <i class="bi bi-house"></i> Torna alla Home
+        </a>
     </div>
 </div>
 
@@ -217,16 +217,14 @@
             const data = await res.json();
 
             if (!res.ok) {
-                logEvent('❌ Errore: ' + (data.error || 'Sconosciuto'));
+                logEvent('Errore: ' + (data.error || 'Sconosciuto'));
                 return;
             }
 
-            // Non aggiorniamo più il tabellone qui: aspettiamo che l'evento
-            // MQTT venga processato e il polling aggiorni la UI in background.
             logEvent(formatEvent(evento));
 
         } catch (err) {
-            logEvent('❌ Errore di rete: ' + err.message);
+            logEvent('Errore di rete: ' + err.message);
         } finally {
             isProcessing = false;
         }
@@ -261,10 +259,10 @@
     function formatEvent(evento) {
         const ts = new Date().toLocaleTimeString('it-IT');
         if (evento.tipo === 'GOAL') {
-            return ts + ' — ⚽ Inviato GOL Team ' + evento.team + ' (in attesa di MQTT)';
+            return ts + ' — GOL Team ' + evento.team + ' (in attesa di MQTT)';
         } else if (evento.tipo === 'TIRO') {
             const val = evento.settore === 'BULL' ? '25' : evento.settore === 'DBULL' ? '50' : (evento.settore + '×' + evento.moltiplicatore);
-            return ts + ' — 🎯 Inviato Tiro: ' + val + ' (in attesa di MQTT)';
+            return ts + ' — Tiro: ' + val + ' (in attesa di MQTT)';
         }
         return ts + ' — Evento inviato: ' + JSON.stringify(evento);
     }
@@ -281,9 +279,9 @@
 
     // Mostra l'overlay di fine partita
     function showMatchEnded(data) {
-        document.getElementById('winner-text').textContent = '🏆 Vincitore: ' + data.vincitore;
+        document.getElementById('winner-text').textContent = 'Vincitore: ' + data.vincitore;
         document.getElementById('final-score-text').textContent = data.punteggio1 + ' — ' + data.punteggio2;
-        document.getElementById('match-status-badge').innerHTML = '✅ TERMINATA';
+        document.getElementById('match-status-badge').innerHTML = '<i class="bi bi-check-circle"></i> TERMINATA';
         document.getElementById('match-status-badge').className = 'badge badge-success';
 
         const overlay = document.getElementById('match-ended-overlay');
@@ -304,7 +302,6 @@
             if (res.ok) {
                 const data = await res.json();
                 
-                // Aggiorna la UI solo se ci sono cambiamenti effettivi nel punteggio
                 const s1 = document.getElementById('score1');
                 const s2 = document.getElementById('score2');
                 if (s1.textContent.trim() !== String(data.punteggio1) || s2.textContent.trim() !== String(data.punteggio2)) {

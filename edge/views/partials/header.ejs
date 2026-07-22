@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Connected Games Platform — Edge Gateway per <%= localeId %>">
     <title><%= typeof title !== 'undefined' ? title + ' | ' : '' %>Connected Games — <%= localeId %></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -175,19 +176,19 @@
                     <div class="user-avatar"><%= user.username.charAt(0).toUpperCase() %></div>
                     <span><%= user.username %></span>
                     <% if (user.isGuest) { %>
-                        <span class="badge badge-guest">⚡ Ospite</span>
+                        <span class="badge badge-guest"><i class="bi bi-lightning-charge"></i> Ospite</span>
                     <% } else { %>
-                        <span class="badge badge-success">● Online</span>
+                        <span class="badge badge-success"><span class="dot dot-success"></span> Online</span>
                     <% } %>
                 </div>
-                <a href="/auth/logout" class="btn btn-sm btn-danger">Esci</a>
+                <a href="/auth/logout" class="btn btn-sm btn-danger"><i class="bi bi-box-arrow-right"></i> Esci</a>
             <% } %>
         </div>
     </nav>
 
     <% if (user && user.isGuest) { %>
         <div class="alert alert-warning" style="border-radius: 0; margin: 0; justify-content: center;">
-            ⚠️ <strong>Modalità Ospite</strong> — Le partite giocate in questa sessione non verranno salvate.
+            <i class="bi bi-exclamation-triangle"></i> <strong>Modalità Ospite</strong> — Le partite giocate in questa sessione non verranno salvate.
         </div>
     <% } %>
 

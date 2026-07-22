@@ -1,13 +1,16 @@
 <%- include('partials/header') %>
 
 <!-- Page Header -->
-<div style="margin-bottom: 2rem;">
-    <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;">
-        Dashboard
-    </h1>
-    <p class="text-muted" style="font-size: 0.9rem;">
-        Pannello di controllo — <%= localeId %>
-    </p>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+        <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </h1>
+        <p class="text-muted" style="font-size: 0.9rem;">
+            Pannello di controllo — <%= localeId %>
+        </p>
+    </div>
+    <a href="/" class="btn btn-secondary"><i class="bi bi-house"></i> Home</a>
 </div>
 
 <!-- Status Cards -->
@@ -16,7 +19,12 @@
     <div class="card">
         <div class="card-subtitle">UTENTE</div>
         <div class="card-title" style="font-size: 1.25rem;">
-            <%= user.isGuest ? '👤' : '🔐' %> <%= user.username %>
+            <% if (user.isGuest) { %>
+                <i class="bi bi-person"></i>
+            <% } else { %>
+                <i class="bi bi-shield-check"></i>
+            <% } %>
+            <%= user.username %>
         </div>
         <div class="mt-1">
             <% if (user.isGuest) { %>
@@ -41,11 +49,11 @@
         <div class="card-subtitle">BROKER MQTT</div>
         <div class="card-title" style="font-size: 1.25rem;">
             <% if (mqttStatus.status === 'connected') { %>
-                🟢 Connesso
+                <span class="dot dot-success"></span> Connesso
             <% } else if (mqttStatus.status === 'reconnecting') { %>
-                🟡 Riconnessione...
+                <i class="bi bi-arrow-repeat" style="color: var(--warning);"></i> Riconnessione...
             <% } else { %>
-                🔴 Disconnesso
+                <span class="dot dot-danger"></span> Disconnesso
             <% } %>
         </div>
         <p class="text-muted text-sm mt-1">
@@ -53,11 +61,11 @@
         </p>
     </div>
 
-    <!-- Locale Info + Stats -->
+    <!-- Locale Info -->
     <div class="card">
         <div class="card-subtitle">LOCALE</div>
         <div class="card-title" style="font-size: 1.25rem;">
-            📍 <%= localeId %>
+            <i class="bi bi-geo-alt"></i> <%= localeId %>
         </div>
         <p class="text-muted text-sm mt-1">
             <strong><%= stats.totalePartite %></strong> partite giocate ·
@@ -67,15 +75,12 @@
     <% } %>
 </div>
 
-<!-- ============================================== -->
-<!-- GIOCHI DISPONIBILI — Visibile a tutti -->
-
-<% if (!user.isGuest && playerStats) { %>
+<% if (!isAdmin && !user.isGuest && playerStats) { %>
     <!-- ============================================== -->
     <!-- STATISTICHE GIOCATORE -->
     <!-- ============================================== -->
     <div class="card mb-3" style="border-top: 4px solid var(--accent-secondary); background: linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, transparent 100%);">
-        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem;">📊 Le tue Statistiche</h2>
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem;"><i class="bi bi-bar-chart-line"></i> Le tue Statistiche</h2>
 
         <div class="grid-3" style="gap: 1rem; margin-bottom: 1.25rem;">
             <div class="card" style="background: var(--bg-secondary); text-align: center;">
@@ -109,7 +114,12 @@
                         <span class="badge <%= won ? 'badge-success' : 'badge-danger' %>"><%= won ? 'VITTORIA' : 'SCONFITTA' %></span>
                     </div>
                     <div style="font-weight: 600;">
-                        <%= p.gioco_id === 'calciobalilla' ? '⚽' : '🎯' %> <%= p.gioco_id %>
+                        <% if (p.gioco_id === 'calciobalilla') { %>
+                            <i class="bi bi-dribbble"></i>
+                        <% } else { %>
+                            <i class="bi bi-bullseye"></i>
+                        <% } %>
+                        <%= p.gioco_id %>
                     </div>
                     <div style="font-weight: 700;">
                         <%= p.punteggio_1 %> — <%= p.punteggio_2 %>
@@ -131,9 +141,9 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--warning);">
                 <% if (user.roles && user.roles.includes('admin_piattaforma')) { %>
-                    🌍 Console Admin Piattaforma
+                    <i class="bi bi-globe"></i> Console Admin Piattaforma
                 <% } else { %>
-                    🔧 Console Admin Locale
+                    <i class="bi bi-gear"></i> Console Admin Locale
                 <% } %>
             </h2>
             <% if (user.roles && user.roles.includes('admin_piattaforma')) { %>
@@ -145,7 +155,7 @@
         <div class="grid-3" style="gap: 1rem; margin-bottom: 1.5rem;">
             <div class="card" style="background: var(--bg-secondary); text-align: center;">
                 <div class="card-subtitle">PARTITE TOTALI</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: white;"><%= stats.totalePartite %></div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-primary);"><%= stats.totalePartite %></div>
             </div>
             <div class="card" style="background: var(--bg-secondary); text-align: center;">
                 <div class="card-subtitle">IN CODA SYNC</div>
@@ -159,40 +169,107 @@
             </div>
         </div>
 
-        <!-- Actions -->
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <a href="/stats" class="btn btn-secondary" id="btn-stats">
-                📊 Statistiche Dettagliate
-            </a>
+        <!-- Sync Action -->
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
             <button class="btn btn-warning" onclick="triggerSync()" id="btn-sync">
-                🔄 Sincronizza Ora
+                <i class="bi bi-arrow-repeat"></i> Sincronizza Ora
             </button>
-            <span class="text-muted text-sm" style="align-self: center;" id="sync-status">
-                <!-- Aggiornato via JS -->
-            </span>
+            <span class="text-muted text-sm" style="align-self: center;" id="sync-status"></span>
         </div>
     </div>
-<% } %>
 
-<!-- Session Info (Debug) -->
-<details class="mt-3" style="color: var(--text-muted); font-size: 0.75rem;">
-    <summary style="cursor: pointer; user-select: none;">🔧 Info di Debug</summary>
-    <div class="card mt-1" style="font-family: monospace; font-size: 0.7rem; overflow-x: auto;">
-        <pre><%= JSON.stringify({
-            user: { id: user.id, username: user.username, isGuest: user.isGuest, roles: user.roles },
-            mqtt: mqttStatus,
-            locale: localeId,
-            stats: { totale: stats.totalePartite, codaSync: stats.inAttesaDiSync }
-        }, null, 2) %></pre>
+    <!-- Statistiche per Gioco -->
+    <% if (stats.perGioco && stats.perGioco.length > 0) { %>
+    <div class="card mb-3" style="border-top: 4px solid var(--accent-secondary);">
+        <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.25rem;"><i class="bi bi-controller"></i> Statistiche per Gioco</h2>
+        <div class="grid-3" style="gap: 1rem;">
+            <% stats.perGioco.forEach(function(g) { %>
+                <div class="card" style="background: var(--bg-secondary);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
+                        <% if (g.gioco_id === 'calciobalilla') { %>
+                            <i class="bi bi-dribbble" style="font-size: 1.5rem; color: var(--accent-primary);"></i>
+                        <% } else { %>
+                            <i class="bi bi-bullseye" style="font-size: 1.5rem; color: var(--danger);"></i>
+                        <% } %>
+                        <span style="font-weight: 700; font-size: 1.1rem; text-transform: capitalize;"><%= g.gioco_id %></span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <div>
+                            <div class="text-muted text-sm">Partite</div>
+                            <div style="font-weight: 700; font-size: 1.25rem;"><%= g.count %></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-sm">Punteggio Medio</div>
+                            <div style="font-weight: 700; font-size: 1.25rem;">
+                                <%= Math.round(g.avg_p1 * 10) / 10 %> — <%= Math.round(g.avg_p2 * 10) / 10 %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
     </div>
-</details>
+    <% } %>
+
+    <!-- Ultime Partite (tabella con stato sync) -->
+    <% if (stats.ultimePartite && stats.ultimePartite.length > 0) { %>
+    <div class="card mb-3">
+        <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.25rem;"><i class="bi bi-journal-text"></i> Ultime Partite</h2>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary);">
+                        <th style="padding: 10px;">Gioco</th>
+                        <th style="padding: 10px;">Giocatore 1</th>
+                        <th style="padding: 10px;">Giocatore 2</th>
+                        <th style="padding: 10px;">Punteggio</th>
+                        <th style="padding: 10px;">Data</th>
+                        <th style="padding: 10px;">Sync</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% stats.ultimePartite.forEach(function(p) { %>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px; font-weight: 600;">
+                                <% if (p.gioco_id === 'calciobalilla') { %>
+                                    <i class="bi bi-dribbble"></i>
+                                <% } else { %>
+                                    <i class="bi bi-bullseye"></i>
+                                <% } %>
+                                <%= p.gioco_id %>
+                            </td>
+                            <td style="padding: 10px;"><%= p.giocatore_1_id ? p.giocatore_1_id.substring(0, 8) + '...' : 'Ospite' %></td>
+                            <td style="padding: 10px;"><%= p.giocatore_2_id ? p.giocatore_2_id.substring(0, 8) + '...' : 'Ospite' %></td>
+                            <td style="padding: 10px; font-weight: 700;"><%= p.punteggio_1 %> — <%= p.punteggio_2 %></td>
+                            <td style="padding: 10px;" class="text-muted text-sm"><%= new Date(p.data_fine).toLocaleString('it-IT') %></td>
+                            <td style="padding: 10px;">
+                                <% if (p.sincronizzata) { %>
+                                    <span class="badge badge-success"><i class="bi bi-check-lg"></i></span>
+                                <% } else { %>
+                                    <span class="badge badge-warning"><i class="bi bi-hourglass-split"></i></span>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <% } else if (stats.totalePartite === 0) { %>
+    <div class="card mb-3" style="text-align: center; padding: 3rem;">
+        <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem; display: block;"></i>
+        <p class="text-muted">Nessuna partita ancora giocata su questo locale.</p>
+    </div>
+    <% } %>
+
+<% } %>
 
 <script>
     async function triggerSync() {
         const btn = document.getElementById('btn-sync');
         const status = document.getElementById('sync-status');
         btn.disabled = true;
-        btn.textContent = '⏳ Sincronizzazione...';
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sincronizzazione...';
         status.textContent = '';
 
         try {
@@ -200,20 +277,19 @@
             const data = await res.json();
 
             if (res.ok) {
-                status.textContent = '✅ ' + (data.salvate || 0) + ' partite sincronizzate';
+                status.innerHTML = '<i class="bi bi-check-circle"></i> ' + (data.salvate || 0) + ' partite sincronizzate';
                 status.style.color = 'var(--success)';
-                // Ricarica la pagina dopo 2 secondi per aggiornare i contatori
                 setTimeout(function() { window.location.reload(); }, 2000);
             } else {
-                status.textContent = '⚠️ ' + (data.error || 'Errore');
+                status.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + (data.error || 'Errore');
                 status.style.color = 'var(--warning)';
             }
         } catch (err) {
-            status.textContent = '❌ Errore di rete: ' + err.message;
+            status.innerHTML = '<i class="bi bi-x-circle"></i> Errore di rete: ' + err.message;
             status.style.color = 'var(--danger)';
         } finally {
             btn.disabled = false;
-            btn.textContent = '🔄 Sincronizza Ora';
+            btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sincronizza Ora';
         }
     }
 </script>

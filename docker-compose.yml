@@ -29,6 +29,7 @@ services:
   postgres-db:
     image: postgres:15-alpine
     container_name: postgres-db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -48,6 +49,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.0
     container_name: keycloak
+    restart: unless-stopped
     command: start-dev --import-realm
     environment:
       KC_DB: postgres
@@ -82,12 +84,13 @@ services:
       context: ./partita-service
       dockerfile: Dockerfile
     container_name: partita-service
+    restart: unless-stopped
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/pissir-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${JWT_ISSUER_URI}
     networks:
       - backend-tier
     depends_on:
@@ -105,12 +108,13 @@ services:
       context: ./torneo-service
       dockerfile: Dockerfile
     container_name: torneo-service
+    restart: unless-stopped
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/pissir-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${JWT_ISSUER_URI}
     networks:
       - backend-tier
     depends_on:
@@ -128,11 +132,12 @@ services:
       context: ./service-gateway
       dockerfile: Dockerfile
     container_name: service-gateway
+    restart: unless-stopped
     ports:
       - "8081:8081"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/pissir-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${JWT_ISSUER_URI}
       - PARTITA_SERVICE_URL=http://partita-service:8082
       - TORNEO_SERVICE_URL=http://torneo-service:8083
     networks:
@@ -160,6 +165,7 @@ services:
       dockerfile: Dockerfile
     image: connectedgames-mosquitto
     container_name: mosquitto-locale1
+    restart: unless-stopped
     environment:
       - LOCALE_ID=locale1
       - MQTT_PUB_USER=${MQTT1_PUBLISH_USER}
@@ -181,6 +187,7 @@ services:
       dockerfile: Dockerfile
     image: connectedgames-mosquitto
     container_name: mosquitto-locale2
+    restart: unless-stopped
     environment:
       - LOCALE_ID=locale2
       - MQTT_PUB_USER=${MQTT2_PUBLISH_USER}
@@ -203,6 +210,7 @@ services:
       dockerfile: Dockerfile
     image: connectedgames-edge
     container_name: edge-locale1
+    restart: unless-stopped
     environment:
       - NODE_ENV=development
       - PORT=3001
@@ -240,6 +248,7 @@ services:
       dockerfile: Dockerfile
     image: connectedgames-edge
     container_name: edge-locale2
+    restart: unless-stopped
     environment:
       - NODE_ENV=development
       - PORT=3002
@@ -278,6 +287,7 @@ services:
       dockerfile: Dockerfile
     image: connectedgames-statistiche-service
     container_name: statistiche-service
+    restart: unless-stopped
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db

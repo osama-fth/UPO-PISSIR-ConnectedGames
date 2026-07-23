@@ -11,6 +11,9 @@
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "bruteForceProtected": false,
+  "defaultRoles": [
+    "giocatore"
+  ],
   "roles": {
     "realm": [
       {
@@ -24,6 +27,17 @@
       {
         "name": "admin_piattaforma",
         "description": "Amministratore globale della piattaforma"
+      },
+      {
+        "name": "default-roles-pissir-realm",
+        "description": "${role_default-roles}",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "giocatore"
+          ]
+        },
+        "clientRole": false
       }
     ]
   },
@@ -61,6 +75,20 @@
             "access.token.claim": "true",
             "userinfo.token.claim": "true"
           }
+        },
+        {
+          "name": "email_verified",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.value": "true",
+            "claim.name": "email_verified",
+            "jsonType.label": "boolean",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
         }
       ]
     },
@@ -78,6 +106,22 @@
       ],
       "webOrigins": [
         "*"
+      ],
+      "protocolMappers": [
+        {
+          "name": "email_verified",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.value": "true",
+            "claim.name": "email_verified",
+            "jsonType.label": "boolean",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
       ]
     }
   ],
@@ -282,5 +326,12 @@
         "giocatore"
       ]
     }
-  ]
+  ],
+  "defaultRole": {
+    "name": "default-roles-pissir-realm",
+    "description": "${role_default-roles}",
+    "composite": true,
+    "clientRole": false,
+    "containerId": "pissir-realm"
+  }
 }

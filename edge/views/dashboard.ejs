@@ -131,6 +131,30 @@
             <% }); %>
         <% } %>
     </div>
+
+    <!-- ============================================== -->
+    <!-- TORNEI ATTIVI -->
+    <!-- ============================================== -->
+    <div class="card mb-3" style="border-top: 4px solid var(--accent-primary);">
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem;"><i class="bi bi-trophy text-warning"></i> Tornei Attivi</h2>
+        
+        <% if (typeof torneiAttivi !== 'undefined' && torneiAttivi.length > 0) { %>
+            <div class="grid-3" style="gap: 1rem;">
+                <% torneiAttivi.forEach(function(t) { %>
+                    <div class="card" style="background: var(--bg-secondary); text-align: center;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;"><%= t.nome %></h3>
+                        <p class="text-muted text-sm mb-2"><%= t.giocoNome %></p>
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="iscrivitiTorneo('<%= t.id %>')">
+                            <i class="bi bi-plus-circle"></i> Iscriviti
+                        </button>
+                    </div>
+                <% }); %>
+            </div>
+            <div id="iscrizione-alert" class="alert d-none mt-3" style="font-size: 0.9rem;"></div>
+        <% } else { %>
+            <p class="text-muted">Nessun torneo attivo al momento.</p>
+        <% } %>
+    </div>
 <% } %>
 
 <% if (isAdmin) { %>
@@ -290,6 +314,33 @@
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sincronizza Ora';
+        }
+    }
+
+    async function iscrivitiTorneo(torneoId) {
+        const alertBox = document.getElementById('iscrizione-alert');
+        alertBox.className = 'alert mt-3';
+        alertBox.innerHTML = '<i class="bi bi-hourglass"></i> Iscrizione in corso...';
+        alertBox.style.backgroundColor = 'var(--bg-card)';
+        
+        try {
+            const res = await fetch('/dashboard/tornei/iscriviti', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ torneoId })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                alertBox.className = 'alert alert-success mt-3';
+                alertBox.innerHTML = '<i class="bi bi-check-circle"></i> Iscrizione completata con successo!';
+            } else {
+                alertBox.className = 'alert alert-warning mt-3';
+                alertBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + (data.error || 'Errore');
+            }
+        } catch (err) {
+            alertBox.className = 'alert alert-danger mt-3';
+            alertBox.innerHTML = '<i class="bi bi-x-circle"></i> Errore di rete: ' + err.message;
         }
     }
 </script>

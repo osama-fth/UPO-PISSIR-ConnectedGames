@@ -8,25 +8,50 @@ import com.connectedgames.core.entity.Torneo;
 import com.connectedgames.core.exception.ResourceNotFoundException;
 import com.connectedgames.core.repository.PartitaRepository;
 import com.connectedgames.core.repository.TorneoRepository;
+import com.connectedgames.core.dto.IscrizioneTorneoResponse;
+import com.connectedgames.core.dto.TorneoCreateInput;
+import com.connectedgames.core.entity.Gioco;
+import com.connectedgames.core.entity.IscrizioneTorneo;
+import com.connectedgames.core.entity.IscrizioneTorneoId;
+import com.connectedgames.core.entity.Locale;
+import com.connectedgames.core.entity.Utente;
+import com.connectedgames.core.repository.GiocoRepository;
+import com.connectedgames.core.repository.IscrizioneTorneoRepository;
+import com.connectedgames.core.repository.LocaleRepository;
+import com.connectedgames.core.repository.PartitaRepository;
+import com.connectedgames.core.repository.TorneoRepository;
+import com.connectedgames.core.repository.UtenteRepository;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TorneoService {
 
     private final TorneoRepository torneoRepo;
     private final PartitaRepository partitaRepo;
+    private final GiocoRepository giocoRepo;
+    private final LocaleRepository localeRepo;
+    private final UtenteRepository utenteRepo;
+    private final IscrizioneTorneoRepository iscrizioneRepo;
 
-    public TorneoService(TorneoRepository torneoRepo, PartitaRepository partitaRepo) {
+    public TorneoService(TorneoRepository torneoRepo, PartitaRepository partitaRepo,
+                         GiocoRepository giocoRepo, LocaleRepository localeRepo,
+                         UtenteRepository utenteRepo, IscrizioneTorneoRepository iscrizioneRepo) {
         this.torneoRepo = torneoRepo;
         this.partitaRepo = partitaRepo;
+        this.giocoRepo = giocoRepo;
+        this.localeRepo = localeRepo;
+        this.utenteRepo = utenteRepo;
+        this.iscrizioneRepo = iscrizioneRepo;
     }
 
     public List<TorneoResponse> getTornei(String stato) {
@@ -54,37 +79,122 @@ public class TorneoService {
             .toList();
     }
 
+    @Transactional(readOnly = true)
+    public TorneoResponse getTorneoById(UUID torneoId) {
+        Torneo t = torneoRepo.findById(torneoId)
+            .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
+        return TorneoResponse.of(
+            t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(),
+            calcolaStatoLazy(t), t.getDataInizio(), t.getDataFine()
+        );
+    }
+
+    @Transactional
+    public TorneoResponse creaTorneo(TorneoCreateInput input) {
+        Torneo t = new Torneo();
+        t.setId(UUID.randomUUID());
+        t.setNome(input.nome());
+        t.setStato("ATTIVO");
+        t.setDataInizio(input.dataInizio());
+        t.setDataFine(input.dataFine());
+
+        Gioco gioco = giocoRepo.findById(input.giocoId())
+            .orElseThrow(() -> new IllegalArgumentException("Gioco non trovato"));
+        t.setGioco(gioco);
+
+        Set<Locale> locali = new HashSet<>();
+        for (String locId : input.localiId()) {
+            Locale loc = localeRepo.findById(locId)
+                .orElseThrow(() -> new IllegalArgumentException("Locale non trovato: " + locId));
+            locali.add(loc);
+        }
+        t.setLocali(locali);
+
+        torneoRepo.save(t);
+
+        return TorneoResponse.of(t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(), t.getStato(), t.getDataInizio(), t.getDataFine());
+    }
+
+    @Transactional
+    public IscrizioneTorneoResponse iscriviGiocatore(UUID torneoId, UUID utenteId) {
+        Torneo torneo = torneoRepo.findById(torneoId)
+            .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
+
+        Utente utente = utenteRepo.findById(utenteId)
+            .orElseThrow(() -> new ResourceNotFoundException("Utente", utenteId.toString()));
+
+        if (iscrizioneRepo.existsByIdTorneoIdAndIdUtenteId(torneoId, utenteId)) {
+            throw new IllegalArgumentException("Utente già iscritto a questo torneo");
+        }
+
+        if (!"ATTIVO".equals(calcolaStatoLazy(torneo))) {
+            throw new IllegalArgumentException("Il torneo non è attivo");
+        }
+
+        IscrizioneTorneo iscrizione = new IscrizioneTorneo();
+        iscrizione.setId(new IscrizioneTorneoId(torneoId, utenteId));
+        iscrizione.setTorneo(torneo);
+        iscrizione.setUtente(utente);
+        iscrizione.setDataIscrizione(OffsetDateTime.now());
+
+        iscrizione = iscrizioneRepo.save(iscrizione);
+        return IscrizioneTorneoResponse.from(iscrizione);
+    }
+
+    @Transactional(readOnly = true)
+    public List<IscrizioneTorneoResponse> getIscritti(UUID torneoId) {
+        if (!torneoRepo.existsById(torneoId)) {
+            throw new ResourceNotFoundException("Torneo", torneoId.toString());
+        }
+        return iscrizioneRepo.findByTorneoId(torneoId).stream()
+            .map(IscrizioneTorneoResponse::from)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
     public ClassificaTorneoResponse getClassifica(UUID torneoId) {
         Torneo torneo = torneoRepo.findById(torneoId)
             .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
 
         List<Partita> partite = partitaRepo.findByTorneoId(torneoId);
 
-        // Aggrega per giocatore (usando giocatore1 come riferimento)
-        // In uno scenario reale si userebbero entrambi i giocatori
-        Map<String, List<Partita>> partitePerGiocatore = partite.stream()
-            .filter(p -> p.getGiocatore1() != null)
-            .collect(Collectors.groupingBy(
-                p -> p.getGiocatore1().getUsername(),
-                LinkedHashMap::new,
-                Collectors.toList()
-            ));
-
-        List<VoceClassifica> classifica = new ArrayList<>();
-        for (Map.Entry<String, List<Partita>> entry : partitePerGiocatore.entrySet()) {
-            long partiteGiocate = entry.getValue().size();
-            long partiteVinte = entry.getValue().stream()
-                .filter(p -> p.getPunteggio1() > p.getPunteggio2())
-                .count();
-            double percentualeVittorie = partiteGiocate > 0
-                ? (double) partiteVinte / partiteGiocate * 100
-                : 0.0;
-
-            classifica.add(new VoceClassifica(0, entry.getKey(), partiteGiocate, (int) partiteVinte, percentualeVittorie));
+        class Stat {
+            int giocate = 0;
+            int vinte = 0;
         }
 
-        // Ordina per percentuale vittorie decrescente
-        classifica.sort(Comparator.comparingDouble(VoceClassifica::percentualeVittorie).reversed());
+        Map<String, Stat> stats = new HashMap<>();
+
+        for (Partita p : partite) {
+            if (p.getGiocatore1() != null) {
+                String name = p.getGiocatore1().getUsername();
+                stats.putIfAbsent(name, new Stat());
+                stats.get(name).giocate++;
+                if (p.getPunteggio1() > p.getPunteggio2()) {
+                    stats.get(name).vinte++;
+                }
+            }
+            if (p.getGiocatore2() != null) {
+                String name = p.getGiocatore2().getUsername();
+                stats.putIfAbsent(name, new Stat());
+                stats.get(name).giocate++;
+                if (p.getPunteggio2() > p.getPunteggio1()) {
+                    stats.get(name).vinte++;
+                }
+            }
+        }
+
+        List<VoceClassifica> classifica = new ArrayList<>();
+        for (Map.Entry<String, Stat> entry : stats.entrySet()) {
+            Stat s = entry.getValue();
+            double perc = s.giocate > 0 ? (double) s.vinte / s.giocate * 100 : 0.0;
+            classifica.add(new VoceClassifica(0, entry.getKey(), s.giocate, s.vinte, Math.round(perc * 100.0) / 100.0));
+        }
+
+        // Ordina per percentuale vittorie decrescente, poi partite vinte, poi partite giocate
+        classifica.sort(Comparator.comparingDouble(VoceClassifica::percentualeVittorie).reversed()
+            .thenComparingInt(VoceClassifica::partiteVinte).reversed()
+            .thenComparingLong(VoceClassifica::partiteGiocate).reversed());
 
         // Assegna posizioni
         List<VoceClassifica> classificaFinale = new ArrayList<>();

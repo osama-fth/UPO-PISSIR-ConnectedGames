@@ -106,6 +106,118 @@ paths:
           $ref: '#/components/responses/401Unauthorized'
         '500':
           $ref: '#/components/responses/500InternalError'
+    post:
+      summary: Crea un nuovo torneo
+      description: Permette la creazione di un torneo associato a un gioco e a vari locali (admin only).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TorneoCreateInput'
+      responses:
+        '200':
+          description: Torneo creato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Torneo'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /tornei/{torneoId}:
+    get:
+      summary: Recupera i dettagli di un singolo torneo
+      description: Restituisce le informazioni di un torneo specifico.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: torneoId
+          in: path
+          required: true
+          description: ID univoco del torneo
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dettagli torneo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Torneo'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: Torneo non trovato
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /tornei/{torneoId}/iscrizioni:
+    get:
+      summary: Ottieni iscritti al torneo
+      description: Restituisce la lista degli iscritti al torneo specificato.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: torneoId
+          in: path
+          required: true
+          description: ID univoco del torneo
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lista iscritti
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IscrizioneTorneoResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+    post:
+      summary: Iscrivi un giocatore al torneo
+      description: Permette l'iscrizione di un giocatore a un torneo attivo.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: torneoId
+          in: path
+          required: true
+          description: ID univoco del torneo
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IscrizioneInput'
+      responses:
+        '200':
+          description: Giocatore iscritto con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IscrizioneTorneoResponse'
+        '400':
+          description: Dati non validi o giocatore già iscritto o torneo chiuso
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
 
   /tornei/{torneoId}/classifica:
     get:
@@ -326,7 +438,7 @@ components:
       required:
         - id
         - nome
-        - tipoGioco
+        - giocoNome
         - stato
         - dataInizio
         - dataFine
@@ -338,7 +450,7 @@ components:
         nome:
           type: string
           example: "Torneo Estivo UPO Calciobalilla 2026"
-        tipoGioco:
+        giocoNome:
           type: string
           example: "CALCIOBALILLA"
         stato:
@@ -353,6 +465,64 @@ components:
           type: string
           format: date-time
           example: "2026-07-15T23:59:59Z"
+
+    TorneoCreateInput:
+      type: object
+      required:
+        - nome
+        - giocoId
+        - localiId
+        - dataInizio
+        - dataFine
+      properties:
+        nome:
+          type: string
+          example: "Campionato Nazionale"
+        giocoId:
+          type: string
+          example: "calciobalilla"
+        localiId:
+          type: array
+          items:
+            type: string
+          example: ["BAR_BELVEDERE"]
+        dataInizio:
+          type: string
+          format: date-time
+        dataFine:
+          type: string
+          format: date-time
+
+    IscrizioneInput:
+      type: object
+      required:
+        - utenteId
+      properties:
+        utenteId:
+          type: string
+          format: uuid
+          example: "a3b9cc22-38e2-4bf1-a06f-b1b7ef38f123"
+
+    IscrizioneTorneoResponse:
+      type: object
+      required:
+        - torneoId
+        - utenteId
+        - utenteNome
+        - dataIscrizione
+      properties:
+        torneoId:
+          type: string
+          format: uuid
+        utenteId:
+          type: string
+          format: uuid
+        utenteNome:
+          type: string
+          example: "mario_rossi"
+        dataIscrizione:
+          type: string
+          format: date-time
 
     ClassificaTorneoResponse:
       type: object

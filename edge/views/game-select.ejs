@@ -77,7 +77,22 @@
 
     <!-- PANEL: Autenticazione Keycloak -->
     <div id="panel-auth" class="card" style="border-top: 4px solid var(--accent-primary); margin-bottom: 2rem; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);">
-        <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;"><i class="bi bi-people"></i> Autenticazione Giocatori</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.3rem; font-weight: 700; margin: 0;"><i class="bi bi-people"></i> Autenticazione Giocatori</h2>
+            
+            <!-- Selezione Torneo -->
+            <% if (typeof torneiAttivi !== 'undefined' && torneiAttivi.length > 0) { %>
+            <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-primary); padding: 5px 15px; border-radius: var(--radius-sm); border: 1px solid var(--accent-primary);">
+                <i class="bi bi-trophy text-warning"></i>
+                <select name="torneoId" id="torneoId" style="background: transparent; border: none; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
+                    <option value="">Nessun torneo (Amichevole)</option>
+                    <% torneiAttivi.forEach(t => { %>
+                        <option value="<%= t.id %>" data-gioco="<%= t.giocoNome.toLowerCase() %>"><%= t.nome %> (<%= t.giocoNome %>)</option>
+                    <% }); %>
+                </select>
+            </div>
+            <% } %>
+        </div>
 
         <div class="grid-3" style="gap: 1.5rem;">
             <!-- Giocatore 1 -->

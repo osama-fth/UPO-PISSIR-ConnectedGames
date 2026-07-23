@@ -46,12 +46,20 @@ public class SecurityConfig {
 
                 // Dashboard UI & Auth Flow (statistiche-service handles its own session)
                 .matchers(ServerWebExchangeMatchers.pathMatchers(
-                    "/", "/dashboard", "/auth/**", "/css/**", "/js/**", "/images/**"
+                    "/", "/dashboard", "/utenti", "/partite", "/tornei", "/auth/**", "/css/**", "/js/**", "/images/**"
                 )).permitAll()
 
-                // API statisitche requires admin role
+                // API statistiche requires admin role
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/api/v1/statistiche/**"))
                 .hasRole("admin_piattaforma")
+                
+                // Tornei API
+                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei"))
+                .hasAnyRole("admin_piattaforma", "admin_locale")
+                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei/*/iscrizioni"))
+                .authenticated()
+                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/tornei/**"))
+                .permitAll()
 
                 // Everything else requires a valid JWT Token
                 .anyExchange()

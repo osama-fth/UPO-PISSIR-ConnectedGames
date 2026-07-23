@@ -1,5 +1,6 @@
 package com.connectedgames.core.service;
 
+import com.connectedgames.core.dto.PartitaDetailResponse;
 import com.connectedgames.core.dto.PartitaSyncInput;
 import com.connectedgames.core.dto.SyncResultResponse;
 import com.connectedgames.core.dto.SyncResultResponse.SyncFailure;
@@ -9,6 +10,7 @@ import com.connectedgames.core.entity.Partita;
 import com.connectedgames.core.entity.Torneo;
 import com.connectedgames.core.entity.Utente;
 import com.connectedgames.core.exception.DuplicatePartitaException;
+import com.connectedgames.core.exception.ResourceNotFoundException;
 import com.connectedgames.core.repository.InstallazioneGiocoRepository;
 import com.connectedgames.core.repository.LocaleRepository;
 import com.connectedgames.core.repository.PartitaRepository;
@@ -21,6 +23,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +53,10 @@ public class PartitaService {
         this.torneoRepo = torneoRepo;
     }
 
+    // ================================================================
+    // Sincronizzazione bulk (esistente, con auto-registrazione utente)
+    // ================================================================
+
     @Transactional
     public SyncResultResponse sincronizzaPartite(String localeId, List<PartitaSyncInput> partite) {
         List<UUID> salvate = new ArrayList<>();
@@ -69,15 +79,15 @@ public class PartitaService {
                     .orElseThrow(() -> new IllegalArgumentException("Locale non trovato: " + input.localeId()));
                 partita.setLocale(locale);
 
+                // Auto-registrazione giocatore 1
                 if (input.giocatore1Id() != null) {
-                    Utente g1 = utenteRepo.findById(input.giocatore1Id())
-                        .orElse(null);
+                    Utente g1 = trovaORegistraUtente(input.giocatore1Id(), input.giocatore1Username());
                     partita.setGiocatore1(g1);
                 }
 
+                // Auto-registrazione giocatore 2
                 if (input.giocatore2Id() != null) {
-                    Utente g2 = utenteRepo.findById(input.giocatore2Id())
-                        .orElse(null);
+                    Utente g2 = trovaORegistraUtente(input.giocatore2Id(), input.giocatore2Username());
                     partita.setGiocatore2(g2);
                 }
 
@@ -88,8 +98,29 @@ public class PartitaService {
                 partita.setDataSincronizzazione(OffsetDateTime.now());
 
                 if (input.torneoId() != null) {
-                    Optional<Torneo> torneo = torneoRepo.findById(input.torneoId());
-                    torneo.ifPresent(partita::setTorneo);
+                    Optional<Torneo> torneoOpt = torneoRepo.findById(input.torneoId());
+                    if (torneoOpt.isPresent()) {
+                        Torneo torneo = torneoOpt.get();
+                        OffsetDateTime now = OffsetDateTime.now();
+
+                        // 1. Validazione finestra temporale
+                        boolean inTime = !now.isBefore(torneo.getDataInizio()) && !now.isAfter(torneo.getDataFine());
+                        
+                        // 2. Validazione iscrizione giocatori
+                        long iscritti = partitaRepo.countIscrizioniByTorneoIdAndGiocatoriId(torneo.getId(), input.giocatore1Id(), input.giocatore2Id());
+                        boolean bothEnrolled = (iscritti == 2);
+                        
+                        // Se gioca con l'ospite (id nullo), non può essere classificato
+                        if (input.giocatore1Id() == null || input.giocatore2Id() == null) {
+                            bothEnrolled = false;
+                        }
+
+                        if (inTime && bothEnrolled) {
+                            partita.setTorneo(torneo);
+                        } else {
+                            log.warn("Partita {} declassata in amichevole. Validazione torneo fallita (inTime={}, bothEnrolled={})", input.id(), inTime, bothEnrolled);
+                        }
+                    }
                 }
 
                 partitaRepo.save(partita);
@@ -106,5 +137,78 @@ public class PartitaService {
         }
 
         return SyncResultResponse.of(salvate, fallite);
+    }
+
+    /**
+     * Cerca un utente per ID (keycloak sub). Se non trovato, lo registra
+     * automaticamente con l'username fornito dall'Edge.
+     * Questo meccanismo garantisce che tutti i giocatori che giocano
+     * almeno una partita siano censiti in platform_db.utente.
+     */
+    private Utente trovaORegistraUtente(UUID keycloakSub, String username) {
+        Optional<Utente> existing = utenteRepo.findById(keycloakSub);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        // Utente non presente in platform_db → auto-registrazione
+        Utente nuovo = new Utente();
+        nuovo.setId(keycloakSub);
+        nuovo.setUsername(username != null ? username : "user_" + keycloakSub.toString().substring(0, 8));
+        nuovo.setEmail(null); // Email non disponibile dal payload, resta in Keycloak
+        nuovo.setDataRegistrazione(OffsetDateTime.now());
+
+        Utente salvato = utenteRepo.saveAndFlush(nuovo);
+        log.info("Utente {} ({}) auto-registrato in platform_db", salvato.getUsername(), salvato.getId());
+        return salvato;
+    }
+
+    // ================================================================
+    // Nuove API — Lista e dettaglio partite (Fase 3)
+    // ================================================================
+
+    /**
+     * Recupera tutte le partite con paginazione e filtri opzionali.
+     */
+    @Transactional(readOnly = true)
+    public Page<PartitaDetailResponse> getPartite(String localeId, String giocoId, UUID giocatoreId,
+                                                   int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dataFine"));
+
+        Page<Partita> partite;
+
+        if (giocatoreId != null) {
+            partite = partitaRepo.findByGiocatoreId(giocatoreId, pageable);
+        } else if (localeId != null && giocoId != null) {
+            partite = partitaRepo.findByLocaleIdAndGiocoId(localeId, giocoId, pageable);
+        } else if (localeId != null) {
+            partite = partitaRepo.findByLocaleId(localeId, pageable);
+        } else if (giocoId != null) {
+            partite = partitaRepo.findByGiocoId(giocoId, pageable);
+        } else {
+            partite = partitaRepo.findAll(pageable);
+        }
+
+        return partite.map(PartitaDetailResponse::from);
+    }
+
+    /**
+     * Recupera il dettaglio di una singola partita per ID.
+     */
+    @Transactional(readOnly = true)
+    public PartitaDetailResponse getPartitaById(UUID partitaId) {
+        Partita partita = partitaRepo.findById(partitaId)
+            .orElseThrow(() -> new ResourceNotFoundException("Partita", partitaId.toString()));
+        return PartitaDetailResponse.from(partita);
+    }
+
+    /**
+     * Recupera le partite giocate da un utente specifico.
+     */
+    @Transactional(readOnly = true)
+    public Page<PartitaDetailResponse> getPartiteByUtente(UUID utenteId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dataFine"));
+        return partitaRepo.findByGiocatoreId(utenteId, pageable)
+            .map(PartitaDetailResponse::from);
     }
 }

@@ -1,8 +1,12 @@
 package com.connectedgames.statistiche.service;
 
 import com.connectedgames.statistiche.dto.StatisticheGlobaliResponse;
+import com.connectedgames.statistiche.dto.StatisticheLocaleResponse;
+import com.connectedgames.statistiche.dto.StatisticheUtenteResponse;
 import com.connectedgames.statistiche.repository.StatisticheRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 public class StatisticheBackendService {
@@ -20,5 +24,13 @@ public class StatisticheBackendService {
                 statisticheRepository.getLocaliPiuAttivi(5),
                 statisticheRepository.getGiochiPiuUtilizzati(5)
         );
+    }
+
+    public StatisticheLocaleResponse getStatistichePerLocale(String localeId) {
+        return statisticheRepository.getStatistichePerLocale(localeId);
+    }
+
+    public StatisticheUtenteResponse getStatistichePerUtente(UUID utenteId) {
+        return statisticheRepository.getStatistichePerUtente(utenteId);
     }
 }

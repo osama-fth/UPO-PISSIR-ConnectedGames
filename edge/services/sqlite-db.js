@@ -34,11 +34,14 @@ function initDatabase() {
             locale_id TEXT NOT NULL,
             gioco_id TEXT NOT NULL,
             giocatore_1_id TEXT,
+            giocatore_1_username TEXT,
             giocatore_2_id TEXT,
+            giocatore_2_username TEXT,
             punteggio_1 INTEGER NOT NULL DEFAULT 0,
             punteggio_2 INTEGER NOT NULL DEFAULT 0,
             data_inizio TEXT NOT NULL,
             data_fine TEXT NOT NULL,
+            torneo_id TEXT,
             sincronizzata INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
@@ -62,9 +65,10 @@ function initDatabase() {
 function salvaPartita(partita) {
     const stmt = db.prepare(`
         INSERT INTO partite_buffer 
-            (id, installazione_id, locale_id, gioco_id, giocatore_1_id, giocatore_2_id, 
-             punteggio_1, punteggio_2, data_inizio, data_fine)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, installazione_id, locale_id, gioco_id, 
+             giocatore_1_id, giocatore_1_username, giocatore_2_id, giocatore_2_username, 
+             punteggio_1, punteggio_2, data_inizio, data_fine, torneo_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -73,11 +77,14 @@ function salvaPartita(partita) {
         partita.localeId,
         partita.giocoId,
         partita.giocatore1Id || null,
+        partita.giocatore1Username || null,
         partita.giocatore2Id || null,
+        partita.giocatore2Username || null,
         partita.punteggio1,
         partita.punteggio2,
         partita.dataInizio,
-        partita.dataFine
+        partita.dataFine,
+        partita.torneoId || null
     );
 
     console.log(`[SQLite ${LOCALE_ID}] Partita ${partita.id} salvata nel buffer`);

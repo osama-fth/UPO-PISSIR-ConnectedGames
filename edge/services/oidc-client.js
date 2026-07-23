@@ -204,7 +204,9 @@ function getUserInfoFromToken(tokenSet) {
         }
     }
 
-    const roles = claims.realm_roles || claims.realm_access?.roles || accessRoles;
+    const allRoles = claims.realm_roles || claims.realm_access?.roles || accessRoles;
+    const validRoles = ['admin_piattaforma', 'admin_locale', 'giocatore'];
+    const roles = allRoles.filter(role => validRoles.includes(role));
 
     return {
         id: claims.sub,

@@ -64,12 +64,14 @@ async function sincronizzaAdesso(accessToken) {
             installazioneId: p.installazione_id,
             localeId: p.locale_id,
             giocatore1Id: p.giocatore_1_id || null,
+            giocatore1Username: p.giocatore_1_username || null,
             giocatore2Id: p.giocatore_2_id || null,
+            giocatore2Username: p.giocatore_2_username || null,
             punteggio1: p.punteggio_1,
             punteggio2: p.punteggio_2,
             dataInizio: p.data_inizio,
             dataFine: p.data_fine,
-            torneoId: null // Tornei non implementati in questa fase
+            torneoId: p.torneo_id || null
         }));
 
         // 3. POST bulk verso il Server Centrale

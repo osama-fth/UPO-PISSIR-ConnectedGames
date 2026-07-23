@@ -18,7 +18,7 @@ public class Utente {
     @Column(name = "username", length = 100, nullable = false, unique = true)
     private String username;
 
-    @Column(name = "email", length = 150, nullable = false, unique = true)
+    @Column(name = "email", length = 150, unique = true)
     private String email;
 
     @Column(name = "data_registrazione", nullable = false)

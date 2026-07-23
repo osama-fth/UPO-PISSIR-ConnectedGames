@@ -34,9 +34,10 @@ const INSTALLAZIONI = {
  * @param {string} giocoId - 'calciobalilla' o 'freccette'
  * @param {Object} giocatore1 - { id, username }
  * @param {Object} giocatore2 - { id, username }
+ * @param {string} [torneoId] - UUID opzionale del torneo
  * @returns {Object} Lo stato iniziale della partita
  */
-function creaPartita(giocoId, giocatore1, giocatore2) {
+function creaPartita(giocoId, giocatore1, giocatore2, torneoId = null) {
     const matchId = uuidv4();
     const installazioneId = INSTALLAZIONI[LOCALE_ID]?.[giocoId];
 
@@ -49,6 +50,7 @@ function creaPartita(giocoId, giocatore1, giocatore2) {
         giocoId,
         installazioneId,
         localeId: LOCALE_ID,
+        torneoId,
         giocatore1: { id: giocatore1.id, username: giocatore1.username },
         giocatore2: { id: giocatore2.id, username: giocatore2.username },
         stato: 'IN_CORSO',
@@ -234,11 +236,14 @@ function terminaPartita(match) {
                 localeId: match.localeId,
                 giocoId: match.giocoId,
                 giocatore1Id: match.giocatore1.id,
+                giocatore1Username: match.giocatore1.username,
                 giocatore2Id: match.giocatore2.id,
+                giocatore2Username: match.giocatore2.username,
                 punteggio1: punteggio1Finale,
                 punteggio2: punteggio2Finale,
                 dataInizio: match.dataInizio,
-                dataFine: match.dataFine
+                dataFine: match.dataFine,
+                torneoId: match.torneoId
             });
         } catch (err) {
             console.error(`[GameEngine ${LOCALE_ID}] Errore salvataggio SQLite:`, err.message);

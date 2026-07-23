@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partite - Connected Games</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background-color: #f8f9fa; margin: 0; padding: 0; }
+        .main-content { margin-left: 250px; padding: 2rem; min-height: calc(100vh - 56px); }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="d-flex">
+    <div th:replace="~{fragments/sidebar :: sidebar('partite')}"></div>
+
+    <div class="main-content flex-grow-1">
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="fw-bold"><i class="bi bi-joystick text-primary"></i> Partite</h2>
+                <p class="text-muted">Elenco globale di tutte le partite registrate.</p>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="partiteTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Data</th>
+                            <th>Locale</th>
+                            <th>Gioco</th>
+                            <th>Giocatore 1</th>
+                            <th>Giocatore 2</th>
+                            <th>Torneo</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6" class="text-center py-4">Caricamento partite in corso...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const token = "[[${jwtToken}]]";
+        fetch('/api/v1/partite?size=100', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector("#partiteTable tbody");
+                tbody.innerHTML = "";
+                if(!data.content || data.content.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Nessuna partita trovata.</td></tr>';
+                    return;
+                }
+                data.content.forEach(p => {
+                    const tr = document.createElement("tr");
+                    const date = p.dataInizio ? new Date(p.dataInizio).toLocaleString() : 'N/A';
+                    
+                    const g1 = p.giocatore1Username || 'Ospite';
+                    const g2 = p.giocatore2Username || 'Ospite';
+                    
+                    const score1 = p.punteggio1;
+                    const score2 = p.punteggio2;
+                    
+                    let g1Html = `${g1} <span class="badge ${score1 > score2 ? 'bg-success' : 'bg-secondary'}">${score1}</span>`;
+                    let g2Html = `<span class="badge ${score2 > score1 ? 'bg-success' : 'bg-secondary'}">${score2}</span> ${g2}`;
+
+                    const torneo = p.torneoId ? `<span class="badge bg-warning text-dark"><i class="bi bi-trophy"></i> Sì</span>` : `<span class="text-muted">-</span>`;
+
+                    tr.innerHTML = `
+                        <td>${date}</td>
+                        <td>${p.localeNome || p.localeId}</td>
+                        <td class="text-capitalize">${p.giocoNome || p.giocoId}</td>
+                        <td>${g1Html}</td>
+                        <td>${g2Html}</td>
+                        <td>${torneo}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                document.querySelector("#partiteTable tbody").innerHTML = '<tr><td colspan="6" class="text-center text-danger">Errore nel caricamento delle partite.</td></tr>';
+            });
+    });
+</script>
+</body>
+</html>

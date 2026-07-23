@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tornei - Connected Games</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background-color: #f8f9fa; margin: 0; padding: 0; }
+        .main-content { margin-left: 250px; padding: 2rem; min-height: calc(100vh - 56px); }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="d-flex">
+    <div th:replace="~{fragments/sidebar :: sidebar('tornei')}"></div>
+
+    <div class="main-content flex-grow-1">
+        <div class="row mb-4 align-items-center">
+            <div class="col">
+                <h2 class="fw-bold"><i class="bi bi-trophy text-warning"></i> Tornei</h2>
+                <p class="text-muted">Elenco dei tornei e classifiche in tempo reale.</p>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="torneiTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Nome Torneo</th>
+                            <th>Gioco</th>
+                            <th>Stato</th>
+                            <th>Inizio</th>
+                            <th>Fine</th>
+                            <th>Azioni</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6" class="text-center py-4">Caricamento tornei in corso...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Classifica -->
+<div class="modal fade" id="classificaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="bi bi-list-ol"></i> Classifica: <span id="modalTorneoNome"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalError" class="alert alert-danger d-none"></div>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="classificaTable">
+                        <thead>
+                            <tr>
+                                <th>Posizione</th>
+                                <th>Giocatore</th>
+                                <th>Partite Giocate</th>
+                                <th>Metrica/Punteggio</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const token = "[[${jwtToken}]]";
+        fetch('/api/v1/tornei', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector("#torneiTable tbody");
+                tbody.innerHTML = "";
+                if(data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Nessun torneo trovato.</td></tr>';
+                    return;
+                }
+                data.forEach(t => {
+                    const tr = document.createElement("tr");
+                    const dataInizio = t.dataInizio ? new Date(t.dataInizio).toLocaleDateString() : 'N/A';
+                    const dataFine = t.dataFine ? new Date(t.dataFine).toLocaleDateString() : 'N/A';
+                    
+                    const badgeClass = t.stato === 'ATTIVO' ? 'bg-success' : 'bg-secondary';
+
+                    tr.innerHTML = `
+                        <td class="fw-bold">${t.nome}</td>
+                        <td class="text-capitalize">${t.giocoNome || t.tipoGioco || 'N/A'}</td>
+                        <td><span class="badge ${badgeClass}">${t.stato}</span></td>
+                        <td>${dataInizio}</td>
+                        <td>${dataFine}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-warning text-dark" onclick="showClassifica('${t.id}', '${t.nome}')">
+                                <i class="bi bi-trophy"></i> Classifica
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                document.querySelector("#torneiTable tbody").innerHTML = '<tr><td colspan="6" class="text-center text-danger">Errore nel caricamento dei tornei.</td></tr>';
+            });
+    });
+
+    const classificaModal = new bootstrap.Modal(document.getElementById('classificaModal'));
+    window.showClassifica = (id, nome) => {
+        document.getElementById('modalTorneoNome').textContent = nome;
+        document.getElementById('modalError').classList.add('d-none');
+        const tbody = document.querySelector("#classificaTable tbody");
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Caricamento classifica...</td></tr>';
+        
+        classificaModal.show();
+
+        const token = "[[${jwtToken}]]";
+        fetch(`/api/v1/tornei/${id}/classifica`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+            .then(res => res.json())
+            .then(data => {
+                tbody.innerHTML = "";
+                if(!data.classifica || data.classifica.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nessun dato in classifica.</td></tr>';
+                    return;
+                }
+                data.classifica.forEach(row => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><strong>${row.posizione}</strong></td>
+                        <td>${row.username}</td>
+                        <td>${row.partiteGiocate}</td>
+                        <td><span class="badge bg-primary fs-6">${row.metricaClassifica}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                tbody.innerHTML = "";
+                document.getElementById('modalError').classList.remove('d-none');
+                document.getElementById('modalError').textContent = "Impossibile caricare la classifica.";
+            });
+    };
+</script>
+</body>
+</html>

@@ -117,6 +117,7 @@ public class AuthController {
                     session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
                     
                     session.setAttribute("idToken", idToken);
+                    session.setAttribute("accessToken", accessToken);
                 }
             }
         } catch (Exception e) {

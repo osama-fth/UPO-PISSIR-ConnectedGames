@@ -36,10 +36,12 @@ CREATE TABLE IF NOT EXISTS platform_db.locale (
 );
 
 -- Tabella UTENTE (anagrafica di business, nessuna password)
+-- L'email è nullable: gli utenti vengono auto-registrati al primo sync
+-- con solo keycloak_sub (id) e username. L'email resta in Keycloak.
 CREATE TABLE IF NOT EXISTS platform_db.utente (
     id UUID PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
+    email VARCHAR(150) UNIQUE,
     data_registrazione TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
@@ -81,6 +83,14 @@ CREATE TABLE IF NOT EXISTS platform_db.torneo_locale (
     torneo_id UUID REFERENCES platform_db.torneo(id) ON DELETE CASCADE NOT NULL,
     locale_id VARCHAR(100) REFERENCES platform_db.locale(id) ON DELETE CASCADE NOT NULL,
     PRIMARY KEY (torneo_id, locale_id)
+);
+
+-- Tabella ISCRIZIONE_TORNEO (iscrizione esplicita giocatore a torneo)
+CREATE TABLE IF NOT EXISTS platform_db.iscrizione_torneo (
+    torneo_id UUID REFERENCES platform_db.torneo(id) ON DELETE CASCADE NOT NULL,
+    utente_id UUID REFERENCES platform_db.utente(id) ON DELETE CASCADE NOT NULL,
+    data_iscrizione TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (torneo_id, utente_id)
 );
 
 -- Tabella PARTITA
@@ -146,3 +156,23 @@ INSERT INTO platform_db.installazione_gioco (id, gioco_id, locale_id, stato_atti
     ('freccette-1', 'freccette', 'BAR_BELVEDERE', 'ATTIVO'),
     ('calciobalilla-2', 'calciobalilla', 'SALA_GIOCHI_ROMA', 'ATTIVO'),
     ('freccette-2', 'freccette', 'SALA_GIOCHI_ROMA', 'ATTIVO');
+
+-- Tornei di esempio
+INSERT INTO platform_db.torneo (id, nome, gioco_id, stato, data_inizio, data_fine) VALUES
+    ('b0000000-0000-0000-0000-000000000001', 'Torneo Estivo Calciobalilla 2026', 'calciobalilla', 'ATTIVO',
+     '2026-07-01T00:00:00Z', '2026-08-31T23:59:59Z'),
+    ('b0000000-0000-0000-0000-000000000002', 'Torneo Freccette Primavera 2026', 'freccette', 'CONCLUSO',
+     '2026-04-01T00:00:00Z', '2026-06-30T23:59:59Z');
+
+-- Associazioni torneo-locale
+INSERT INTO platform_db.torneo_locale (torneo_id, locale_id) VALUES
+    ('b0000000-0000-0000-0000-000000000001', 'BAR_BELVEDERE'),
+    ('b0000000-0000-0000-0000-000000000001', 'SALA_GIOCHI_ROMA'),
+    ('b0000000-0000-0000-0000-000000000002', 'BAR_BELVEDERE');
+
+-- Iscrizioni torneo (giocatori iscritti ai tornei)
+INSERT INTO platform_db.iscrizione_torneo (torneo_id, utente_id) VALUES
+    ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001'),
+    ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002'),
+    ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001'),
+    ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002');

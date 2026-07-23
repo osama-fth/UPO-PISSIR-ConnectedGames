@@ -36,6 +36,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - ./seed-demo.sql:/docker-entrypoint-initdb.d/z-seed-demo.sql:ro
     networks:
       - backend-tier
     healthcheck:
@@ -90,7 +91,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${JWT_ISSUER_URI}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:9080/realms/pissir-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/pissir-realm/protocol/openid-connect/certs
     networks:
       - backend-tier
     depends_on:
@@ -114,7 +116,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${JWT_ISSUER_URI}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:9080/realms/pissir-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/pissir-realm/protocol/openid-connect/certs
     networks:
       - backend-tier
     depends_on:
@@ -137,7 +140,8 @@ services:
       - "8081:8081"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${JWT_ISSUER_URI}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:9080/realms/pissir-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/pissir-realm/protocol/openid-connect/certs
       - PARTITA_SERVICE_URL=http://partita-service:8082
       - TORNEO_SERVICE_URL=http://torneo-service:8083
     networks:
@@ -295,6 +299,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KEYCLOAK_URL=http://localhost:${KEYCLOAK_HOST_PORT}/realms/pissir-realm
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:9080/realms/pissir-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/pissir-realm/protocol/openid-connect/certs
       - GATEWAY_URL=http://localhost:8081
     ports:
       - "${STATS_HOST_PORT}:8084"

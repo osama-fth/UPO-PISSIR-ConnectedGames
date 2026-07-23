@@ -28,7 +28,7 @@ const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'edge-client';
  */
 router.post('/start', async (req, res) => {
     try {
-        const { giocoId, player1Username, player1Password, player2Username, player2Password } = req.body;
+        const { giocoId, player1Username, player1Password, player2Username, player2Password, torneoId } = req.body;
 
         if (!giocoId || !['calciobalilla', 'freccette'].includes(giocoId)) {
             return res.status(400).render('error', {
@@ -75,8 +75,9 @@ router.post('/start', async (req, res) => {
             });
         }
 
-        // Crea la partita
-        const match = creaPartita(giocoId, giocatore1, giocatore2);
+        // Crea la partita (passando l'eventuale torneoId)
+        const selectedTorneo = torneoId ? torneoId : null;
+        const match = creaPartita(giocoId, giocatore1, giocatore2, selectedTorneo);
 
         // Redirect alla pagina di gioco
         return res.redirect(`/game/${match.id}`);

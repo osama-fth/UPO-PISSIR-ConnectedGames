@@ -219,6 +219,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=development
+      - TZ=Europe/Rome
       - PORT=3001
       - LOCALE_ID=BAR_BELVEDERE
       - EDGE_PUBLIC_URL=http://localhost:${EDGE1_HOST_PORT}
@@ -257,6 +258,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=development
+      - TZ=Europe/Rome
       - PORT=3002
       - LOCALE_ID=SALA_GIOCHI_ROMA
       - EDGE_PUBLIC_URL=http://localhost:${EDGE2_HOST_PORT}

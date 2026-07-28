@@ -75,11 +75,11 @@
             </div>
             <div>
                 <div class="text-muted text-sm" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Inizio</div>
-                <div style="font-weight: 600;"><%= new Date(match.dataInizio).toLocaleString('it-IT') %></div>
+                <div style="font-weight: 600;"><%= new Date(match.dataInizio).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) %></div>
             </div>
             <div>
                 <div class="text-muted text-sm" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Fine</div>
-                <div style="font-weight: 600;"><%= match.dataFine ? new Date(match.dataFine).toLocaleString('it-IT') : '—' %></div>
+                <div style="font-weight: 600;"><%= match.dataFine ? new Date(match.dataFine).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) : '—' %></div>
             </div>
         </div>
     </div>

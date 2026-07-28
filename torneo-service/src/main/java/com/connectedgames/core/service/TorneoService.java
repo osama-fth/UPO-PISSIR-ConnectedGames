@@ -137,8 +137,9 @@ public class TorneoService {
             throw new IllegalArgumentException("Utente già iscritto a questo torneo");
         }
 
-        if (!"ATTIVO".equals(calcolaStatoLazy(torneo))) {
-            throw new IllegalArgumentException("Il torneo non è attivo");
+        String stato = calcolaStatoLazy(torneo);
+        if ("CONCLUSO".equals(stato)) {
+            throw new IllegalArgumentException("Impossibile iscriversi: il torneo è già concluso");
         }
 
         IscrizioneTorneo iscrizione = new IscrizioneTorneo();

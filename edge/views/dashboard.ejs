@@ -75,6 +75,103 @@
     <% } %>
 </div>
 
+<% if (isAdmin) { %>
+    <!-- ============================================== -->
+    <!-- PANNELLO AMMINISTRATORE & SYNC PARTITE -->
+    <!-- ============================================== -->
+    <div class="card mb-3" style="border-top: 4px solid var(--warning); background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--warning);">
+                <% if (user.roles && user.roles.includes('admin_piattaforma')) { %>
+                    <i class="bi bi-globe"></i> Console Admin Piattaforma
+                <% } else { %>
+                    <i class="bi bi-gear"></i> Console Admin Locale
+                <% } %>
+            </h2>
+            <% if (user.roles && user.roles.includes('admin_piattaforma')) { %>
+                <span class="badge badge-danger">SUPER ADMIN</span>
+            <% } %>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid-3" style="gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="card" style="background: var(--bg-secondary); text-align: center;">
+                <div class="card-subtitle">PARTITE TOTALI</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-primary);"><%= stats.totalePartite %></div>
+            </div>
+            <div class="card" style="background: var(--bg-secondary); text-align: center;">
+                <div class="card-subtitle">IN CODA SYNC</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: <%= stats.inAttesaDiSync > 0 ? 'var(--warning)' : 'var(--success)' %>;">
+                    <%= stats.inAttesaDiSync %>
+                </div>
+            </div>
+            <div class="card" style="background: var(--bg-secondary); text-align: center;">
+                <div class="card-subtitle">SINCRONIZZATE</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: var(--success);"><%= stats.sincronizzate %></div>
+            </div>
+        </div>
+
+        <!-- Sync Action -->
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <button class="btn btn-warning" onclick="triggerSync()" id="btn-sync">
+                <i class="bi bi-arrow-repeat"></i> Sincronizza Ora
+            </button>
+            <span class="text-muted text-sm" style="align-self: center;" id="sync-status"></span>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- FORM CREAZIONE TORNEO (solo admin) -->
+    <!-- ============================================== -->
+    <div class="card mb-3" style="border-top: 4px solid var(--accent-secondary);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="font-size: 1.3rem; font-weight: 700;"><i class="bi bi-plus-circle text-success"></i> Crea Nuovo Torneo</h2>
+        </div>
+        <form id="form-crea-torneo" onsubmit="creaTorneo(event)">
+            <div class="grid-3" style="gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Nome Torneo</label>
+                    <input type="text" id="t-nome" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;" placeholder="es. Torneo Estivo 2026">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Gioco</label>
+                    <select id="t-gioco" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;">
+                        <option value="calciobalilla">Calciobalilla</option>
+                        <option value="freccette">Freccette</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Locali</label>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 400; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" name="localiIds" value="BAR_BELVEDERE" <%- localeId === 'BAR_BELVEDERE' ? 'checked' : '' %>> Bar Belvedere
+                        </label>
+                        <label style="font-size: 0.85rem; font-weight: 400; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" name="localiIds" value="SALA_GIOCHI_ROMA" <%- localeId === 'SALA_GIOCHI_ROMA' ? 'checked' : '' %>> Sala Giochi Roma
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="grid-3" style="gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data e Ora Inizio</label>
+                    <input type="datetime-local" id="t-inizio" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); color-scheme: dark; font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data e Ora Fine</label>
+                    <input type="datetime-local" id="t-fine" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); color-scheme: dark; font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button type="submit" class="btn btn-success" style="width: 100%;">
+                        <i class="bi bi-plus-circle"></i> Crea Torneo
+                    </button>
+                </div>
+            </div>
+            <div id="crea-torneo-alert" class="alert d-none" style="font-size: 0.9rem;"></div>
+        </form>
+    </div>
+<% } %>
+
 <% if (!isAdmin && !user.isGuest && playerStats) { %>
     <!-- ============================================== -->
     <!-- STATISTICHE GIOCATORE -->
@@ -195,102 +292,6 @@
 </div>
 
 <% if (isAdmin) { %>
-    <!-- ============================================== -->
-    <!-- PANNELLO AMMINISTRATORE -->
-    <!-- ============================================== -->
-    <div class="card mb-3" style="border-top: 4px solid var(--warning); background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--warning);">
-                <% if (user.roles && user.roles.includes('admin_piattaforma')) { %>
-                    <i class="bi bi-globe"></i> Console Admin Piattaforma
-                <% } else { %>
-                    <i class="bi bi-gear"></i> Console Admin Locale
-                <% } %>
-            </h2>
-            <% if (user.roles && user.roles.includes('admin_piattaforma')) { %>
-                <span class="badge badge-danger">SUPER ADMIN</span>
-            <% } %>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="grid-3" style="gap: 1rem; margin-bottom: 1.5rem;">
-            <div class="card" style="background: var(--bg-secondary); text-align: center;">
-                <div class="card-subtitle">PARTITE TOTALI</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-primary);"><%= stats.totalePartite %></div>
-            </div>
-            <div class="card" style="background: var(--bg-secondary); text-align: center;">
-                <div class="card-subtitle">IN CODA SYNC</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: <%= stats.inAttesaDiSync > 0 ? 'var(--warning)' : 'var(--success)' %>;">
-                    <%= stats.inAttesaDiSync %>
-                </div>
-            </div>
-            <div class="card" style="background: var(--bg-secondary); text-align: center;">
-                <div class="card-subtitle">SINCRONIZZATE</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: var(--success);"><%= stats.sincronizzate %></div>
-            </div>
-        </div>
-
-        <!-- Sync Action -->
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-            <button class="btn btn-warning" onclick="triggerSync()" id="btn-sync">
-                <i class="bi bi-arrow-repeat"></i> Sincronizza Ora
-            </button>
-            <span class="text-muted text-sm" style="align-self: center;" id="sync-status"></span>
-        </div>
-    </div>
-
-    <!-- ============================================== -->
-    <!-- FORM CREAZIONE TORNEO (solo admin) -->
-    <!-- ============================================== -->
-    <div class="card mb-3" style="border-top: 4px solid var(--accent-secondary);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2 style="font-size: 1.3rem; font-weight: 700;"><i class="bi bi-plus-circle text-success"></i> Crea Nuovo Torneo</h2>
-        </div>
-        <form id="form-crea-torneo" onsubmit="creaTorneo(event)">
-            <div class="grid-3" style="gap: 1rem; margin-bottom: 1rem;">
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Nome Torneo</label>
-                    <input type="text" id="t-nome" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;" placeholder="es. Torneo Estivo 2026">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Gioco</label>
-                    <select id="t-gioco" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;">
-                        <option value="calciobalilla">Calciobalilla</option>
-                        <option value="freccette">Freccette</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Locali</label>
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 0.85rem; font-weight: 400; display: flex; align-items: center; gap: 6px;">
-                            <input type="checkbox" name="localiIds" value="BAR_BELVEDERE" <%- localeId === 'BAR_BELVEDERE' ? 'checked' : '' %>> Bar Belvedere
-                        </label>
-                        <label style="font-size: 0.85rem; font-weight: 400; display: flex; align-items: center; gap: 6px;">
-                            <input type="checkbox" name="localiIds" value="SALA_GIOCHI_ROMA" <%- localeId === 'SALA_GIOCHI_ROMA' ? 'checked' : '' %>> Sala Giochi Roma
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="grid-3" style="gap: 1rem; margin-bottom: 1rem;">
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data e Ora Inizio</label>
-                    <input type="datetime-local" id="t-inizio" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); color-scheme: dark; font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data e Ora Fine</label>
-                    <input type="datetime-local" id="t-fine" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); color-scheme: dark; font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
-                </div>
-                <div style="display: flex; align-items: flex-end;">
-                    <button type="submit" class="btn btn-success" style="width: 100%;">
-                        <i class="bi bi-plus-circle"></i> Crea Torneo
-                    </button>
-                </div>
-            </div>
-            <div id="crea-torneo-alert" class="alert d-none" style="font-size: 0.9rem;"></div>
-        </form>
-    </div>
-
-    <!-- Statistiche per Gioco -->
     <% if (stats.perGioco && stats.perGioco.length > 0) { %>
     <div class="card mb-3" style="border-top: 4px solid var(--accent-secondary);">
         <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.25rem;"><i class="bi bi-controller"></i> Statistiche per Gioco</h2>

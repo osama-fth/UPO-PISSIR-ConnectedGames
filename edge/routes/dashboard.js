@@ -31,29 +31,23 @@ const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gat
  */
 function formatRomeIso(dateStr) {
     if (!dateStr) return null;
-    // Interpreta l'input come mezzanotte ora locale di Roma
-    const date = new Date(dateStr);
-    // Calcola l'offset di Roma per questa data usando Intl
-    const romeFormatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Europe/Rome',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: false
-    });
-    // Ottieni l'offset in minuti per la data specificata
-    const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
-    const romeDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
-    const offsetMinutes = (romeDate - utcDate) / 60000;
-    const offsetSign = offsetMinutes >= 0 ? '+' : '-';
-    const offsetH = String(Math.floor(Math.abs(offsetMinutes) / 60)).padStart(2, '0');
-    const offsetM = String(Math.abs(offsetMinutes) % 60).padStart(2, '0');
-    const offset = `${offsetSign}${offsetH}:${offsetM}`;
+    let cleanStr = dateStr.trim();
+    if (cleanStr.length === 10) {
+        cleanStr += 'T00:00:00';
+    } else if (cleanStr.length === 16) {
+        cleanStr += ':00';
+    }
+    // Calcolo dell'offset di Roma per la data specificata (CEST +02:00 / CET +01:00)
+    const testDate = new Date(cleanStr + 'Z');
+    const year = testDate.getUTCFullYear();
+    const mar31 = new Date(Date.UTC(year, 2, 31));
+    const startDst = new Date(Date.UTC(year, 2, 31 - mar31.getUTCDay(), 1, 0, 0));
+    const oct31 = new Date(Date.UTC(year, 9, 31));
+    const endDst = new Date(Date.UTC(year, 9, 31 - oct31.getUTCDay(), 1, 0, 0));
+    const isDst = testDate >= startDst && testDate < endDst;
+    const offset = isDst ? '+02:00' : '+01:00';
 
-    // Formatta la data in ISO locale
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}T00:00:00${offset}`;
+    return `${cleanStr}${offset}`;
 }
 
 /**

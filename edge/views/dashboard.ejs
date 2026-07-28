@@ -149,9 +149,9 @@
                     </div>
                     <p class="text-muted text-sm mb-2"><i class="bi bi-controller"></i> <%= t.tipoGioco %></p>
                     <p class="text-muted text-sm mb-2" style="font-size: 0.75rem;">
-                        <i class="bi bi-calendar"></i>
-                        <%= new Date(t.dataInizio).toLocaleDateString('it-IT') %> →
-                        <%= new Date(t.dataFine).toLocaleDateString('it-IT') %>
+                        <i class="bi bi-calendar-event"></i>
+                        <%= new Date(t.dataInizio).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) %> →
+                        <%= new Date(t.dataFine).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) %>
                     </p>
 
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem;">
@@ -273,12 +273,12 @@
             </div>
             <div class="grid-3" style="gap: 1rem; margin-bottom: 1rem;">
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data Inizio</label>
-                    <input type="date" id="t-inizio" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data e Ora Inizio</label>
+                    <input type="datetime-local" id="t-inizio" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); color-scheme: dark; font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data Fine</label>
-                    <input type="date" id="t-fine" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data e Ora Fine</label>
+                    <input type="datetime-local" id="t-fine" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); color-scheme: dark; font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
                 </div>
                 <div style="display: flex; align-items: flex-end;">
                     <button type="submit" class="btn btn-success" style="width: 100%;">

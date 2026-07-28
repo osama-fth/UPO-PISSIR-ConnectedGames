@@ -20,6 +20,26 @@ const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'edge-client';
 
 
 
+const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
+
+/**
+ * Helper: recupera i tornei attivi pertinenti per questo locale
+ */
+async function getTorneiAttiviLocale() {
+    try {
+        const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei`);
+        if (!response.ok) return [];
+        const all = await response.json();
+        return all.filter(t =>
+            t.stato === 'ATTIVO' &&
+            (!t.localiIds || t.localiIds.length === 0 || t.localiIds.includes(LOCALE_ID))
+        );
+    } catch (err) {
+        console.error(`[Game ${LOCALE_ID}] Errore fetch tornei:`, err.message);
+        return [];
+    }
+}
+
 /**
  * POST /game/start
  * Avvia una nuova partita. Richiede l'autenticazione di 2 giocatori.
@@ -41,6 +61,7 @@ router.post('/start', async (req, res) => {
             return res.status(400).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
+                torneiAttivi: await getTorneiAttiviLocale(),
                 error: 'Inserisci le credenziali per entrambi i giocatori.'
             });
         }
@@ -53,6 +74,7 @@ router.post('/start', async (req, res) => {
             return res.status(401).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
+                torneiAttivi: await getTorneiAttiviLocale(),
                 error: `Autenticazione fallita: ${authErr.message}`
             });
         }
@@ -62,6 +84,7 @@ router.post('/start', async (req, res) => {
             return res.status(403).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
+                torneiAttivi: await getTorneiAttiviLocale(),
                 error: 'Entrambi gli utenti devono avere il ruolo "giocatore" per poter giocare.'
             });
         }
@@ -71,7 +94,7 @@ router.post('/start', async (req, res) => {
             return res.status(400).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
-                torneiAttivi: [],
+                torneiAttivi: await getTorneiAttiviLocale(),
                 error: 'I due giocatori devono essere diversi.'
             });
         }
@@ -80,7 +103,6 @@ router.post('/start', async (req, res) => {
         const selectedTorneo = torneoId ? torneoId : null;
         if (selectedTorneo) {
             try {
-                const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
                 const iscRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${selectedTorneo}/iscrizioni`);
                 if (!iscRes.ok) {
                     throw new Error(`Impossibile verificare le iscrizioni al torneo (status ${iscRes.status})`);
@@ -98,7 +120,7 @@ router.post('/start', async (req, res) => {
                     return res.status(403).render('game-select', {
                         title: 'Seleziona Gioco',
                         localeId: LOCALE_ID,
-                        torneiAttivi: [],
+                        torneiAttivi: await getTorneiAttiviLocale(),
                         error: `Impossibile avviare la partita: "${nonIscritto}" non è iscritto a questo torneo. Entrambi i giocatori devono essere iscritti al torneo selezionato.`
                     });
                 }
@@ -106,7 +128,7 @@ router.post('/start', async (req, res) => {
                 return res.status(500).render('game-select', {
                     title: 'Seleziona Gioco',
                     localeId: LOCALE_ID,
-                    torneiAttivi: [],
+                    torneiAttivi: await getTorneiAttiviLocale(),
                     error: `Errore verifica iscrizioni torneo: ${torneoErr.message}`
                 });
             }

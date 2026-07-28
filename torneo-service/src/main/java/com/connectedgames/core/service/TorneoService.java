@@ -54,6 +54,7 @@ public class TorneoService {
         this.iscrizioneRepo = iscrizioneRepo;
     }
 
+    @Transactional(readOnly = true)
     public List<TorneoResponse> getTornei(String stato) {
         List<Torneo> tornei;
 
@@ -74,7 +75,10 @@ public class TorneoService {
                 t.getGioco().getNome().toUpperCase(),
                 calcolaStatoLazy(t),
                 t.getDataInizio(),
-                t.getDataFine()
+                t.getDataFine(),
+                t.getLocali() != null
+                    ? t.getLocali().stream().map(l -> l.getId()).toList()
+                    : List.of()
             ))
             .toList();
     }
@@ -83,9 +87,12 @@ public class TorneoService {
     public TorneoResponse getTorneoById(UUID torneoId) {
         Torneo t = torneoRepo.findById(torneoId)
             .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
+        List<String> localiIds = t.getLocali() != null
+            ? t.getLocali().stream().map(l -> l.getId()).toList()
+            : List.of();
         return TorneoResponse.of(
             t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(),
-            calcolaStatoLazy(t), t.getDataInizio(), t.getDataFine()
+            calcolaStatoLazy(t), t.getDataInizio(), t.getDataFine(), localiIds
         );
     }
 
@@ -112,7 +119,10 @@ public class TorneoService {
 
         torneoRepo.save(t);
 
-        return TorneoResponse.of(t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(), t.getStato(), t.getDataInizio(), t.getDataFine());
+        List<String> localiIds = t.getLocali() != null
+            ? t.getLocali().stream().map(l -> l.getId()).toList()
+            : List.of();
+        return TorneoResponse.of(t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(), t.getStato(), t.getDataInizio(), t.getDataFine(), localiIds);
     }
 
     @Transactional
@@ -208,6 +218,35 @@ public class TorneoService {
             torneo.getNome(),
             classificaFinale
         );
+    }
+
+    @Transactional
+    public void cancellaTorneo(UUID torneoId) {
+        Torneo torneo = torneoRepo.findById(torneoId)
+            .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
+
+        if (!"NON_ATTIVO".equals(calcolaStatoLazy(torneo))) {
+            throw new IllegalStateException("Il torneo può essere cancellato solo se non è ancora iniziato");
+        }
+
+        iscrizioneRepo.deleteByTorneoId(torneoId);
+        torneoRepo.delete(torneo);
+    }
+
+    @Transactional
+    public void disiscriviGiocatore(UUID torneoId, UUID utenteId) {
+        Torneo torneo = torneoRepo.findById(torneoId)
+            .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
+
+        if (!"NON_ATTIVO".equals(calcolaStatoLazy(torneo))) {
+            throw new IllegalStateException("La disiscrizione è possibile solo se il torneo non è ancora iniziato");
+        }
+
+        if (!iscrizioneRepo.existsByIdTorneoIdAndIdUtenteId(torneoId, utenteId)) {
+            throw new ResourceNotFoundException("Iscrizione", utenteId.toString());
+        }
+
+        iscrizioneRepo.deleteByTorneoIdAndUtenteId(torneoId, utenteId);
     }
 
     private String calcolaStatoLazy(Torneo torneo) {

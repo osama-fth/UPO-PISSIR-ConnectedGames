@@ -53,13 +53,20 @@ public class SecurityConfig {
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/api/v1/statistiche/**"))
                 .hasRole("admin_piattaforma")
                 
-                // Tornei API
+                // Tornei API — GET pubbliche
+                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/tornei", "/api/v1/tornei/**"))
+                .permitAll()
+                // POST crea torneo: solo admin
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei"))
                 .hasAnyRole("admin_piattaforma", "admin_locale")
+                // DELETE torneo: solo admin
+                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tornei/*"))
+                .hasAnyRole("admin_piattaforma", "admin_locale")
+                // POST iscrizione e DELETE disiscrizione: utente autenticato
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei/*/iscrizioni"))
                 .authenticated()
-                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/tornei/**"))
-                .permitAll()
+                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tornei/*/iscrizioni/*"))
+                .authenticated()
 
                 // Everything else requires a valid JWT Token
                 .anyExchange()

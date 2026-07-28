@@ -133,26 +133,61 @@
     </div>
 
     <!-- ============================================== -->
-    <!-- TORNEI ATTIVI -->
+    <!-- TORNEI -->
     <!-- ============================================== -->
     <div class="card mb-3" style="border-top: 4px solid var(--accent-primary);">
-        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem;"><i class="bi bi-trophy text-warning"></i> Tornei Attivi</h2>
-        
-        <% if (typeof torneiAttivi !== 'undefined' && torneiAttivi.length > 0) { %>
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem;"><i class="bi bi-trophy text-warning"></i> Tornei</h2>
+
+        <% if (typeof tornei !== 'undefined' && tornei.length > 0) { %>
             <div class="grid-3" style="gap: 1rem;">
-                <% torneiAttivi.forEach(function(t) { %>
-                    <div class="card" style="background: var(--bg-secondary); text-align: center;">
-                        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;"><%= t.nome %></h3>
-                        <p class="text-muted text-sm mb-2"><%= t.giocoNome %></p>
-                        <button class="btn btn-sm btn-outline-primary w-100" onclick="iscrivitiTorneo('<%= t.id %>')">
-                            <i class="bi bi-plus-circle"></i> Iscriviti
-                        </button>
+                <% tornei.forEach(function(t) { %>
+                    <div class="card" style="background: var(--bg-secondary);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <h3 style="font-size: 1rem; font-weight: 700; margin: 0;"><%= t.nome %></h3>
+                            <span class="badge <%= t.stato === 'ATTIVO' ? 'badge-success' : t.stato === 'NON_ATTIVO' ? 'badge-info' : 'badge-guest' %>" style="font-size: 0.7rem;"><%= t.stato %></span>
+                        </div>
+                        <p class="text-muted text-sm mb-2"><i class="bi bi-controller"></i> <%= t.tipoGioco %></p>
+                        <p class="text-muted text-sm mb-2" style="font-size: 0.75rem;">
+                            <i class="bi bi-calendar"></i>
+                            <%= new Date(t.dataInizio).toLocaleDateString('it-IT') %> →
+                            <%= new Date(t.dataFine).toLocaleDateString('it-IT') %>
+                        </p>
+
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem;">
+                            <!-- Stato iscrizione -->
+                            <% if (t.isIscritto) { %>
+                                <span class="badge badge-success" style="text-align: center; padding: 6px;"><i class="bi bi-check-circle"></i> Sei già iscritto</span>
+                            <% } else if (t.stato === 'ATTIVO') { %>
+                                <button class="btn btn-sm btn-primary" onclick="iscrivitiTorneo('<%= t.id %>')">
+                                    <i class="bi bi-plus-circle"></i> Iscriviti
+                                </button>
+                            <% } %>
+
+                            <!-- Disiscrizione (giocatore iscritto, torneo non ancora iniziato) -->
+                            <% if (t.canUnenroll) { %>
+                                <button class="btn btn-sm btn-outline-warning" onclick="disiscriviTorneo('<%= t.id %>')">
+                                    <i class="bi bi-x-circle"></i> Disiscriviti
+                                </button>
+                            <% } %>
+
+                            <!-- Cancella torneo (solo admin, non ancora iniziato) -->
+                            <% if (t.canCancel) { %>
+                                <button class="btn btn-sm btn-danger" onclick="cancellaTorneo('<%= t.id %>', '<%= t.nome %>')">
+                                    <i class="bi bi-trash"></i> Cancella Torneo
+                                </button>
+                            <% } %>
+
+                            <!-- Dettaglio/Classifica -->
+                            <button class="btn btn-sm" style="background: var(--bg-primary); color: var(--text-secondary); border: 1px solid var(--border-color);" onclick="mostraDettaglio('<%= t.id %>', '<%= t.nome %>')">
+                                <i class="bi bi-bar-chart-line"></i> Dettaglio &amp; Classifica
+                            </button>
+                        </div>
                     </div>
                 <% }); %>
             </div>
-            <div id="iscrizione-alert" class="alert d-none mt-3" style="font-size: 0.9rem;"></div>
+            <div id="torneo-alert" class="alert d-none mt-3" style="font-size: 0.9rem;"></div>
         <% } else { %>
-            <p class="text-muted">Nessun torneo attivo al momento.</p>
+            <p class="text-muted">Nessun torneo disponibile per questo locale.</p>
         <% } %>
     </div>
 <% } %>
@@ -200,6 +235,57 @@
             </button>
             <span class="text-muted text-sm" style="align-self: center;" id="sync-status"></span>
         </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- FORM CREAZIONE TORNEO (solo admin) -->
+    <!-- ============================================== -->
+    <div class="card mb-3" style="border-top: 4px solid var(--accent-secondary);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="font-size: 1.3rem; font-weight: 700;"><i class="bi bi-plus-circle text-success"></i> Crea Nuovo Torneo</h2>
+        </div>
+        <form id="form-crea-torneo" onsubmit="creaTorneo(event)">
+            <div class="grid-3" style="gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Nome Torneo</label>
+                    <input type="text" id="t-nome" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;" placeholder="es. Torneo Estivo 2026">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Gioco</label>
+                    <select id="t-gioco" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;">
+                        <option value="calciobalilla">Calciobalilla</option>
+                        <option value="freccette">Freccette</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Locali</label>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 400; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" name="localiIds" value="BAR_BELVEDERE" <%- localeId === 'BAR_BELVEDERE' ? 'checked' : '' %>> Bar Belvedere
+                        </label>
+                        <label style="font-size: 0.85rem; font-weight: 400; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" name="localiIds" value="SALA_GIOCHI_ROMA" <%- localeId === 'SALA_GIOCHI_ROMA' ? 'checked' : '' %>> Sala Giochi Roma
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="grid-3" style="gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data Inizio</label>
+                    <input type="date" id="t-inizio" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Data Fine</label>
+                    <input type="date" id="t-fine" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;">
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button type="submit" class="btn btn-success" style="width: 100%;">
+                        <i class="bi bi-plus-circle"></i> Crea Torneo
+                    </button>
+                </div>
+            </div>
+            <div id="crea-torneo-alert" class="alert d-none" style="font-size: 0.9rem;"></div>
+        </form>
     </div>
 
     <!-- Statistiche per Gioco -->
@@ -288,22 +374,46 @@
 
 <% } %>
 
+<!-- ============================================== -->
+<!-- MODALE DETTAGLIO TORNEO -->
+<!-- ============================================== -->
+<div id="modal-dettaglio" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background: var(--bg-card); border-radius: var(--radius-lg); padding: 2rem; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; position:relative;">
+        <button onclick="chiudiModal()" style="position:absolute; top:1rem; right:1rem; background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;"><i class="bi bi-x-lg"></i></button>
+        <h2 id="modal-titolo" style="font-size:1.4rem; font-weight:800; margin-bottom:1.5rem;"><i class="bi bi-trophy text-warning"></i> Dettaglio Torneo</h2>
+
+        <!-- Tabs -->
+        <div style="display:flex; gap:0; margin-bottom:1rem; border-bottom:1px solid var(--border-color);">
+            <button id="tab-classifica" onclick="switchTab('classifica')" style="padding:8px 16px; border:none; background:none; font-weight:700; color:var(--accent-primary); border-bottom:2px solid var(--accent-primary); cursor:pointer; font-family:'Inter',sans-serif;">Classifica</button>
+            <button id="tab-iscritti" onclick="switchTab('iscritti')" style="padding:8px 16px; border:none; background:none; font-weight:700; color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif;">Giocatori Iscritti</button>
+        </div>
+
+        <!-- Pannello Classifica -->
+        <div id="panel-classifica">
+            <div id="classifica-body"><p class="text-muted">Caricamento...</p></div>
+        </div>
+        <!-- Pannello Iscritti -->
+        <div id="panel-iscritti" style="display:none;">
+            <div id="iscritti-body"><p class="text-muted">Caricamento...</p></div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // ---- Sync ----
     async function triggerSync() {
         const btn = document.getElementById('btn-sync');
         const status = document.getElementById('sync-status');
         btn.disabled = true;
         btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sincronizzazione...';
         status.textContent = '';
-
         try {
             const res = await fetch('/sync/now', { method: 'POST' });
             const data = await res.json();
-
             if (res.ok) {
                 status.innerHTML = '<i class="bi bi-check-circle"></i> ' + (data.salvate || 0) + ' partite sincronizzate';
                 status.style.color = 'var(--success)';
-                setTimeout(function() { window.location.reload(); }, 2000);
+                setTimeout(() => window.location.reload(), 2000);
             } else {
                 status.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + (data.error || 'Errore');
                 status.style.color = 'var(--warning)';
@@ -317,12 +427,18 @@
         }
     }
 
+    // ---- Helper alert ----
+    function showTorneoAlert(msg, type) {
+        const alertBox = document.getElementById('torneo-alert');
+        if (!alertBox) return;
+        alertBox.className = 'alert alert-' + type + ' mt-3';
+        alertBox.innerHTML = msg;
+        alertBox.classList.remove('d-none');
+        setTimeout(() => window.location.reload(), 2500);
+    }
+
+    // ---- Iscrizione ----
     async function iscrivitiTorneo(torneoId) {
-        const alertBox = document.getElementById('iscrizione-alert');
-        alertBox.className = 'alert mt-3';
-        alertBox.innerHTML = '<i class="bi bi-hourglass"></i> Iscrizione in corso...';
-        alertBox.style.backgroundColor = 'var(--bg-card)';
-        
         try {
             const res = await fetch('/dashboard/tornei/iscriviti', {
                 method: 'POST',
@@ -330,19 +446,167 @@
                 body: JSON.stringify({ torneoId })
             });
             const data = await res.json();
-            
             if (res.ok) {
-                alertBox.className = 'alert alert-success mt-3';
-                alertBox.innerHTML = '<i class="bi bi-check-circle"></i> Iscrizione completata con successo!';
+                showTorneoAlert('<i class="bi bi-check-circle"></i> Iscrizione completata!', 'success');
             } else {
-                alertBox.className = 'alert alert-warning mt-3';
+                showTorneoAlert('<i class="bi bi-exclamation-triangle"></i> ' + (data.error || 'Errore'), 'warning');
+            }
+        } catch (err) {
+            showTorneoAlert('<i class="bi bi-x-circle"></i> Errore di rete: ' + err.message, 'danger');
+        }
+    }
+
+    // ---- Disiscrizione ----
+    async function disiscriviTorneo(torneoId) {
+        if (!confirm('Sei sicuro di volerti disiscrivere da questo torneo?')) return;
+        try {
+            const res = await fetch('/dashboard/tornei/disiscrivi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ torneoId })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showTorneoAlert('<i class="bi bi-check-circle"></i> Disiscrizione completata!', 'success');
+            } else {
+                showTorneoAlert('<i class="bi bi-exclamation-triangle"></i> ' + (data.error || 'Errore'), 'warning');
+            }
+        } catch (err) {
+            showTorneoAlert('<i class="bi bi-x-circle"></i> Errore di rete: ' + err.message, 'danger');
+        }
+    }
+
+    // ---- Cancella Torneo ----
+    async function cancellaTorneo(torneoId, nome) {
+        if (!confirm('Sei sicuro di voler CANCELLARE il torneo "' + nome + '"? L\'operazione è irreversibile.')) return;
+        try {
+            const res = await fetch('/dashboard/tornei/cancella', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ torneoId })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showTorneoAlert('<i class="bi bi-check-circle"></i> Torneo cancellato!', 'success');
+            } else {
+                showTorneoAlert('<i class="bi bi-exclamation-triangle"></i> ' + (data.error || 'Errore'), 'warning');
+            }
+        } catch (err) {
+            showTorneoAlert('<i class="bi bi-x-circle"></i> Errore di rete: ' + err.message, 'danger');
+        }
+    }
+
+    // ---- Crea Torneo ----
+    async function creaTorneo(e) {
+        e.preventDefault();
+        const alertBox = document.getElementById('crea-torneo-alert');
+        alertBox.className = 'alert mt-2';
+        alertBox.innerHTML = '<i class="bi bi-hourglass"></i> Creazione in corso...';
+        alertBox.classList.remove('d-none');
+
+        const nome = document.getElementById('t-nome').value;
+        const giocoId = document.getElementById('t-gioco').value;
+        const dataInizio = document.getElementById('t-inizio').value;
+        const dataFine = document.getElementById('t-fine').value;
+        const localiCheckboxes = document.querySelectorAll('input[name="localiIds"]:checked');
+        const localiIds = Array.from(localiCheckboxes).map(cb => cb.value);
+
+        if (localiIds.length === 0) {
+            alertBox.className = 'alert alert-warning mt-2';
+            alertBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Seleziona almeno un locale.';
+            return;
+        }
+
+        try {
+            const res = await fetch('/dashboard/tornei/crea', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome, giocoId, dataInizio, dataFine, localiIds })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alertBox.className = 'alert alert-success mt-2';
+                alertBox.innerHTML = '<i class="bi bi-check-circle"></i> Torneo creato con successo!';
+                document.getElementById('form-crea-torneo').reset();
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                alertBox.className = 'alert alert-warning mt-2';
                 alertBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + (data.error || 'Errore');
             }
         } catch (err) {
-            alertBox.className = 'alert alert-danger mt-3';
+            alertBox.className = 'alert alert-danger mt-2';
             alertBox.innerHTML = '<i class="bi bi-x-circle"></i> Errore di rete: ' + err.message;
         }
     }
+
+    // ---- Modale Dettaglio ----
+    function chiudiModal() {
+        document.getElementById('modal-dettaglio').style.display = 'none';
+    }
+
+    function switchTab(tab) {
+        document.getElementById('panel-classifica').style.display = tab === 'classifica' ? '' : 'none';
+        document.getElementById('panel-iscritti').style.display = tab === 'iscritti' ? '' : 'none';
+        document.getElementById('tab-classifica').style.color = tab === 'classifica' ? 'var(--accent-primary)' : 'var(--text-muted)';
+        document.getElementById('tab-classifica').style.borderBottom = tab === 'classifica' ? '2px solid var(--accent-primary)' : 'none';
+        document.getElementById('tab-iscritti').style.color = tab === 'iscritti' ? 'var(--accent-primary)' : 'var(--text-muted)';
+        document.getElementById('tab-iscritti').style.borderBottom = tab === 'iscritti' ? '2px solid var(--accent-primary)' : 'none';
+    }
+
+    async function mostraDettaglio(torneoId, nome) {
+        document.getElementById('modal-titolo').innerHTML = '<i class="bi bi-trophy text-warning"></i> ' + nome;
+        document.getElementById('classifica-body').innerHTML = '<p class="text-muted">Caricamento...</p>';
+        document.getElementById('iscritti-body').innerHTML = '<p class="text-muted">Caricamento...</p>';
+        document.getElementById('modal-dettaglio').style.display = 'flex';
+        switchTab('classifica');
+
+        try {
+            const res = await fetch('/dashboard/tornei/' + torneoId + '/dettaglio');
+            const data = await res.json();
+
+            // Classifica
+            if (data.classifica && data.classifica.length > 0) {
+                let html = '<table style="width:100%; border-collapse:collapse;">';
+                html += '<thead><tr style="border-bottom:2px solid var(--border-color); color:var(--text-secondary); font-size:0.8rem;">';
+                html += '<th style="padding:8px;">Pos.</th><th style="padding:8px;">Giocatore</th><th style="padding:8px;">Giocate</th><th style="padding:8px;">Vinte</th><th style="padding:8px;">% Vittorie</th></tr></thead><tbody>';
+                data.classifica.forEach(v => {
+                    html += '<tr style="border-bottom:1px solid var(--border-color);">';
+                    html += '<td style="padding:8px; font-weight:800; color:var(--accent-primary);">#' + v.posizione + '</td>';
+                    html += '<td style="padding:8px; font-weight:600;">' + v.giocatoreNome + '</td>';
+                    html += '<td style="padding:8px; text-align:center;">' + v.partiteGiocate + '</td>';
+                    html += '<td style="padding:8px; text-align:center; color:var(--success);">' + v.partiteVinte + '</td>';
+                    html += '<td style="padding:8px; text-align:center; font-weight:700;">' + v.percentualeVittorie + '%</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+                document.getElementById('classifica-body').innerHTML = html;
+            } else {
+                document.getElementById('classifica-body').innerHTML = '<p class="text-muted">Nessuna partita giocata in questo torneo ancora.</p>';
+            }
+
+            // Iscritti
+            if (data.iscritti && data.iscritti.length > 0) {
+                let html = '<ul style="list-style:none; padding:0; margin:0;">';
+                data.iscritti.forEach(i => {
+                    html += '<li style="padding:8px 0; border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:8px;">';
+                    html += '<i class="bi bi-person-circle" style="color:var(--accent-primary);"></i> <span style="font-weight:600;">' + i.utenteUsername + '</span>';
+                    html += '<span class="text-muted text-sm">iscritto il ' + new Date(i.dataIscrizione).toLocaleDateString("it-IT") + '</span>';
+                    html += '</li>';
+                });
+                html += '</ul>';
+                document.getElementById('iscritti-body').innerHTML = html;
+            } else {
+                document.getElementById('iscritti-body').innerHTML = '<p class="text-muted">Nessun giocatore iscritto.</p>';
+            }
+        } catch (err) {
+            document.getElementById('classifica-body').innerHTML = '<p class="text-muted">Errore caricamento: ' + err.message + '</p>';
+        }
+    }
+
+    // Chiudi modale cliccando fuori
+    document.getElementById('modal-dettaglio').addEventListener('click', function(e) {
+        if (e.target === this) chiudiModal();
+    });
 </script>
 
 <%- include('partials/footer') %>

@@ -6,13 +6,16 @@ import com.connectedgames.core.service.TorneoService;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
 import com.connectedgames.core.dto.TorneoCreateInput;
 import com.connectedgames.core.dto.IscrizioneInput;
@@ -67,5 +70,19 @@ public class TorneoController {
             @PathVariable UUID torneoId) {
         List<IscrizioneTorneoResponse> response = torneoService.getIscritti(torneoId);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{torneoId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancellaTorneo(@PathVariable UUID torneoId) {
+        torneoService.cancellaTorneo(torneoId);
+    }
+
+    @DeleteMapping("/{torneoId}/iscrizioni/{utenteId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void disiscriviGiocatore(
+            @PathVariable UUID torneoId,
+            @PathVariable UUID utenteId) {
+        torneoService.disiscriviGiocatore(torneoId, utenteId);
     }
 }

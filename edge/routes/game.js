@@ -71,12 +71,48 @@ router.post('/start', async (req, res) => {
             return res.status(400).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
+                torneiAttivi: [],
                 error: 'I due giocatori devono essere diversi.'
             });
         }
 
-        // Crea la partita (passando l'eventuale torneoId)
+        // Se è stata selezionata una partita di torneo, verifica che ENTRAMBI i giocatori siano iscritti
         const selectedTorneo = torneoId ? torneoId : null;
+        if (selectedTorneo) {
+            try {
+                const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
+                const iscRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${selectedTorneo}/iscrizioni`);
+                if (!iscRes.ok) {
+                    throw new Error(`Impossibile verificare le iscrizioni al torneo (status ${iscRes.status})`);
+                }
+                const iscrizioni = await iscRes.json();
+                const iscrittiIds = iscrizioni.map(i => i.utenteId);
+
+                const p1Iscritto = iscrittiIds.includes(giocatore1.id);
+                const p2Iscritto = iscrittiIds.includes(giocatore2.id);
+
+                if (!p1Iscritto || !p2Iscritto) {
+                    const nonIscritto = !p1Iscritto
+                        ? giocatore1.username
+                        : giocatore2.username;
+                    return res.status(403).render('game-select', {
+                        title: 'Seleziona Gioco',
+                        localeId: LOCALE_ID,
+                        torneiAttivi: [],
+                        error: `Impossibile avviare la partita: "${nonIscritto}" non è iscritto a questo torneo. Entrambi i giocatori devono essere iscritti al torneo selezionato.`
+                    });
+                }
+            } catch (torneoErr) {
+                return res.status(500).render('game-select', {
+                    title: 'Seleziona Gioco',
+                    localeId: LOCALE_ID,
+                    torneiAttivi: [],
+                    error: `Errore verifica iscrizioni torneo: ${torneoErr.message}`
+                });
+            }
+        }
+
+        // Crea la partita
         const match = creaPartita(giocoId, giocatore1, giocatore2, selectedTorneo);
 
         // Redirect alla pagina di gioco

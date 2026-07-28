@@ -79,19 +79,20 @@
     <div id="panel-auth" class="card" style="border-top: 4px solid var(--accent-primary); margin-bottom: 2rem; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h2 style="font-size: 1.3rem; font-weight: 700; margin: 0;"><i class="bi bi-people"></i> Autenticazione Giocatori</h2>
-            
-            <!-- Selezione Torneo -->
-            <% if (typeof torneiAttivi !== 'undefined' && torneiAttivi.length > 0) { %>
-            <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-primary); padding: 5px 15px; border-radius: var(--radius-sm); border: 1px solid var(--accent-primary);">
+        </div>
+
+        <%# Selezione Torneo — nascosta finché non si sceglie un gioco %>
+        <div id="torneo-select-wrapper" style="display: none; margin-bottom: 1.5rem; padding: 12px 16px; background: var(--bg-primary); border-radius: var(--radius-sm); border: 1px solid var(--accent-primary);">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <i class="bi bi-trophy text-warning"></i>
-                <select name="torneoId" id="torneoId" style="background: transparent; border: none; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
-                    <option value="">Nessun torneo (Amichevole)</option>
-                    <% torneiAttivi.forEach(t => { %>
-                        <option value="<%= t.id %>" data-gioco="<%= t.giocoNome.toLowerCase() %>"><%= t.nome %> (<%= t.giocoNome %>)</option>
-                    <% }); %>
+                <label for="torneoId" style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); white-space: nowrap;">Modalità:</label>
+                <select name="torneoId" id="torneoId" style="flex: 1; background: transparent; border: none; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
+                    <option value="">Amichevole (non conta in classifica)</option>
+                    <% if (typeof torneiAttivi !== 'undefined') { torneiAttivi.forEach(function(t) { %>
+                        <option value="<%= t.id %>" data-gioco="<%= t.tipoGioco.toLowerCase() %>"><%= t.nome %> (<%= t.tipoGioco %>)</option>
+                    <% }); } %>
                 </select>
             </div>
-            <% } %>
         </div>
 
         <div class="grid-3" style="gap: 1.5rem;">
@@ -233,7 +234,7 @@
 </style>
 
 <script>
-    // Game card selection
+    // Game card selection — aggiorna anche la select tornei
     document.querySelectorAll('.game-card').forEach(card => {
         const radio = card.querySelector('input[type="radio"]');
         card.addEventListener('click', () => {
@@ -242,6 +243,33 @@
             radio.checked = true;
             // Nascondi errore validazione se visibile
             document.getElementById('game-validation-error').style.display = 'none';
+
+            // Filtra e mostra la select tornei per questo gioco
+            const selectedGame = radio.value; // 'calciobalilla' o 'freccette'
+            const torneoWrapper = document.getElementById('torneo-select-wrapper');
+            const torneoSelect = document.getElementById('torneoId');
+
+            if (torneoWrapper && torneoSelect) {
+                let hasTornei = false;
+                Array.from(torneoSelect.options).forEach(opt => {
+                    if (opt.value === '') {
+                        // Opzione "Amichevole" sempre visibile
+                        opt.style.display = '';
+                    } else {
+                        const optGame = opt.getAttribute('data-gioco');
+                        if (optGame === selectedGame) {
+                            opt.style.display = '';
+                            hasTornei = true;
+                        } else {
+                            opt.style.display = 'none';
+                            // Se era selezionato un torneo del gioco sbagliato, resetta
+                            if (opt.selected) torneoSelect.value = '';
+                        }
+                    }
+                });
+                // Mostra il wrapper solo se ci sono tornei per questo gioco
+                torneoWrapper.style.display = hasTornei ? 'block' : 'none';
+            }
         });
     });
 

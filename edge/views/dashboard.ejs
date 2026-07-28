@@ -350,8 +350,8 @@
                                 <% } %>
                                 <%= p.gioco_id %>
                             </td>
-                            <td style="padding: 10px;"><%= p.giocatore_1_id ? p.giocatore_1_id.substring(0, 8) + '...' : 'Ospite' %></td>
-                            <td style="padding: 10px;"><%= p.giocatore_2_id ? p.giocatore_2_id.substring(0, 8) + '...' : 'Ospite' %></td>
+                            <td style="padding: 10px; font-weight: 600;"><%= p.giocatore_1_username || (p.giocatore_1_id ? p.giocatore_1_id.substring(0, 8) + '...' : 'Ospite') %></td>
+                            <td style="padding: 10px; font-weight: 600;"><%= p.giocatore_2_username || (p.giocatore_2_id ? p.giocatore_2_id.substring(0, 8) + '...' : 'Ospite') %></td>
                             <td style="padding: 10px; font-weight: 700;"><%= p.punteggio_1 %> — <%= p.punteggio_2 %></td>
                             <td style="padding: 10px;" class="text-muted text-sm"><%= new Date(p.data_fine).toLocaleString('it-IT') %></td>
                             <td style="padding: 10px;">

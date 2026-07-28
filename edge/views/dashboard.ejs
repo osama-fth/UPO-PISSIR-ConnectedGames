@@ -131,30 +131,32 @@
             <% }); %>
         <% } %>
     </div>
+<% } %>
 
-    <!-- ============================================== -->
-    <!-- TORNEI -->
-    <!-- ============================================== -->
-    <div class="card mb-3" style="border-top: 4px solid var(--accent-primary);">
-        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem;"><i class="bi bi-trophy text-warning"></i> Tornei</h2>
+<!-- ============================================== -->
+<!-- TORNEI DISPONIBILI NEL LOCALE -->
+<!-- ============================================== -->
+<div class="card mb-3" style="border-top: 4px solid var(--accent-primary);">
+    <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem;"><i class="bi bi-trophy text-warning"></i> Tornei del Locale</h2>
 
-        <% if (typeof tornei !== 'undefined' && tornei.length > 0) { %>
-            <div class="grid-3" style="gap: 1rem;">
-                <% tornei.forEach(function(t) { %>
-                    <div class="card" style="background: var(--bg-secondary);">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                            <h3 style="font-size: 1rem; font-weight: 700; margin: 0;"><%= t.nome %></h3>
-                            <span class="badge <%= t.stato === 'ATTIVO' ? 'badge-success' : t.stato === 'NON_ATTIVO' ? 'badge-info' : 'badge-guest' %>" style="font-size: 0.7rem;"><%= t.stato %></span>
-                        </div>
-                        <p class="text-muted text-sm mb-2"><i class="bi bi-controller"></i> <%= t.tipoGioco %></p>
-                        <p class="text-muted text-sm mb-2" style="font-size: 0.75rem;">
-                            <i class="bi bi-calendar"></i>
-                            <%= new Date(t.dataInizio).toLocaleDateString('it-IT') %> →
-                            <%= new Date(t.dataFine).toLocaleDateString('it-IT') %>
-                        </p>
+    <% if (typeof tornei !== 'undefined' && tornei.length > 0) { %>
+        <div class="grid-3" style="gap: 1rem;">
+            <% tornei.forEach(function(t) { %>
+                <div class="card" style="background: var(--bg-secondary);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                        <h3 style="font-size: 1rem; font-weight: 700; margin: 0;"><%= t.nome %></h3>
+                        <span class="badge <%= t.stato === 'ATTIVO' ? 'badge-success' : t.stato === 'NON_ATTIVO' ? 'badge-info' : 'badge-guest' %>" style="font-size: 0.7rem;"><%= t.stato %></span>
+                    </div>
+                    <p class="text-muted text-sm mb-2"><i class="bi bi-controller"></i> <%= t.tipoGioco %></p>
+                    <p class="text-muted text-sm mb-2" style="font-size: 0.75rem;">
+                        <i class="bi bi-calendar"></i>
+                        <%= new Date(t.dataInizio).toLocaleDateString('it-IT') %> →
+                        <%= new Date(t.dataFine).toLocaleDateString('it-IT') %>
+                    </p>
 
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem;">
-                            <!-- Stato iscrizione -->
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem;">
+                        <!-- Stato iscrizione (solo per giocatori autenticati non admin) -->
+                        <% if (!isAdmin && !user.isGuest) { %>
                             <% if (t.isIscritto) { %>
                                 <span class="badge badge-success" style="text-align: center; padding: 6px;"><i class="bi bi-check-circle"></i> Sei già iscritto</span>
                             <% } else if (t.stato === 'ATTIVO') { %>
@@ -169,28 +171,28 @@
                                     <i class="bi bi-x-circle"></i> Disiscriviti
                                 </button>
                             <% } %>
+                        <% } %>
 
-                            <!-- Cancella torneo (solo admin, non ancora iniziato) -->
-                            <% if (t.canCancel) { %>
-                                <button class="btn btn-sm btn-danger" onclick="cancellaTorneo('<%= t.id %>', '<%= t.nome %>')">
-                                    <i class="bi bi-trash"></i> Cancella Torneo
-                                </button>
-                            <% } %>
-
-                            <!-- Dettaglio/Classifica -->
-                            <button class="btn btn-sm" style="background: var(--bg-primary); color: var(--text-secondary); border: 1px solid var(--border-color);" onclick="mostraDettaglio('<%= t.id %>', '<%= t.nome %>')">
-                                <i class="bi bi-bar-chart-line"></i> Dettaglio &amp; Classifica
+                        <!-- Cancella torneo (solo admin, non ancora iniziato) -->
+                        <% if (t.canCancel) { %>
+                            <button class="btn btn-sm btn-danger" onclick="cancellaTorneo('<%= t.id %>', '<%= t.nome %>')">
+                                <i class="bi bi-trash"></i> Cancella Torneo
                             </button>
-                        </div>
+                        <% } %>
+
+                        <!-- Dettaglio/Classifica (accessibile a tutti) -->
+                        <button class="btn btn-sm" style="background: var(--bg-primary); color: var(--text-secondary); border: 1px solid var(--border-color);" onclick="mostraDettaglio('<%= t.id %>', '<%= t.nome %>')">
+                            <i class="bi bi-bar-chart-line"></i> Dettaglio &amp; Classifica
+                        </button>
                     </div>
-                <% }); %>
-            </div>
-            <div id="torneo-alert" class="alert d-none mt-3" style="font-size: 0.9rem;"></div>
-        <% } else { %>
-            <p class="text-muted">Nessun torneo disponibile per questo locale.</p>
-        <% } %>
-    </div>
-<% } %>
+                </div>
+            <% }); %>
+        </div>
+        <div id="torneo-alert" class="alert d-none mt-3" style="font-size: 0.9rem;"></div>
+    <% } else { %>
+        <p class="text-muted">Nessun torneo disponibile per questo locale.</p>
+    <% } %>
+</div>
 
 <% if (isAdmin) { %>
     <!-- ============================================== -->

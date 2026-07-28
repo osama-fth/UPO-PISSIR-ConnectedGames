@@ -195,10 +195,10 @@ router.get('/dashboard', requireAuth, async (req, res) => {
 });
 
 /**
- * GET /dashboard/tornei/:torneoId/dettaglio
+ * GET /tornei/:torneoId/dettaglio e /dashboard/tornei/:torneoId/dettaglio
  * Dettaglio torneo: classifica + iscritti
  */
-router.get('/tornei/:torneoId/dettaglio', async (req, res) => {
+router.get(['/tornei/:torneoId/dettaglio', '/dashboard/tornei/:torneoId/dettaglio'], async (req, res) => {
     try {
         const { torneoId } = req.params;
         const [torneoRes, classificaRes, iscrittiRes] = await Promise.all([
@@ -222,10 +222,10 @@ router.get('/tornei/:torneoId/dettaglio', async (req, res) => {
 });
 
 /**
- * POST /dashboard/tornei/iscriviti
+ * POST /tornei/iscriviti e /dashboard/tornei/iscriviti
  * Iscrive l'utente corrente a un torneo.
  */
-router.post('/tornei/iscriviti', requireAuth, async (req, res) => {
+router.post(['/tornei/iscriviti', '/dashboard/tornei/iscriviti'], requireAuth, async (req, res) => {
     try {
         const { torneoId } = req.body;
         const utenteId = req.session.user.id;
@@ -251,10 +251,10 @@ router.post('/tornei/iscriviti', requireAuth, async (req, res) => {
 });
 
 /**
- * POST /dashboard/tornei/disiscrivi
+ * POST /tornei/disiscrivi e /dashboard/tornei/disiscrivi
  * Disiscrive l'utente corrente da un torneo.
  */
-router.post('/tornei/disiscrivi', requireAuth, async (req, res) => {
+router.post(['/tornei/disiscrivi', '/dashboard/tornei/disiscrivi'], requireAuth, async (req, res) => {
     try {
         const { torneoId } = req.body;
         const utenteId = req.session.user.id;
@@ -276,10 +276,10 @@ router.post('/tornei/disiscrivi', requireAuth, async (req, res) => {
 });
 
 /**
- * POST /dashboard/tornei/cancella
+ * POST /tornei/cancella e /dashboard/tornei/cancella
  * Cancella un torneo (solo admin, solo se NON_ATTIVO).
  */
-router.post('/tornei/cancella', requireAuth, requireAdminAccess, async (req, res) => {
+router.post(['/tornei/cancella', '/dashboard/tornei/cancella'], requireAuth, requireAdminAccess, async (req, res) => {
     try {
         const { torneoId } = req.body;
 
@@ -300,10 +300,10 @@ router.post('/tornei/cancella', requireAuth, requireAdminAccess, async (req, res
 });
 
 /**
- * POST /dashboard/tornei/crea
+ * POST /tornei/crea e /dashboard/tornei/crea
  * Crea un nuovo torneo (solo per Admin).
  */
-router.post('/tornei/crea', requireAuth, requireAdminAccess, async (req, res) => {
+router.post(['/tornei/crea', '/dashboard/tornei/crea'], requireAuth, requireAdminAccess, async (req, res) => {
     try {
         const { nome, giocoId, dataInizio, dataFine, localiIds } = req.body;
 

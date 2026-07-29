@@ -107,8 +107,8 @@
                         <td>${dataInizio}</td>
                         <td>${dataFine}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-warning text-dark" onclick="showClassifica('${t.id}', '${t.nome}')">
-                                <i class="bi bi-trophy"></i> Classifica
+                            <button class="btn btn-sm btn-warning text-dark fw-bold" onclick="showClassifica('${t.id}', '${t.nome}')">
+                                <i class="bi bi-trophy-fill me-1"></i> Classifica
                             </button>
                         </td>
                     `;
@@ -143,10 +143,10 @@
                 data.classifica.forEach(row => {
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
-                        <td><strong>${row.posizione}</strong></td>
-                        <td>${row.username}</td>
+                        <td><strong class="text-warning">#${row.posizione}</strong></td>
+                        <td class="fw-bold"><i class="bi bi-person-circle text-info me-1"></i> ${row.username}</td>
                         <td>${row.partiteGiocate}</td>
-                        <td><span class="badge bg-primary fs-6">${row.metricaClassifica}</span></td>
+                        <td><span class="badge bg-success fs-6">${row.metricaClassifica}</span></td>
                     `;
                     tbody.appendChild(tr);
                 });

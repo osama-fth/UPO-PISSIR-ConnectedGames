@@ -199,7 +199,10 @@ public class TorneoService {
         for (Map.Entry<String, Stat> entry : stats.entrySet()) {
             Stat s = entry.getValue();
             double perc = s.giocate > 0 ? (double) s.vinte / s.giocate * 100 : 0.0;
-            classifica.add(new VoceClassifica(0, entry.getKey(), s.giocate, s.vinte, Math.round(perc * 100.0) / 100.0));
+            double roundedPerc = Math.round(perc * 100.0) / 100.0;
+            String metrica = s.vinte + " vinte (" + Math.round(roundedPerc) + "%)";
+            String playerUsername = entry.getKey();
+            classifica.add(new VoceClassifica(0, playerUsername, s.giocate, s.vinte, roundedPerc, metrica));
         }
 
         // Ordina per percentuale vittorie decrescente, poi partite vinte, poi partite giocate
@@ -211,7 +214,7 @@ public class TorneoService {
         List<VoceClassifica> classificaFinale = new ArrayList<>();
         for (int i = 0; i < classifica.size(); i++) {
             VoceClassifica v = classifica.get(i);
-            classificaFinale.add(new VoceClassifica(i + 1, v.giocatoreNome(), v.partiteGiocate(), v.partiteVinte(), v.percentualeVittorie()));
+            classificaFinale.add(new VoceClassifica(i + 1, v.username(), v.partiteGiocate(), v.partiteVinte(), v.percentualeVittorie(), v.metricaClassifica()));
         }
 
         return ClassificaTorneoResponse.of(

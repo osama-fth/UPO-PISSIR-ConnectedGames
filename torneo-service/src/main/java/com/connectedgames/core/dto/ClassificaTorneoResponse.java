@@ -14,9 +14,10 @@ public record ClassificaTorneoResponse(
 
     public record VoceClassifica(
         int posizione,
-        String giocatoreNome,
+        String username,
         long partiteGiocate,
         int partiteVinte,
-        double percentualeVittorie
+        double percentualeVittorie,
+        String metricaClassifica
     ) {}
 }

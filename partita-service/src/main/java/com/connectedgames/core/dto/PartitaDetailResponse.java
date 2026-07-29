@@ -12,6 +12,7 @@ public record PartitaDetailResponse(
     String installazioneId,
     String localeId,
     String nomeLocale,
+    String giocoId,
     String nomeGioco,
     UUID giocatore1Id,
     String giocatore1Username,
@@ -28,11 +29,16 @@ public record PartitaDetailResponse(
 
     public static PartitaDetailResponse from(
             com.connectedgames.core.entity.Partita p) {
+        String giocoId = p.getInstallazione() != null && p.getInstallazione().getGioco() != null
+            ? p.getInstallazione().getGioco().getId()
+            : (p.getInstallazione() != null ? p.getInstallazione().getId().split("-")[0] : null);
+
         return new PartitaDetailResponse(
             p.getId(),
             p.getInstallazione() != null ? p.getInstallazione().getId() : null,
             p.getLocale() != null ? p.getLocale().getId() : null,
             p.getLocale() != null ? p.getLocale().getNome() : null,
+            giocoId,
             p.getInstallazione() != null && p.getInstallazione().getGioco() != null
                 ? p.getInstallazione().getGioco().getNome() : null,
             p.getGiocatore1() != null ? p.getGiocatore1().getId() : null,

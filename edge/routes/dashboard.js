@@ -8,6 +8,7 @@ const router = express.Router();
 const { requireAuth, requireAdminAccess, canAdminCurrentLocale } = require('../middleware/auth');
 const { getStatsLocale, getStatsGiocatore } = require('../services/sqlite-db');
 const { getActiveMatches } = require('../services/game-engine');
+const { directPasswordAuth } = require('../services/oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 
@@ -98,11 +99,95 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     const installazioni = INSTALLAZIONI[LOCALE_ID] || [];
     const activeGames = getActiveMatches();
 
-    let stats = { totalePartite: 0, inAttesaDiSync: 0, sincronizzate: 0, perGioco: [], ultimePartite: [] };
+    let localStats = { totalePartite: 0, inAttesaDiSync: 0, sincronizzate: 0, perGioco: [], ultimePartite: [] };
     try {
-        stats = getStatsLocale();
+        localStats = getStatsLocale();
     } catch (err) {
-        console.error(`[Dashboard ${LOCALE_ID}] Errore caricamento stats:`, err.message);
+        console.error(`[Dashboard ${LOCALE_ID}] Errore caricamento stats locali:`, err.message);
+    }
+
+    let stats = { ...localStats };
+
+    // Arricchisce le statistiche dell'Edge con le partite censite nel Cloud per questo locale
+    try {
+        let tokenToUse = req.session.tokenSet?.accessToken;
+        if (!tokenToUse) {
+            try {
+                const serviceUser = await directPasswordAuth('edge_sync_service', 'syncpassword');
+                tokenToUse = serviceUser.accessToken;
+            } catch (authErr) {
+                console.error(`[Dashboard ${LOCALE_ID}] Impossibile ottenere token per fetch partite centrali:`, authErr.message);
+            }
+        }
+
+        const headers = {};
+        if (tokenToUse) {
+            headers['Authorization'] = `Bearer ${tokenToUse}`;
+        }
+
+        const centralRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/partite?localeId=${LOCALE_ID}&page=0&size=100`, { headers });
+        if (centralRes.ok) {
+            const centralData = await centralRes.json();
+            const centralPartite = (centralData.content || []).map(p => {
+                let giocoIdNormalized = p.giocoId || (p.nomeGioco ? p.nomeGioco.toLowerCase() : 'calciobalilla');
+                return {
+                    id: p.id,
+                    installazione_id: p.installazioneId,
+                    locale_id: p.localeId,
+                    gioco_id: giocoIdNormalized,
+                    giocatore_1_id: p.giocatore1Id,
+                    giocatore_1_username: p.giocatore1Username,
+                    giocatore_2_id: p.giocatore2Id,
+                    giocatore_2_username: p.giocatore2Username,
+                    punteggio_1: p.punteggio1,
+                    punteggio_2: p.punteggio2,
+                    data_inizio: p.dataInizio,
+                    data_fine: p.dataFine,
+                    torneo_id: p.torneoId,
+                    sincronizzata: 1
+                };
+            });
+
+            // Unisci partite dal Cloud e partite locali non ancora sincronizzate
+            const localUnsynced = (localStats.ultimePartite || []).filter(p => !p.sincronizzata);
+            const mergedMap = new Map();
+
+            centralPartite.forEach(p => mergedMap.set(p.id, p));
+            localUnsynced.forEach(p => mergedMap.set(p.id, p));
+
+            const combinedPartite = Array.from(mergedMap.values()).sort(
+                (a, b) => new Date(b.data_fine) - new Date(a.data_fine)
+            );
+
+            // Aggregazioni per gioco
+            const giocoStatsMap = {};
+            combinedPartite.forEach(p => {
+                const gId = p.gioco_id || 'calciobalilla';
+                if (!giocoStatsMap[gId]) {
+                    giocoStatsMap[gId] = { gioco_id: gId, count: 0, sum_p1: 0, sum_p2: 0 };
+                }
+                giocoStatsMap[gId].count++;
+                giocoStatsMap[gId].sum_p1 += (p.punteggio_1 || 0);
+                giocoStatsMap[gId].sum_p2 += (p.punteggio_2 || 0);
+            });
+
+            const perGiocoAgg = Object.values(giocoStatsMap).map(g => ({
+                gioco_id: g.gioco_id,
+                count: g.count,
+                avg_p1: g.count > 0 ? g.sum_p1 / g.count : 0,
+                avg_p2: g.count > 0 ? g.sum_p2 / g.count : 0
+            }));
+
+            stats = {
+                totalePartite: combinedPartite.length,
+                inAttesaDiSync: localStats.inAttesaDiSync,
+                sincronizzate: centralData.totalElements,
+                perGioco: perGiocoAgg,
+                ultimePartite: combinedPartite.slice(0, 10)
+            };
+        }
+    } catch (errCentral) {
+        console.error(`[Dashboard ${LOCALE_ID}] Errore fetch partite centrali per locale:`, errCentral.message);
     }
 
     // Statistiche personali del giocatore

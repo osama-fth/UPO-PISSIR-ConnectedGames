@@ -82,8 +82,8 @@
 
                     tr.innerHTML = `
                         <td>${date}</td>
-                        <td>${p.localeNome || p.localeId}</td>
-                        <td class="text-capitalize">${p.giocoNome || p.giocoId}</td>
+                        <td>${p.nomeLocale || p.localeId || 'N/A'}</td>
+                        <td class="text-capitalize">${p.nomeGioco || p.giocoId || 'N/A'}</td>
                         <td>${g1Html}</td>
                         <td>${g2Html}</td>
                         <td>${torneo}</td>

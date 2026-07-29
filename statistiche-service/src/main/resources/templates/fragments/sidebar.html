@@ -1,32 +1,30 @@
-<div th:fragment="sidebar(activeTab)" class="bg-dark text-white h-100" style="min-height: calc(100vh - 56px); width: 250px; position: fixed; left: 0; z-index: 100;">
+<div th:fragment="sidebar(activeTab)" class="sidebar-container h-100" style="min-height: calc(100vh - 56px); width: 250px; position: fixed; left: 0; z-index: 100;">
     <div class="d-flex flex-column p-3 h-100">
         <ul class="nav nav-pills flex-column mb-auto">
             <li class="nav-item">
-                <a th:href="@{/dashboard}" class="nav-link text-white mb-2" th:classappend="${activeTab == 'dashboard'} ? 'active bg-primary' : ''">
+                <a th:href="@{/dashboard}" class="nav-link mb-2" th:classappend="${activeTab == 'dashboard'} ? 'active' : ''">
                     <i class="bi bi-graph-up-arrow me-2"></i> Dashboard
                 </a>
             </li>
             <li>
-                <a th:href="@{/utenti}" class="nav-link text-white mb-2" th:classappend="${activeTab == 'utenti'} ? 'active bg-primary' : ''">
+                <a th:href="@{/utenti}" class="nav-link mb-2" th:classappend="${activeTab == 'utenti'} ? 'active' : ''">
                     <i class="bi bi-people me-2"></i> Utenti
                 </a>
             </li>
             <li>
-                <a th:href="@{/partite}" class="nav-link text-white mb-2" th:classappend="${activeTab == 'partite'} ? 'active bg-primary' : ''">
+                <a th:href="@{/partite}" class="nav-link mb-2" th:classappend="${activeTab == 'partite'} ? 'active' : ''">
                     <i class="bi bi-joystick me-2"></i> Partite
                 </a>
             </li>
             <li>
-                <a th:href="@{/tornei}" class="nav-link text-white mb-2" th:classappend="${activeTab == 'tornei'} ? 'active bg-primary' : ''">
+                <a th:href="@{/tornei}" class="nav-link mb-2" th:classappend="${activeTab == 'tornei'} ? 'active' : ''">
                     <i class="bi bi-trophy me-2"></i> Tornei
                 </a>
             </li>
         </ul>
-        <hr>
-        <div class="dropdown">
-            <a href="#" class="d-flex align-items-center text-white text-decoration-none" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                <strong>Connected Games Platform</strong>
-            </a>
+        <hr style="border-color: var(--border-color);">
+        <div class="text-muted text-center" style="font-size: 0.75rem;">
+            <span class="fw-semibold text-uppercase" style="letter-spacing: 0.05em;">Central Platform v1.0</span>
         </div>
     </div>
 </div>

@@ -64,6 +64,11 @@ public class PartitaService {
 
         for (PartitaSyncInput input : partite) {
             try {
+                // Fix C4: Verifica che il localeId del payload corrisponda a quello del path della richiesta
+                if (localeId != null && !localeId.equalsIgnoreCase(input.localeId())) {
+                    throw new IllegalArgumentException("localeId del payload ('" + input.localeId() + "') non corrisponde a quello del path ('" + localeId + "')");
+                }
+
                 if (partitaRepo.existsById(input.id())) {
                     throw new DuplicatePartitaException(input.id());
                 }
@@ -144,6 +149,10 @@ public class PartitaService {
      * automaticamente con l'username fornito dall'Edge.
      * Questo meccanismo garantisce che tutti i giocatori che giocano
      * almeno una partita siano censiti in platform_db.utente.
+     * 
+     * NOTE (C4 Security Architecture):
+     * La protezione dell'endpoint da payload/UUID arbitrari viene garantita
+     * a monte al Service Gateway tramite il filtro TenantVerificationGatewayFilterFactory.
      */
     private Utente trovaORegistraUtente(UUID keycloakSub, String username) {
         Optional<Utente> existing = utenteRepo.findById(keycloakSub);

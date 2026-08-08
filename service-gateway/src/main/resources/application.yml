@@ -29,6 +29,7 @@ spring:
             - Path=/api/v1/locali/{localeId}/partite/sincronizza
             - Method=POST
           filters:
+            - TenantVerification
             - name: Retry
               args:
                 retries: 3
@@ -67,13 +68,13 @@ spring:
             - Path=/, /dashboard, /utenti, /partite, /tornei, /auth/**, /css/**, /js/**, /images/**
 
       # ============================================================
-      # GLOBAL CORS — Permette le chiamate dagli Edge Node
+      # GLOBAL CORS — Origini e metodi ristretti per sicurezza (M3)
       # ============================================================
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
-            allowedMethods: "GET, POST, PUT, DELETE, OPTIONS"
+            allowedOriginPatterns: "http://localhost:3001, http://localhost:3002, http://localhost:8081"
+            allowedMethods: "GET, POST, PUT, OPTIONS"
             allowedHeaders: "*"
             allowCredentials: false
 

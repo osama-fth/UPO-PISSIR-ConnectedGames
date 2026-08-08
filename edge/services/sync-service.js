@@ -17,6 +17,46 @@ const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
 const SYNC_INTERVAL_MS = 2 * 60 * 1000; // 2 minuti
 
+// Cache in-memory del token per il service account (Fix M2)
+let cachedServiceToken = null;
+let cachedServiceTokenExpiresAt = 0;
+
+/**
+ * Ottiene e riusa il token per edge_sync_service fino a scadenza (Fix M2).
+ */
+async function getServiceAccountToken() {
+    if (cachedServiceToken && Date.now() < cachedServiceTokenExpiresAt) {
+        console.log(`[Sync ${LOCALE_ID}] Riuso token service account in cache (scade tra ${Math.round((cachedServiceTokenExpiresAt - Date.now())/1000)}s)`);
+        return cachedServiceToken;
+    }
+
+    const serviceUser = process.env.SYNC_SERVICE_USER || 'edge_sync_service';
+    const servicePassword = process.env.SYNC_SERVICE_PASSWORD || 'syncpassword';
+
+    if (!process.env.SYNC_SERVICE_USER || !process.env.SYNC_SERVICE_PASSWORD) {
+        console.warn(`[Sync ${LOCALE_ID}] WARNING (M2): SYNC_SERVICE_USER / SYNC_SERVICE_PASSWORD non configurate nelle env vars. Utilizzo credenziali fallback.`);
+    }
+
+    console.log(`[Sync ${LOCALE_ID}] Richiesta nuovo token per service account '${serviceUser}'...`);
+    const serviceAuth = await directPasswordAuth(serviceUser, servicePassword);
+    cachedServiceToken = serviceAuth.accessToken;
+
+    try {
+        const payloadBase64 = cachedServiceToken.split('.')[1];
+        const claims = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf8'));
+        if (claims.exp) {
+            // Margine di sicurezza di 30 secondi prima della scadenza reale
+            cachedServiceTokenExpiresAt = (claims.exp * 1000) - 30000;
+        } else {
+            cachedServiceTokenExpiresAt = Date.now() + (55 * 60 * 1000);
+        }
+    } catch (e) {
+        cachedServiceTokenExpiresAt = Date.now() + (55 * 60 * 1000);
+    }
+
+    return cachedServiceToken;
+}
+
 // Semaforo booleano in-memory per evitare sync simultanee
 let isSyncing = false;
 let lastSyncTime = null;
@@ -84,12 +124,10 @@ async function sincronizzaAdesso(accessToken) {
 
         let tokenToUse = accessToken;
 
-        // Se chiamato dal cron (accessToken null), otteniamo un token per il sync service
+        // Se chiamato dal cron (accessToken null), otteniamo un token per il sync service (con cache, Fix M2)
         if (!tokenToUse) {
-            console.log(`[Sync ${LOCALE_ID}] Richiesta token per edge_sync_service...`);
             try {
-                const serviceUser = await directPasswordAuth('edge_sync_service', 'syncpassword');
-                tokenToUse = serviceUser.accessToken;
+                tokenToUse = await getServiceAccountToken();
             } catch (authErr) {
                 console.error(`[Sync ${LOCALE_ID}] Fallita autenticazione service user:`, authErr.message);
                 throw new Error('Impossibile ottenere token per la sincronizzazione');
@@ -164,9 +202,8 @@ async function sincronizzaAdesso(accessToken) {
 
 /**
  * Avvia il cron-job automatico di sincronizzazione.
- * Esegue ogni 5 minuti. Non usa un access token (le richieste
- * dal cron passano via rete Docker interna; in produzione
- * servirebbero credenziali service-to-service).
+ * Esegue ogni 2 minuti (SYNC_INTERVAL_MS, Fix M1).
+ * Autentica le richieste al Gateway via JWT del service account edge_sync_service.
  */
 function avviaCronSync() {
     if (cronTimer) {

@@ -39,7 +39,11 @@ L'intero stack è containerizzato e facilmente avviabile con un solo comando.
    - 📍 **Bar Belvedere:** [http://localhost:3001](http://localhost:3001)
    - 📍 **Sala Giochi Roma:** [http://localhost:3002](http://localhost:3002)
 
-3. **Accesso alla Console Keycloak (Piattaforma)**
+3. **Accesso alla Dashboard Amministrativa Centrale (Piattaforma)**
+   - 📊 **URL:** [http://localhost:8081/dashboard](http://localhost:8081/dashboard) *(Accetta solo utenti con ruolo `admin_piattaforma`, es. `admin_piattaforma` / `password`)*
+   - *Nota Architetturale:* Esposta dal Gateway in trasparenza da `statistiche-service`. Gestisce una sessione cookie-based OIDC per gli amministratori di piattaforma, affiancandosi al modello Bearer JWT utilizzato dalle API REST dei microservizi.
+
+4. **Accesso alla Console Keycloak (Piattaforma)**
    - 🔐 **URL:** [http://localhost:9080](http://localhost:9080)
    - **Credenziali Admin:** `admin` / `admin`
 

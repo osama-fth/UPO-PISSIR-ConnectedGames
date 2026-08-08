@@ -44,7 +44,11 @@ public class SecurityConfig {
                     "/swagger-resources/**", "/configuration/ui", "/configuration/security"
                 )).permitAll()
 
-                // Dashboard UI & Auth Flow (statistiche-service handles its own session)
+                // NOTE (M4 Architectural Design):
+                // Superficie UI server-rendered (statistiche-service):
+                // Le route UI ("/", "/dashboard", "/auth/**", ecc.) usano un modello di autenticazione basato su sessione cookie OIDC.
+                // Il Gateway applica permitAll() a livello perimetrale e delega la sicurezza al servizio downstream (BFF pattern),
+                // mentre per le API REST (/api/v1/**) viene applicata la validazione Bearer JWT direttamente qui nel Gateway.
                 .matchers(ServerWebExchangeMatchers.pathMatchers(
                     "/", "/dashboard", "/utenti", "/partite", "/tornei", "/auth/**", "/css/**", "/js/**", "/images/**"
                 )).permitAll()

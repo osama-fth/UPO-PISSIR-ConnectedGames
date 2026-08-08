@@ -233,6 +233,8 @@ services:
       - MQTT_SUB_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
       - MQTT_PUB_USER=${MQTT1_PUBLISH_USER}
       - MQTT_PUB_PASSWORD=${MQTT1_PUBLISH_PASSWORD}
+      - SYNC_SERVICE_USER=${SYNC_SERVICE_USER}
+      - SYNC_SERVICE_PASSWORD=${SYNC_SERVICE_PASSWORD}
     volumes:
       - edge-locale1-data:/usr/src/app/data
     ports:
@@ -272,6 +274,8 @@ services:
       - MQTT_SUB_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
       - MQTT_PUB_USER=${MQTT2_PUBLISH_USER}
       - MQTT_PUB_PASSWORD=${MQTT2_PUBLISH_PASSWORD}
+      - SYNC_SERVICE_USER=${SYNC_SERVICE_USER}
+      - SYNC_SERVICE_PASSWORD=${SYNC_SERVICE_PASSWORD}
     volumes:
       - edge-locale2-data:/usr/src/app/data
     ports:

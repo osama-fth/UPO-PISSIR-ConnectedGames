@@ -26,6 +26,15 @@ function initDatabase() {
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
 
+    // Tabella partite_attive: persistenza in-memory per resilienza a riavvii container (Fix C1)
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS partite_attive (
+            id TEXT PRIMARY KEY,
+            state_json TEXT NOT NULL,
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    `);
+
     // Tabella partite_buffer: buffer locale prima della sincronizzazione
     db.exec(`
         CREATE TABLE IF NOT EXISTS partite_buffer (
@@ -55,6 +64,35 @@ function initDatabase() {
 
     console.log(`[SQLite ${LOCALE_ID}] Database inizializzato: ${DB_PATH}`);
     return db;
+}
+
+/**
+ * Salva o aggiorna lo stato di una partita attiva nel DB SQLite (Fix C1).
+ */
+function salvaPartitaAttiva(match) {
+    const stmt = db.prepare(`
+        INSERT INTO partite_attive (id, state_json, updated_at)
+        VALUES (?, ?, datetime('now'))
+        ON CONFLICT(id) DO UPDATE SET state_json = excluded.state_json, updated_at = datetime('now')
+    `);
+    stmt.run(match.id, JSON.stringify(match));
+}
+
+/**
+ * Rimuove una partita attiva terminata dal DB SQLite (Fix C1).
+ */
+function rimuoviPartitaAttiva(matchId) {
+    const stmt = db.prepare(`DELETE FROM partite_attive WHERE id = ?`);
+    stmt.run(matchId);
+}
+
+/**
+ * Recupera tutte le partite attive salvate nel DB SQLite (Fix C1).
+ */
+function getPartiteAttiveSalvate() {
+    const stmt = db.prepare(`SELECT state_json FROM partite_attive`);
+    const rows = stmt.all();
+    return rows.map(r => JSON.parse(r.state_json));
 }
 
 /**
@@ -193,6 +231,9 @@ function getDb() {
 module.exports = {
     initDatabase,
     salvaPartita,
+    salvaPartitaAttiva,
+    rimuoviPartitaAttiva,
+    getPartiteAttiveSalvate,
     getPartiteNonSincronizzate,
     segnaComeSincronizzate,
     getStatsLocale,

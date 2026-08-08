@@ -10,7 +10,12 @@
 
 const { v4: uuidv4 } = require('uuid');
 const { publishEvent, getMqttEvents } = require('./mqtt-client');
-const { salvaPartita } = require('./sqlite-db');
+const { 
+    salvaPartita, 
+    salvaPartitaAttiva, 
+    rimuoviPartitaAttiva, 
+    getPartiteAttiveSalvate 
+} = require('./sqlite-db');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 
@@ -72,6 +77,12 @@ function creaPartita(giocoId, giocatore1, giocatore2, torneoId = null) {
     }
 
     activeMatches.set(matchId, match);
+    try {
+        salvaPartitaAttiva(match); // Fix C1: Persistenza immediata su SQLite
+    } catch (e) {
+        console.error(`[GameEngine ${LOCALE_ID}] Errore salvataggio partita attiva SQLite:`, e.message);
+    }
+
     console.log(`[GameEngine ${LOCALE_ID}] Partita ${matchId} creata: ${giocoId} — ${giocatore1.username} vs ${giocatore2.username}`);
 
     return match;
@@ -97,13 +108,25 @@ function processaEvento(matchId, evento) {
         timestamp: new Date().toISOString()
     });
 
+    let resMatch;
     if (match.giocoId === 'calciobalilla') {
-        return processaEventoCalciobalilla(match, evento);
+        resMatch = processaEventoCalciobalilla(match, evento);
     } else if (match.giocoId === 'freccette') {
-        return processaEventoFreccette(match, evento);
+        resMatch = processaEventoFreccette(match, evento);
+    } else {
+        resMatch = match;
     }
 
-    return match;
+    // Fix C1: Aggiorna lo stato della partita attiva in SQLite dopo l'evento
+    if (resMatch && resMatch.stato === 'IN_CORSO') {
+        try {
+            salvaPartitaAttiva(resMatch);
+        } catch (e) {
+            console.error(`[GameEngine ${LOCALE_ID}] Errore aggiornamento partita attiva in SQLite:`, e.message);
+        }
+    }
+
+    return resMatch;
 }
 
 /**
@@ -252,6 +275,13 @@ function terminaPartita(match) {
         console.log(`[GameEngine ${LOCALE_ID}] Partita ospite — non salvata su SQLite`);
     }
 
+    // Fix C1: Rimuove la partita dalla tabella partite_attive quando termina
+    try {
+        rimuoviPartitaAttiva(match.id);
+    } catch (e) {
+        console.error(`[GameEngine ${LOCALE_ID}] Errore rimozione partita attiva in SQLite:`, e.message);
+    }
+
     return match;
 }
 
@@ -289,10 +319,56 @@ function getActiveMatches() {
 }
 
 /**
- * Rimuove una partita dalla memoria (cleanup).
+ * Rimuove una partita dalla memoria e da SQLite (cleanup).
  */
 function removeMatch(matchId) {
     activeMatches.delete(matchId);
+    try {
+        rimuoviPartitaAttiva(matchId);
+    } catch (e) {
+        // Ignora se non presente
+    }
+}
+
+/**
+ * Carica le partite attive salvate nel DB SQLite all'avvio dell'Edge Node (Fix C1).
+ */
+function caricaPartiteAttiveDaDb() {
+    try {
+        const matches = getPartiteAttiveSalvate();
+        for (const m of matches) {
+            if (m && m.id && m.stato === 'IN_CORSO') {
+                activeMatches.set(m.id, m);
+            }
+        }
+        if (activeMatches.size > 0) {
+            console.log(`[GameEngine ${LOCALE_ID}] Ripristinate ${activeMatches.size} partite attive da SQLite (Fix C1)`);
+        }
+    } catch (err) {
+        console.error(`[GameEngine ${LOCALE_ID}] Errore ripristino partite attive da SQLite:`, err.message);
+    }
+}
+
+/**
+ * Controllo periodico per pulizia partite abbandonate (Fix C1 TTL).
+ */
+function avviaTimeoutPartiteAbbandonate() {
+    setInterval(() => {
+        const now = Date.now();
+        const MAX_INACTIVE_MS = 2 * 60 * 60 * 1000; // 2 ore
+
+        for (const [matchId, match] of activeMatches.entries()) {
+            const lastEventTime = match.eventi && match.eventi.length > 0
+                ? new Date(match.eventi[match.eventi.length - 1].timestamp).getTime()
+                : new Date(match.dataInizio).getTime();
+
+            if (now - lastEventTime > MAX_INACTIVE_MS) {
+                console.warn(`[GameEngine ${LOCALE_ID}] Partita ${matchId} inattiva da >2h. Marcatura come ABBANDONATA.`);
+                match.stato = 'ABBANDONATA';
+                removeMatch(matchId);
+            }
+        }
+    }, 5 * 60 * 1000).unref();
 }
 
 module.exports = {
@@ -302,12 +378,17 @@ module.exports = {
     getMatch,
     getActiveMatches,
     removeMatch,
-    calcolaValoreTiro
+    calcolaValoreTiro,
+    caricaPartiteAttiveDaDb,
+    avviaTimeoutPartiteAbbandonate
 };
 
 // ============================================================
-// Sottoscrizione eventi MQTT reali
+// Inizializzazione e sottoscrizione eventi MQTT reali
 // ============================================================
+caricaPartiteAttiveDaDb();
+avviaTimeoutPartiteAbbandonate();
+
 getMqttEvents().on('evento', ({ topic, payload }) => {
     try {
         if (payload && payload.matchId && payload.tipo) {

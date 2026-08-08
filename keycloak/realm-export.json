@@ -123,9 +123,30 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "edge-sync-client",
+      "name": "Edge Sync Service Client",
+      "description": "Client confidentiale per il demone di sincronizzazione Edge (Fix M5)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "edge-sync-secret-12345",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
     }
   ],
   "users": [
+    {
+      "id": "a0000000-0000-0000-0000-000000000099",
+      "username": "service-account-edge-sync-client",
+      "enabled": true,
+      "serviceAccountClientId": "edge-sync-client",
+      "realmRoles": [
+        "admin_piattaforma"
+      ]
+    },
     {
       "id": "a0000000-0000-0000-0000-000000000001",
       "username": "SuperMario",

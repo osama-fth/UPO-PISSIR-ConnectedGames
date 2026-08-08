@@ -11,7 +11,7 @@
 // ============================================================
 
 const { getPartiteNonSincronizzate, segnaComeSincronizzate } = require('./sqlite-db');
-const { directPasswordAuth } = require('./oidc-client');
+const { directPasswordAuth, clientCredentialsAuth } = require('./oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
@@ -22,7 +22,7 @@ let cachedServiceToken = null;
 let cachedServiceTokenExpiresAt = 0;
 
 /**
- * Ottiene e riusa il token per edge_sync_service fino a scadenza (Fix M2).
+ * Ottiene e riusa il token per edge_sync_service / edge-sync-client fino a scadenza (Fix M2 & M5).
  */
 async function getServiceAccountToken() {
     if (cachedServiceToken && Date.now() < cachedServiceTokenExpiresAt) {
@@ -30,16 +30,17 @@ async function getServiceAccountToken() {
         return cachedServiceToken;
     }
 
-    const serviceUser = process.env.SYNC_SERVICE_USER || 'edge_sync_service';
-    const servicePassword = process.env.SYNC_SERVICE_PASSWORD || 'syncpassword';
-
-    if (!process.env.SYNC_SERVICE_USER || !process.env.SYNC_SERVICE_PASSWORD) {
-        console.warn(`[Sync ${LOCALE_ID}] WARNING (M2): SYNC_SERVICE_USER / SYNC_SERVICE_PASSWORD non configurate nelle env vars. Utilizzo credenziali fallback.`);
+    try {
+        console.log(`[Sync ${LOCALE_ID}] Richiesta nuovo token via Client Credentials Grant (Fix M5)...`);
+        const serviceAuth = await clientCredentialsAuth();
+        cachedServiceToken = serviceAuth.accessToken;
+    } catch (clientCredErr) {
+        console.warn(`[Sync ${LOCALE_ID}] Client Credentials Grant fallito (${clientCredErr.message}), tentiamo fallback Direct Password Auth...`);
+        const serviceUser = process.env.SYNC_SERVICE_USER || 'edge_sync_service';
+        const servicePassword = process.env.SYNC_SERVICE_PASSWORD || 'syncpassword';
+        const serviceAuth = await directPasswordAuth(serviceUser, servicePassword);
+        cachedServiceToken = serviceAuth.accessToken;
     }
-
-    console.log(`[Sync ${LOCALE_ID}] Richiesta nuovo token per service account '${serviceUser}'...`);
-    const serviceAuth = await directPasswordAuth(serviceUser, servicePassword);
-    cachedServiceToken = serviceAuth.accessToken;
 
     try {
         const payloadBase64 = cachedServiceToken.split('.')[1];

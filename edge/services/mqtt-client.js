@@ -7,11 +7,13 @@
 // ricevere gli eventi dai sensori/simulatori.
 // ============================================================
 
+const fs = require('fs');
 const mqtt = require('mqtt');
 const EventEmitter = require('events');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtts://localhost:8883';
+const MQTT_CA_PATH = process.env.MQTT_CA_PATH || null;
 
 // Credenziali Edge (Sola lettura/sottoscrizione)
 const MQTT_SUB_USER = process.env.MQTT_SUB_USER || 'edge-client';
@@ -38,15 +40,28 @@ let connectionStatusPub = 'disconnected';
 function connectMqtt() {
     console.log(`[MQTT] Connessione a ${MQTT_BROKER_URL} (SUB come '${MQTT_SUB_USER}', PUB come '${MQTT_PUB_USER}')...`);
 
-    // --- CLIENT SUBSCRIBE (Edge) ---
-    clientSub = mqtt.connect(MQTT_BROKER_URL, {
-        username: MQTT_SUB_USER,
-        password: MQTT_SUB_PASSWORD,
-        clientId: `edge-sub-${LOCALE_ID}-${Date.now()}`,
+    // Opzioni TLS per i client MQTT (Fix C2)
+    const tlsOptions = {
         clean: true,
         reconnectPeriod: 5000,
-        connectTimeout: 10000,
-        rejectUnauthorized: false
+        connectTimeout: 10000
+    };
+
+    if (MQTT_CA_PATH && fs.existsSync(MQTT_CA_PATH)) {
+        console.log(`[MQTT TLS] Caricamento certificato CA da ${MQTT_CA_PATH}`);
+        tlsOptions.ca = [fs.readFileSync(MQTT_CA_PATH)];
+        tlsOptions.rejectUnauthorized = true;
+    } else {
+        // Disabilitato solo se certificato CA non fornito (es. dev container locale senza CA condivisa)
+        tlsOptions.rejectUnauthorized = process.env.MQTT_REJECT_UNAUTHORIZED === 'true';
+    }
+
+    // --- CLIENT SUBSCRIBE (Edge) ---
+    clientSub = mqtt.connect(MQTT_BROKER_URL, {
+        ...tlsOptions,
+        username: MQTT_SUB_USER,
+        password: MQTT_SUB_PASSWORD,
+        clientId: `edge-sub-${LOCALE_ID}-${Date.now()}`
     });
 
     clientSub.on('connect', () => {
@@ -84,13 +99,10 @@ function connectMqtt() {
 
     // --- CLIENT PUBLISH (Simulatore) ---
     clientPub = mqtt.connect(MQTT_BROKER_URL, {
+        ...tlsOptions,
         username: MQTT_PUB_USER,
         password: MQTT_PUB_PASSWORD,
-        clientId: `edge-pub-${LOCALE_ID}-${Date.now()}`,
-        clean: true,
-        reconnectPeriod: 5000,
-        connectTimeout: 10000,
-        rejectUnauthorized: false
+        clientId: `edge-pub-${LOCALE_ID}-${Date.now()}`
     });
 
     clientPub.on('connect', () => {

@@ -30,6 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -130,8 +134,27 @@ public class TorneoService {
         Torneo torneo = torneoRepo.findById(torneoId)
             .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
 
+        // Auto-registrazione utente in platform_db se non ha ancora mai giocato partite
         Utente utente = utenteRepo.findById(utenteId)
-            .orElseThrow(() -> new ResourceNotFoundException("Utente", utenteId.toString()));
+            .orElseGet(() -> {
+                String username = null;
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth instanceof JwtAuthenticationToken jwtAuth) {
+                    Jwt jwt = jwtAuth.getToken();
+                    username = jwt.getClaimAsString("preferred_username");
+                    if (username == null) {
+                        username = jwt.getClaimAsString("username");
+                    }
+                }
+                if (username == null || username.isBlank()) {
+                    username = "user_" + utenteId.toString().substring(0, 8);
+                }
+                Utente nuovo = new Utente();
+                nuovo.setId(utenteId);
+                nuovo.setUsername(username);
+                nuovo.setDataRegistrazione(OffsetDateTime.now());
+                return utenteRepo.saveAndFlush(nuovo);
+            });
 
         if (iscrizioneRepo.existsByIdTorneoIdAndIdUtenteId(torneoId, utenteId)) {
             throw new IllegalArgumentException("Utente già iscritto a questo torneo");

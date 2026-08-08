@@ -39,6 +39,18 @@ mosquitto_passwd -b "$PASSWORD_FILE" "$MQTT_SUB_USER" "$MQTT_SUB_PASSWORD"
 
 echo "Password file generato in $PASSWORD_FILE con utenti: $MQTT_PUB_USER, $MQTT_SUB_USER"
 
+# Genera certificati TLS dedicati ed unici al runtime per questo specifico locale (Fix C2)
+CERT_KEY="/mosquitto/data/server.key"
+CERT_CRT="/mosquitto/data/server.crt"
+
+echo "=== Generazione certificati TLS dedicati per '${LOCALE_ID:-default}' ==="
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout "$CERT_KEY" \
+    -out "$CERT_CRT" \
+    -subj "/C=IT/ST=Piemonte/L=Vercelli/O=PISSIR/OU=ConnectedGames/CN=mosquitto-${LOCALE_ID:-locale}"
+chmod 0600 "$CERT_KEY"
+chmod 0644 "$CERT_CRT"
+
 # Determina il file di configurazione in base al locale
 CONFIG_FILE="/mosquitto/config/mosquitto-${LOCALE_ID}.conf"
 

@@ -285,6 +285,40 @@ async function directPasswordAuth(username, password) {
     };
 }
 
+/**
+ * Autentica un service account usando il Client Credentials Grant (Fix M5).
+ * @param {string} [clientId] - ID del client confidentiale
+ * @param {string} [clientSecret] - Secret del client
+ */
+async function clientCredentialsAuth(
+    clientId = process.env.SYNC_CLIENT_ID || 'edge-sync-client',
+    clientSecret = process.env.SYNC_CLIENT_SECRET || 'edge-sync-secret-12345'
+) {
+    const tokenUrl = `${KEYCLOAK_INTERNAL_URL}/protocol/openid-connect/token`;
+
+    const body = new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: 'openid profile email'
+    });
+
+    const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+    });
+
+    if (!response.ok) {
+        throw new Error(`Client Credentials Auth fallita per '${clientId}': ${response.statusText}`);
+    }
+
+    const tokenData = await response.json();
+    return {
+        accessToken: tokenData.access_token
+    };
+}
+
 module.exports = {
     initOidcClient,
     checkKeycloakHealth,
@@ -294,5 +328,6 @@ module.exports = {
     getUserInfoFromToken,
     getLogoutUrl,
     isOidcAvailable,
-    directPasswordAuth
+    directPasswordAuth,
+    clientCredentialsAuth
 };

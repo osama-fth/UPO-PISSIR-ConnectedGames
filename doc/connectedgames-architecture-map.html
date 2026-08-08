@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Connected Games Platform — Mappa Architetturale &amp; Analisi Rischi</title>
+<title>Connected Games Platform — Mappa Architetturale Interattiva</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,6 +14,7 @@
     --bg-panel-2:#161f29;
     --grid:#1c2732;
     --border:#243040;
+    --border-highlight:#3fd0c9;
     --text:#e7eef5;
     --text-muted:#8fa1b3;
     --text-faint:#5b6b7c;
@@ -21,14 +22,12 @@
     --accent-amber:#e8a33d;
     --accent-violet:#9d7bd8;
     --accent-blue:#5b9cf0;
-    --sev-critical:#e5484d;
-    --sev-medium:#e8a33d;
-    --sev-low:#6b8fb0;
+    --accent-emerald:#30d158;
     --mono:'IBM Plex Mono', ui-monospace, monospace;
     --sans:'Inter', system-ui, sans-serif;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
   body{
     background-image:
       linear-gradient(var(--grid) 1px, transparent 1px),
@@ -38,7 +37,7 @@
   }
   ::selection{background:var(--accent-cyan);color:#04201d;}
 
-  .wrap{max-width:1500px;margin:0 auto;padding:20px 20px 60px;}
+  .wrap{max-width:1400px;margin:0 auto;padding:20px 20px 60px;}
 
   header.top{
     display:flex; flex-wrap:wrap; gap:16px; justify-content:space-between; align-items:flex-end;
@@ -46,7 +45,7 @@
   }
   .eyebrow{
     font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
-    color:var(--accent-cyan); margin:0 0 6px;
+    color:var(--accent-cyan); margin:0 0 6px; display:flex; align-items:center; gap:8px;
   }
   h1{font-family:var(--mono); font-size:22px; margin:0; font-weight:600; letter-spacing:-0.01em;}
   h1 span{color:var(--text-muted); font-weight:400;}
@@ -54,411 +53,439 @@
   .top-meta b{color:var(--text);}
 
   .legend{
-    display:flex; gap:14px; flex-wrap:wrap; font-family:var(--mono); font-size:11px; color:var(--text-muted);
-    margin-bottom:18px;
+    display:flex; gap:18px; flex-wrap:wrap; font-family:var(--mono); font-size:11.5px; color:var(--text-muted);
+    margin-bottom:18px; background:var(--bg-panel); border:1px solid var(--border); padding:12px 18px; border-radius:8px;
+    align-items:center;
   }
-  .legend .dot{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:6px;vertical-align:middle;}
-
-  .layout{display:grid; grid-template-columns:1fr 380px; gap:18px;}
-  @media (max-width:980px){ .layout{grid-template-columns:1fr;} }
+  .legend .legend-item{display:flex; align-items:center; gap:8px;}
+  .legend .dot{width:12px;height:12px;border-radius:3px;display:inline-block;}
 
   .panel{
     background:var(--bg-panel); border:1px solid var(--border); border-radius:10px;
-    padding:16px; position:relative;
+    padding:20px; position:relative; width:100%;
   }
   .panel h2{
-    font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--text-muted); margin:0 0 12px; display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:13px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-muted); margin:0 0 14px; display:flex; align-items:center; gap:8px;
   }
-  .panel h2::before{content:''; width:3px; height:12px; background:var(--accent-cyan); display:inline-block;}
+  .panel h2::before{content:''; width:4px; height:14px; background:var(--accent-cyan); display:inline-block;}
 
   /* ---------- Flow selector ---------- */
-  .flow-tabs{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+  .flow-tabs{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px;}
   .flow-tab{
-    font-family:var(--mono); font-size:11.5px; padding:7px 11px; border-radius:20px;
+    font-family:var(--mono); font-size:12px; padding:8px 14px; border-radius:20px;
     border:1px solid var(--border); background:var(--bg-panel-2); color:var(--text-muted);
-    cursor:pointer; transition:all .15s ease; user-select:none;
+    cursor:pointer; transition:all .15s ease; user-select:none; display:flex; align-items:center; gap:8px;
   }
   .flow-tab:hover{border-color:var(--accent-cyan); color:var(--text);}
-  .flow-tab.active{background:var(--accent-cyan); color:#04201d; border-color:var(--accent-cyan); font-weight:600;}
-  .flow-tab .risk-mark{color:var(--sev-critical); font-weight:700;}
-  .flow-tab.active .risk-mark{color:#5c0a0a;}
+  .flow-tab.active{background:var(--accent-cyan); color:#04201d; border-color:var(--accent-cyan); font-weight:700;}
 
-  .flow-controls{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .flow-controls{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
   .flow-controls button{
     font-family:var(--mono); font-size:12px; background:var(--bg-panel-2); color:var(--text);
-    border:1px solid var(--border); border-radius:6px; padding:6px 12px; cursor:pointer;
+    border:1px solid var(--border); border-radius:6px; padding:8px 16px; cursor:pointer;
+    display:flex; align-items:center; gap:6px; transition:all .15s ease;
   }
-  .flow-controls button:hover{border-color:var(--accent-cyan);}
+  .flow-controls button:hover{border-color:var(--accent-cyan); background:rgba(63,208,201,.1);}
   .flow-controls button:disabled{opacity:.35; cursor:default;}
-  .flow-controls .step-label{font-family:var(--mono); font-size:11px; color:var(--text-muted); flex:1;}
+  .flow-controls .step-label{font-family:var(--mono); font-size:12px; color:var(--accent-cyan); font-weight:600; flex:1;}
+
   .flow-desc{
-    font-size:13px; line-height:1.55; color:var(--text); background:var(--bg-panel-2);
-    border:1px solid var(--border); border-radius:8px; padding:12px; min-height:64px;
+    font-size:13.5px; line-height:1.6; color:var(--text); background:var(--bg-panel-2);
+    border:1px solid var(--border); border-radius:8px; padding:14px; min-height:75px;
   }
-  .flow-desc.risk{border-color:var(--sev-critical); box-shadow:0 0 0 1px rgba(229,72,77,.25) inset;}
   .flow-desc .tag{
-    display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.06em;
-    padding:2px 7px; border-radius:4px; margin-bottom:8px; text-transform:uppercase;
+    font-family:var(--mono); font-size:11px; font-weight:700; text-transform:uppercase;
+    padding:3px 8px; border-radius:4px; margin-right:8px; vertical-align:middle;
+    background:rgba(91,156,240,.2); color:var(--accent-blue);
   }
-  .tag.critical{background:rgba(229,72,77,.15); color:var(--sev-critical); border:1px solid rgba(229,72,77,.4);}
-  .tag.medium{background:rgba(232,163,61,.15); color:var(--sev-medium); border:1px solid rgba(232,163,61,.4);}
-  .tag.info{background:rgba(63,208,201,.12); color:var(--accent-cyan); border:1px solid rgba(63,208,201,.35);}
 
-  /* ---------- Diagram ---------- */
-  .diagram-scroll{overflow-x:auto; overflow-y:hidden; border-radius:8px;}
-  .canvas{
-    position:relative; width:100%; min-width:760px; aspect-ratio:1600/900;
-    background:radial-gradient(ellipse at 50% 0%, #101a24 0%, #0a0e13 70%);
-    border-radius:8px; border:1px solid var(--border);
+  /* ---------- Canvas Diagram ---------- */
+  .canvas-container{
+    position:relative; width:100%; height:820px; background:rgba(10,14,19,.85);
+    border:1px solid var(--border); border-radius:10px; overflow-x:auto; overflow-y:hidden;
   }
-  svg.wires{position:absolute; inset:0; width:100%; height:100%;}
-  .wire{fill:none; stroke:var(--border); stroke-width:2; transition:stroke .2s, stroke-width .2s, opacity .2s;}
-  .wire.risk{stroke:rgba(229,72,77,.55); stroke-dasharray:5 4;}
-  .wire.active{stroke:var(--accent-cyan); stroke-width:3;}
-  .wire.active.risk{stroke:var(--sev-critical);}
-  .wire-arrow{fill:var(--border);}
-  .flow-dot{fill:var(--accent-cyan); filter:drop-shadow(0 0 5px var(--accent-cyan));}
-
-  .zone{
-    position:absolute; border:1px dashed var(--border); border-radius:10px;
-    font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);
+  .canvas-inner{
+    position:relative; width:1060px; height:820px; margin:0 auto;
   }
-  .zone span{position:absolute; top:-8px; left:12px; background:var(--bg-panel); padding:0 6px;}
+  svg.wires{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1;}
 
+  /* Zones */
+  .zone-box{
+    position:absolute; border:1.5px dashed var(--border); border-radius:10px;
+    background:rgba(22,31,41,.2); pointer-events:none; z-index:0;
+  }
+  .zone-box.core-zone{
+    border-color:rgba(157,123,216,.35); background:rgba(157,123,216,.03);
+  }
+  .zone-box .zone-label{
+    position:absolute; top:10px; left:14px; font-family:var(--mono); font-size:10.5px;
+    color:var(--text-muted); text-transform:uppercase; letter-spacing:.1em; font-weight:700;
+  }
+
+  /* Nodes */
   .node{
-    position:absolute; transform:translate(-50%,-50%); width:132px;
-    background:var(--bg-panel-2); border:1.5px solid var(--border); border-radius:9px;
-    padding:9px 10px; cursor:pointer; text-align:left; transition:border-color .15s, box-shadow .15s, transform .15s;
-    z-index:2;
+    position:absolute; z-index:2; border-radius:8px; border:1px solid var(--border);
+    background:var(--bg-panel); padding:12px 14px; cursor:pointer;
+    transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    user-select:none;
   }
-  .node:hover{transform:translate(-50%,-50%) translateY(-2px); border-color:var(--accent-cyan);}
-  .node.selected{border-color:var(--accent-cyan); box-shadow:0 0 0 3px rgba(63,208,201,.18);}
-  .node.active-flow{border-color:var(--accent-cyan); box-shadow:0 0 14px rgba(63,208,201,.35);}
-  .node .kicker{font-family:var(--mono); font-size:8.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em;}
-  .node .name{font-family:var(--sans); font-size:12px; font-weight:600; color:var(--text); line-height:1.25; margin-top:2px;}
-  .node .sev-badges{position:absolute; top:-7px; right:-7px; display:flex; gap:3px;}
-  .sev-dot{width:14px; height:14px; border-radius:50%; font-family:var(--mono); font-size:8.5px; font-weight:700;
-    display:flex; align-items:center; justify-content:center; border:1.5px solid var(--bg);}
-  .sev-dot.critical{background:var(--sev-critical); color:#2a0303;}
-  .sev-dot.medium{background:var(--sev-medium); color:#2a1a02;}
+  .node:hover{border-color:var(--accent-cyan); transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,.5);}
+  .node.selected{border-color:var(--accent-cyan); box-shadow:0 0 0 3px rgba(63,208,201,.35);}
+  .node.active-flow{
+    border-color:var(--accent-cyan); box-shadow:0 0 20px rgba(63,208,201,.5);
+    animation:pulse-node 2s infinite ease-in-out;
+  }
+  @keyframes pulse-node{
+    0%,100%{box-shadow:0 0 14px rgba(63,208,201,.4);}
+    50%{box-shadow:0 0 24px rgba(63,208,201,.9);}
+  }
 
-  .node.type-edge{border-left:3px solid var(--accent-amber);}
-  .node.type-core{border-left:3px solid var(--accent-blue);}
-  .node.type-id{border-left:3px solid var(--accent-violet);}
-  .node.type-store{border-left:3px solid var(--text-faint);}
-  .node.type-client{border-left:3px solid var(--accent-cyan);}
+  .node .kicker{font-family:var(--mono); font-size:9.5px; color:var(--text-faint); text-transform:uppercase; margin-bottom:3px;}
+  .node .name{font-family:var(--mono); font-size:12px; font-weight:700; color:var(--text); line-height:1.3;}
 
+  /* Node types */
+  .node.type-client{border-left:4px solid var(--accent-blue);}
+  .node.type-edge{border-left:4px solid var(--accent-cyan);}
+  .node.type-core{border-left:4px solid var(--accent-violet);}
+  .node.type-store{border-left:4px solid var(--accent-amber);}
+  .node.type-id{border-left:4px solid var(--accent-emerald);}
+
+  /* SVG Wires */
+  path.wire{
+    fill:none; stroke:var(--border); stroke-width:2px; stroke-dasharray:5 4;
+    transition:stroke .25s ease, stroke-width .25s ease;
+  }
+  path.wire.active{
+    stroke:var(--accent-cyan); stroke-width:3px; stroke-dasharray:8 4;
+    animation:dash 0.9s linear infinite; filter:drop-shadow(0 0 8px rgba(63,208,201,.9));
+  }
+  @keyframes dash{ to{ stroke-dashoffset: -24; } }
+
+  /* Tooltip */
   .tooltip{
-    position:absolute; z-index:10; pointer-events:none; max-width:230px;
-    background:#050708; border:1px solid var(--accent-cyan); border-radius:7px; padding:8px 10px;
-    font-size:11.5px; color:var(--text); line-height:1.4; box-shadow:0 8px 24px rgba(0,0,0,.5);
-    opacity:0; transition:opacity .12s; transform:translate(-50%, -115%);
+    position:absolute; z-index:10; background:var(--bg-panel-2); border:1px solid var(--border);
+    border-radius:6px; padding:10px 14px; font-size:12px; font-family:var(--sans);
+    color:var(--text); pointer-events:none; opacity:0; transition:opacity .15s ease;
+    box-shadow:0 6px 18px rgba(0,0,0,.6); max-width:300px;
   }
   .tooltip.show{opacity:1;}
+  .tooltip b{font-family:var(--mono); color:var(--accent-cyan); display:block; margin-bottom:4px; font-size:13px;}
 
-  /* ---------- Detail panel ---------- */
-  #detail-panel .placeholder{color:var(--text-faint); font-size:13px; line-height:1.6;}
-  .detail-head{display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:4px;}
-  .detail-title{font-family:var(--sans); font-size:16px; font-weight:700; margin:0;}
-  .detail-kicker{font-family:var(--mono); font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;}
-  .detail-section{margin-top:14px;}
-  .detail-section h3{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin:0 0 6px;}
-  .detail-section ul{margin:0; padding-left:16px; font-size:12.5px; line-height:1.55; color:var(--text);}
-  .detail-section p{margin:0; font-size:12.5px; line-height:1.55; color:var(--text);}
-  .finding{
-    border:1px solid var(--border); border-left:3px solid var(--sev-medium); border-radius:6px;
-    padding:8px 10px; margin-bottom:8px; font-size:12.5px; line-height:1.5; background:var(--bg-panel-2);
+  /* ---------- Drawer Modal for Component Inspection ---------- */
+  .drawer-overlay{
+    position:fixed; inset:0; background:rgba(4,8,12,.75); backdrop-filter:blur(4px);
+    z-index:99; opacity:0; pointer-events:none; transition:opacity .25s ease;
   }
-  .finding.critical{border-left-color:var(--sev-critical);}
-  .finding .flabel{font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; display:block;}
-  .finding.critical .flabel{color:var(--sev-critical);}
-  .finding:not(.critical) .flabel{color:var(--sev-medium);}
-  code{font-family:var(--mono); background:#000; padding:1px 5px; border-radius:4px; font-size:11px; color:var(--accent-cyan);}
+  .drawer-overlay.show{opacity:1; pointer-events:auto;}
 
-  .stats-row{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
-  .stat{
-    flex:1; min-width:90px; background:var(--bg-panel-2); border:1px solid var(--border); border-radius:7px;
-    padding:8px 10px; text-align:center;
+  .drawer{
+    position:fixed; top:0; right:0; width:460px; height:100vh; background:var(--bg-panel);
+    border-left:1px solid var(--border); z-index:100; transform:translateX(100%);
+    transition:transform .3s cubic-bezier(0.16, 1, 0.3, 1); padding:24px; overflow-y:auto;
+    box-shadow:-10px 0 30px rgba(0,0,0,.6);
   }
-  .stat .n{font-family:var(--mono); font-size:19px; font-weight:700;}
-  .stat.crit .n{color:var(--sev-critical);}
-  .stat.med .n{color:var(--sev-medium);}
-  .stat .l{font-size:9.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; font-family:var(--mono); margin-top:2px;}
+  .drawer.show{transform:translateX(0);}
 
-  footer{margin-top:22px; font-family:var(--mono); font-size:10.5px; color:var(--text-faint); text-align:center; line-height:1.6;}
+  .drawer-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:14px;}
+  .drawer-title{font-family:var(--mono); font-size:16px; font-weight:700; color:var(--text); margin:0;}
+  .drawer-kicker{font-family:var(--mono); font-size:11px; color:var(--accent-cyan); text-transform:uppercase; margin-top:2px;}
+  .btn-close-drawer{
+    background:var(--bg-panel-2); border:1px solid var(--border); color:var(--text-muted);
+    width:32px; height:32px; border-radius:50%; font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:all .15s ease;
+  }
+  .btn-close-drawer:hover{color:var(--text); border-color:var(--accent-cyan); background:rgba(63,208,201,.1);}
+
+  .drawer-section{margin-bottom:20px;}
+  .drawer-section h3{
+    font-family:var(--mono); font-size:12px; text-transform:uppercase; color:var(--accent-cyan);
+    letter-spacing:.08em; margin:0 0 8px; display:flex; align-items:center; gap:6px;
+  }
+  .drawer-section p{margin:0; font-size:13px; line-height:1.6; color:var(--text);}
+  .drawer-section ul{margin:6px 0 0; padding-left:18px; font-size:13px; line-height:1.6; color:var(--text);}
+  .drawer-section code{font-family:var(--mono); font-size:11.5px; background:var(--bg-panel-2); padding:2px 6px; border-radius:4px; color:var(--accent-cyan); border:1px solid var(--border);}
 </style>
 </head>
 <body>
-<div class="wrap">
 
+<div class="wrap">
   <header class="top">
     <div>
-      <p class="eyebrow">Analisi statica del repository · connectedgames-lorenzo-tornei</p>
-      <h1>Connected Games Platform <span>— mappa architetturale &amp; audit rischi</span></h1>
+      <div class="eyebrow">
+        <span>Connected Games Platform</span>
+        <span>• Architettura a Microservizi Edge-to-Cloud</span>
+      </div>
+      <h1>Mappa Architetturale Interattiva <span>&amp; Flussi Operativi</span></h1>
     </div>
     <div class="top-meta">
-      <div>Fonte: <b>docker-compose.yml, service-gateway, edge, partita-service, mosquitto</b></div>
-      <div>17 nodi · 5 flussi tracciati · <span style="color:var(--sev-critical)">4 criticità critiche</span></div>
+      Progetto PISSIR A.A. 2025/2026 — UPO<br>
+      Container <b>Docker Multi-Tier</b> con Reti Segregate
     </div>
   </header>
 
   <div class="legend">
-    <span><span class="dot" style="background:var(--accent-amber)"></span>Edge / IoT locale</span>
-    <span><span class="dot" style="background:var(--accent-blue)"></span>Piattaforma centrale</span>
-    <span><span class="dot" style="background:var(--accent-violet)"></span>Identity (Keycloak)</span>
-    <span><span class="dot" style="background:var(--text-faint)"></span>Storage</span>
-    <span><span class="dot" style="background:var(--accent-cyan)"></span>Client / Browser</span>
-    <span style="margin-left:auto"><span class="dot" style="background:var(--sev-critical);border-radius:50%"></span>Criticità critica</span>
-    <span><span class="dot" style="background:var(--sev-medium);border-radius:50%"></span>Criticità media</span>
+    <div class="legend-item"><span class="dot" style="background:var(--accent-blue)"></span> Client UI / Browser</div>
+    <div class="legend-item"><span class="dot" style="background:var(--accent-cyan)"></span> Edge Node (Express / Node.js)</div>
+    <div class="legend-item"><span class="dot" style="background:var(--accent-violet)"></span> Microservizi Cloud (Spring Boot 3)</div>
+    <div class="legend-item"><span class="dot" style="background:var(--accent-amber)"></span> Database (SQLite / PostgreSQL)</div>
+    <div class="legend-item"><span class="dot" style="background:var(--accent-emerald)"></span> Keycloak IdP (OIDC / OAuth2)</div>
+    <div class="legend-item" style="margin-left:auto; color:var(--accent-cyan);">💡 Clicca su qualsiasi nodo per aprire la scheda dettagliata</div>
   </div>
 
-  <div class="layout">
+  <div class="panel">
+    <h2>Seleziona e Simula un Flusso Operativo</h2>
+    
+    <div class="flow-tabs" id="flow-tabs"></div>
 
-    <!-- ============ DIAGRAM ============ -->
-    <div class="panel">
-      <h2>Topologia del sistema</h2>
+    <div class="flow-controls">
+      <button id="btn-prev" disabled>← Passo prec.</button>
+      <button id="btn-next">Passo succ. →</button>
+      <button id="btn-play">▶ Play animazione</button>
+      <span class="step-label" id="step-label">Seleziona un flusso per avviare la simulazione...</span>
+    </div>
 
-      <div class="flow-tabs" id="flow-tabs"></div>
-      <div class="flow-controls">
-        <button id="btn-prev">◀ prev</button>
-        <button id="btn-play">▶ play</button>
-        <button id="btn-next">next ▶</button>
-        <span class="step-label" id="step-label">seleziona un flusso</span>
-      </div>
-      <div class="flow-desc" id="flow-desc">Clicca un nodo per i dettagli, oppure scegli un flusso qui sopra per vedere passo-passo come attraversa il sistema — incluso dove si rompe la fiducia tra i componenti.</div>
+    <div class="flow-desc" id="flow-desc">
+      Seleziona uno dei flussi in alto per evidenziare il percorso dinamico dei dati e delle chiamate tra i vari container della piattaforma.
+    </div>
 
-      <div class="diagram-scroll" style="margin-top:14px;">
-        <div class="canvas" id="canvas">
-          <svg class="wires" id="wires" viewBox="0 0 1600 900" preserveAspectRatio="none">
-            <defs>
-              <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-                <path d="M0,0 L6,3 L0,6 Z" class="wire-arrow"></path>
-              </marker>
-            </defs>
-          </svg>
-
-          <div class="zone" style="left:18px; top:18px; width:460px; height:330px;"><span>Locale 1 — Bar Belvedere</span></div>
-          <div class="zone" style="left:18px; top:552px; width:460px; height:330px;"><span>Locale 2 — Sala Giochi Roma</span></div>
-          <div class="zone" style="left:560px; top:18px; width:480px; height:864px;"><span>Piattaforma centrale — backend-tier</span></div>
-          <div class="zone" style="left:1120px; top:18px; width:462px; height:520px;"><span>Identity &amp; ingresso pubblico</span></div>
-
-          <div id="nodes"></div>
+    <div class="canvas-container" id="canvas" style="margin-top:16px;">
+      <div class="canvas-inner" id="canvas-inner">
+        <!-- Zone Containers & Networks -->
+        <div class="zone-box" style="left:15px; top:15px; width:360px; height:375px;">
+          <span class="zone-label">RETE: locale1-tier</span>
         </div>
+        <div class="zone-box" style="left:15px; top:410px; width:360px; height:385px;">
+          <span class="zone-label">RETE: locale2-tier</span>
+        </div>
+        <div class="zone-box core-zone" style="left:395px; top:15px; width:650px; height:780px;">
+          <span class="zone-label" style="color:var(--accent-violet);">RETE CENTRALE: platform-backend-tier (Internal)</span>
+        </div>
+
+        <svg class="wires" id="wires">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#3fd0c9"/>
+            </marker>
+          </defs>
+        </svg>
+
+        <div id="nodes"></div>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- ============ DETAIL PANEL ============ -->
-    <div class="panel" id="detail-panel">
-      <h2>Dettaglio nodo</h2>
-      <div class="stats-row">
-        <div class="stat crit"><div class="n">4</div><div class="l">critiche</div></div>
-        <div class="stat med"><div class="n">6</div><div class="l">medie</div></div>
-        <div class="stat"><div class="n">17</div><div class="l">nodi</div></div>
-      </div>
-      <div class="placeholder" style="margin-top:16px;">Nessun nodo selezionato. Clicca un elemento del diagramma per vederne responsabilità, dipendenze e criticità rilevate nel codice.</div>
+<!-- Modal Drawer for Component Details -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div>
+      <h2 class="drawer-title" id="drawer-title">Nome Componente</h2>
+      <div class="drawer-kicker" id="drawer-kicker">Tecnologia / Modulo</div>
     </div>
-
+    <button class="btn-close-drawer" id="btn-close-drawer">✕</button>
+  </div>
+  
+  <div class="drawer-section">
+    <h3>⚙️ Cosa Fa (Funzionalità Principale)</h3>
+    <p id="drawer-cosa-fa"></p>
   </div>
 
-  <footer>
-    Diagramma generato da analisi statica del codice sorgente caricato — nessuna chiamata di rete, nessun dato eseguito.<br>
-    Ogni criticità indicata è riferita a righe di codice o configurazione effettivamente presenti nel repository.
-  </footer>
+  <div class="drawer-section">
+    <h3>🔌 Di Cosa Ha Bisogno (Dipendenze &amp; Prerequisiti)</h3>
+    <ul id="drawer-di-cosa-ha-bisogno"></ul>
+  </div>
+
+  <div class="drawer-section">
+    <h3>📡 Come Si Interfaccia (Protocolli, Endpoint &amp; Porte)</h3>
+    <p id="drawer-come-si-interfaccia"></p>
+  </div>
 </div>
 
 <div class="tooltip" id="tooltip"></div>
 
 <script>
 /* ============================================================
-   DATA MODEL
+   DATA MODEL: NODES & ARCHITECTURE
    ============================================================ */
 
 const NODES = {
-  browser1: { x:240, y:70,  w:132, type:'client', kicker:'client', name:'Browser giocatore', zone:'l1',
-    detail:{
-      role:'Accede alla dashboard servita dall\'Edge Node (porta 3001) per login, avvio partite, storico.',
-      deps:['edge1'],
-      findings:[]
-    }},
-  edge1: { x:240, y:210, w:140, type:'edge', kicker:'node.js / express', name:'Edge Node — Locale 1', zone:'l1',
-    detail:{
-      role:'Dashboard locale, sessione Express in-memory, client OIDC (Authorization Code + PKCE), motore partite in-memory, buffer SQLite, cron di sync verso il gateway ogni 2 minuti.',
-      deps:['mosquitto1','sqlite1','keycloak','gateway'],
-      findings:[
-        {sev:'critical', label:'Stato partita non persistito', text:'<code>activeMatches</code> è una Map in memoria (game-engine.js). Un restart del container a metà partita perde silenziosamente il match — nessun recovery, nessun timeout su match abbandonati (leak illimitato nel tempo).'},
-        {sev:'medium', label:'Cron/commento disallineati', text:'sync-service.js: il commento dice "ogni 5 minuti", <code>SYNC_INTERVAL_MS</code> vale 2 minuti. Segnale di codice non revisionato prima del commit.'},
-        {sev:'medium', label:'Credenziali service-account nel sorgente', text:'<code>edge_sync_service</code> / <code>syncpassword</code> compaiono come fallback letterali in sync-service.js; il token viene richiesto ex-novo a ogni ciclo cron invece di essere riusato fino a scadenza.'}
-      ]
-    }},
-  mosquitto1: { x:240, y:360, w:132, type:'edge', kicker:'mosquitto 2.0', name:'Broker MQTT — Locale 1', zone:'l1',
-    detail:{
-      role:'Riceve eventi sensore (gol, tiri) su <code>locale/BAR_BELVEDERE/eventi</code> e li inoltra all\'Edge via MQTTS.',
-      deps:['sim1','edge1'],
-      findings:[
-        {sev:'critical', label:'TLS cosmetico', text:'Il certificato self-signed è generato in build-time nell\'immagine Docker condivisa (<code>connectedgames-mosquitto</code>), quindi locale1 e locale2 montano la stessa coppia di chiavi. Il client Edge si connette con <code>rejectUnauthorized:false</code>: nessuna verifica del certificato in nessun verso. MQTTS qui è teatro, non sicurezza.'}
-      ]
-    }},
-  sim1: { x:90, y:360, w:120, type:'edge', kicker:'publisher', name:'Simulatore sensori 1', zone:'l1',
-    detail:{
-      role:'Pubblica eventi GOAL/TIRO sul topic del locale usando le credenziali "publish" — nello stesso container/rete dell\'Edge.',
-      deps:['mosquitto1'],
-      findings:[
-        {sev:'medium', label:'Confine di fiducia illusorio', text:'Il ruolo "simulator" pub e il ruolo "edge" sub condividono di fatto lo stesso perimetro di rete Docker. Chi compromette l\'Edge ottiene anche le credenziali di publish: sensore IoT e applicazione non sono due domini di fiducia realmente separati, anche se il diagramma li disegna come tali.'}
-      ]
-    }},
-  sqlite1: { x:410, y:210, w:110, type:'store', kicker:'sqlite', name:'Buffer offline 1', zone:'l1',
-    detail:{ role:'Coda locale delle partite non ancora sincronizzate col server centrale (resilienza a disconnessioni).', deps:[], findings:[] }},
+  // --- LOCALE 1 ---
+  browser1: { x:30, y:60, w:150, type:'client', kicker:'client browser', name:'Browser Giocatore 1',
+    cosaFa: 'Interfaccia utente server-rendered ed HTML5 per il giocatore nel Locale 1. Permette l\'autenticazione OIDC, la selezione del gioco, l\'avvio partita e la visualizzazione del punteggio live.',
+    bisogno: ['Edge Node (Locale 1) attivo sulla porta host 3001.'],
+    interfaccia: 'HTTP/HTML5 via Web Browser indirizzato a <code>http://localhost:3001</code> e redirect OIDC diretto a Keycloak (<code>http://localhost:9080/realms/pissir-realm</code>).'
+  },
+  edge1: { x:30, y:205, w:160, type:'edge', kicker:'node.js / express', name:'Edge Node — Locale 1',
+    cosaFa: 'Nodo applicativo locale del Bar Belvedere. Gestisce le sessioni dei giocatori, calcola il punteggio della partita attiva in tempo reale via WebSocket/MQTT, salva le partite concluse nel DB SQLite locale ed esegue il cron-job di sincronizzazione massiva verso il Cloud via Service Gateway.',
+    bisogno: ['Broker MQTT Mosquitto locale per gli eventi sensori.', 'Database SQLite locale per il buffering offline.', 'Service Gateway centrale per la sincronizzazione.', 'Keycloak IdP per l\'autenticazione OIDC PKCE.'],
+    interfaccia: 'REST Express.js (Porta 3001), MQTTS TLS (Porta 8883), OIDC PKCE diretto con Keycloak (Porta 9080/8080) e chiamate API REST via Service Gateway (Porta 8081).'
+  },
+  mosquitto1: { x:30, y:330, w:160, type:'edge', kicker:'eclipse-mosquitto 2.0', name:'Broker MQTT — Locale 1',
+    cosaFa: 'Broker di messaggistica MQTTS per il Bar Belvedere. Riceve i messaggi degli eventi di gioco (gol, tiri) dai sensori o dal simulatore e li inoltra in tempo reale all\'Edge Node sottoscritto.',
+    bisogno: ['Certificato TLS/SSL generato a runtime con Subject <code>CN=mosquitto-BAR_BELVEDERE</code>.', 'Password file utenti generato a runtime.'],
+    interfaccia: 'MQTTS TLS sicuro sulla porta 8883 (Topic: <code>locale/BAR_BELVEDERE/eventi</code> con QoS 1).'
+  },
+  sim1: { x:210, y:330, w:150, type:'edge', kicker:'publisher iot', name:'Simulatore Sensori 1',
+    cosaFa: 'Simula gli impulsi degli hardware di gioco (es. fotocellule goal per il calciobalilla o bersagli freccette) inviando eventi JSON al broker MQTT.',
+    bisogno: ['Broker MQTT Mosquitto raggiungibile sulla porta 8883 con credenziali di pubblicazione.'],
+    interfaccia: 'MQTTS Client Publisher su topic <code>locale/BAR_BELVEDERE/eventi</code>.'
+  },
+  sqlite1: { x:210, y:205, w:150, type:'store', kicker:'sqlite3 (wal mode)', name:'Buffer SQLite Locale 1',
+    cosaFa: 'Database SQLite locale usato come buffer store-and-forward. Mantiene la tabella <code>partite_attive</code> per la tolleranza ai crash ed la tabella <code>partite_buffer</code> per le partite concluse in attesa di sync.',
+    bisogno: ['Modulo `better-sqlite3` ed accesso in scrittura al file `edge.sqlite3`.'],
+    interfaccia: 'Lettura/Scrittura atomica locale in modalità WAL (Write-Ahead Logging).'
+  },
 
-  browser2: { x:240, y:600, w:132, type:'client', kicker:'client', name:'Browser giocatore', zone:'l2',
-    detail:{ role:'Accede alla dashboard Edge locale 2 (porta 3002).', deps:['edge2'], findings:[] }},
-  edge2: { x:240, y:740, w:140, type:'edge', kicker:'node.js / express', name:'Edge Node — Locale 2', zone:'l2',
-    detail:{
-      role:'Stessa immagine e stessa logica di edge1, distribuita per Sala Giochi Roma.',
-      deps:['mosquitto2','sqlite2','keycloak','gateway'],
-      findings:[
-        {sev:'medium', label:'Stessa base di codice, stesse falle', text:'Ogni criticità di edge1 (stato in-memory, credenziali hardcoded) si replica identicamente qui: non è un caso isolato ma un pattern architetturale.'}
-      ]
-    }},
-  mosquitto2: { x:240, y:890, w:132, type:'edge', kicker:'mosquitto 2.0', name:'Broker MQTT — Locale 2', zone:'l2',
-    detail:{ role:'Equivalente di mosquitto1 per il locale 2.', deps:['sim2','edge2'],
-      findings:[{sev:'critical', label:'Stesso certificato TLS di locale1', text:'Stessa immagine Docker → stessa coppia di chiavi self-signed di mosquitto-locale1. Compromettere il certificato di un locale compromette (in teoria) anche l\'altro.'}] }},
-  sim2: { x:90, y:890, w:120, type:'edge', kicker:'publisher', name:'Simulatore sensori 2', zone:'l2',
-    detail:{ role:'Equivalente di sim1 per il locale 2.', deps:['mosquitto2'], findings:[] }},
-  sqlite2: { x:410, y:740, w:110, type:'store', kicker:'sqlite', name:'Buffer offline 2', zone:'l2',
-    detail:{ role:'Coda locale partite del locale 2.', deps:[], findings:[] }},
+  // --- LOCALE 2 ---
+  browser2: { x:30, y:455, w:150, type:'client', kicker:'client browser', name:'Browser Giocatore 2',
+    cosaFa: 'Interfaccia web del giocatore nel Locale 2 (Sala Giochi Roma).',
+    bisogno: ['Edge Node (Locale 2) attivo sulla porta host 3002.'],
+    interfaccia: 'HTTP/HTML5 via Web Browser su <code>http://localhost:3002</code>.'
+  },
+  edge2: { x:30, y:600, w:160, type:'edge', kicker:'node.js / express', name:'Edge Node — Locale 2',
+    cosaFa: 'Nodo applicativo locale per Sala Giochi Roma. Stessa architettura ed isolamento del Locale 1.',
+    bisogno: ['Broker Mosquitto Locale 2', 'SQLite Locale 2', 'Service Gateway centrale'],
+    interfaccia: 'Express.js (Porta 3002), MQTTS TLS (Porta 8884), REST verso Service Gateway (Porta 8081).'
+  },
+  mosquitto2: { x:30, y:725, w:160, type:'edge', kicker:'eclipse-mosquitto 2.0', name:'Broker MQTT — Locale 2',
+    cosaFa: 'Broker MQTTS per Sala Giochi Roma.',
+    bisogno: ['Certificato TLS generato a runtime per <code>CN=mosquitto-SALA_GIOCHI_ROMA</code>.'],
+    interfaccia: 'MQTTS TLS (Porta 8884, Topic: <code>locale/SALA_GIOCHI_ROMA/eventi</code>).'
+  },
+  sim2: { x:210, y:725, w:150, type:'edge', kicker:'publisher iot', name:'Simulatore Sensori 2',
+    cosaFa: 'Simulatore hardware per il Locale 2.',
+    bisogno: ['Broker Mosquitto 2 attivo.'],
+    interfaccia: 'MQTTS Publisher su topic <code>locale/SALA_GIOCHI_ROMA/eventi</code>.'
+  },
+  sqlite2: { x:210, y:600, w:150, type:'store', kicker:'sqlite3 (wal mode)', name:'Buffer SQLite Locale 2',
+    cosaFa: 'Buffer di storage offline per Sala Giochi Roma.',
+    bisogno: ['Accesso a file `edge.sqlite3` del Locale 2.'],
+    interfaccia: 'File I/O SQLite WAL.'
+  },
 
-  gateway: { x:800, y:250, w:150, type:'core', kicker:'spring cloud gateway', name:'Service Gateway', zone:'core',
-    detail:{
-      role:'Unico ingresso REST pubblico (porta 8081). Valida i JWT Keycloak, instrada verso partita/torneo/statistiche-service, applica autorizzazioni per path+metodo, serve anche come reverse proxy per la UI server-rendered di statistiche-service.',
-      deps:['partita','torneo','statistiche','keycloak'],
-      findings:[
-        {sev:'critical', label:'Nessuna verifica di tenant sul bulk-sync', text:'La route <code>POST /api/v1/locali/{localeId}/partite/sincronizza</code> richiede solo un JWT valido (<code>anyExchange().authenticated()</code>), senza verificare che il chiamante appartenga davvero a quel <code>localeId</code>. Qualunque utente autenticato (anche un semplice "giocatore") può inviare risultati per un locale che non è il suo.'},
-        {sev:'medium', label:'CORS permissivo', text:'<code>allowedOrigins:"*"</code> con <code>allowedMethods</code> che include DELETE. Attenuato da <code>allowCredentials:false</code>, ma indebolisce comunque la difesa in profondità su un gateway che espone anche endpoint mutanti.'},
-        {sev:'medium', label:'Due modelli di autenticazione sullo stesso ingresso', text:'Le route <code>/</code>, <code>/dashboard</code>, <code>/utenti</code>, <code>/tornei</code>, <code>/auth/**</code> sono <code>permitAll()</code> a livello gateway e passate a statistiche-service, che gestisce da sé una sessione cookie-based — completamente separata dal modello bearer-JWT usato dalle API. Questa seconda superficie UI non è menzionata nel README.'}
-      ]
-    }},
-  partita: { x:700, y:110, w:140, type:'core', kicker:'spring boot', name:'Partita Service', zone:'core',
-    detail:{
-      role:'Riceve il bulk-sync dall\'Edge, salva partite, gestisce auto-registrazione utenti e classificazione tornei. Raggiungibile solo sulla rete interna <code>backend-tier</code> (nessuna porta host esposta).',
-      deps:['postgres'],
-      findings:[
-        {sev:'critical', label:'localeId di path mai incrociato col payload', text:'<code>PartitaService.sincronizzaPartite(localeId, partite)</code> usa il <code>localeId</code> del path solo per il logging implicito: ogni riga del payload porta un proprio <code>localeId</code> che viene risolto e salvato senza mai confrontarlo col path né con l\'identità del chiamante. Isolamento multi-tenant assente sia al gateway sia qui.'},
-        {sev:'critical', label:'Auto-registrazione utenti non verificata', text:'<code>trovaORegistraUtente</code> crea un nuovo <code>Utente</code> in <code>platform_db</code> per qualsiasi UUID "giocatoreId" ricevuto nel payload, senza controllare che quello <code>sub</code> Keycloak esista davvero. Una sync forgiata può iniettare identità arbitrarie con punteggi a piacere.'},
-        {sev:'medium', label:'Idempotenza silenziosa', text:'Una partita già presente per ID viene marcata "sincronizzata con successo" (idempotenza), ma questo maschera anche eventuali ID duplicati generati per errore o collisione lato client.'}
-      ]
-    }},
-  torneo: { x:900, y:110, w:140, type:'core', kicker:'spring boot', name:'Torneo Service', zone:'core',
-    detail:{
-      role:'Iscrizioni, classifiche, finestre temporali dei tornei.',
-      deps:['postgres'],
-      findings:[
-        {sev:'medium', label:'Validazione solo a posteriori', text:'La finestra temporale e l\'iscrizione dei giocatori vengono controllate in PartitaService al momento del sync, dopo che l\'Edge ha già giocato e salvato il match come "torneo". Il match declassato ad "amichevole" resta comunque nello storico generale, con potenziale confusione per il giocatore su cosa abbia effettivamente contato.'}
-      ]
-    }},
-  statistiche: { x:800, y:400, w:150, type:'core', kicker:'spring boot + thymeleaf', name:'Statistiche Service', zone:'core',
-    detail:{
-      role:'API statistiche globali (solo <code>admin_piattaforma</code>) e dashboard server-rendered (Thymeleaf) servita in trasparenza dal Gateway su <code>/</code>, <code>/dashboard</code>, <code>/utenti</code>, <code>/partite</code>, <code>/tornei</code>.',
-      deps:['postgres','keycloak'],
-      findings:[
-        {sev:'medium', label:'Superficie non documentata', text:'Questa UI amministrativa esiste ed è pubblicamente raggiungibile via Gateway, ma non compare nel README (che descrive solo le dashboard Edge sulle porte 3001/3002).'}
-      ]
-    }},
-  postgres: { x:850, y:560, w:150, type:'store', kicker:'postgresql 15', name:'Postgres', zone:'core',
-    detail:{ role:'Due database logici: <code>platform_db</code> (dominio di business) e <code>keycloak_db</code> (identità). Stessa istanza fisica, stesse credenziali admin condivise tra i due domini.', deps:[], findings:[
-      {sev:'medium', label:'Isolamento debole tra i due DB logici', text:'platform_db e keycloak_db vivono sulla stessa istanza Postgres con lo stesso utente admin iniettato via env var: un compromesso su un servizio applicativo con quelle credenziali ha visibilità potenziale su entrambi i domini.'}
-    ] }},
-
-  keycloak: { x:1300, y:250, w:150, type:'id', kicker:'keycloak 24', name:'Keycloak', zone:'id',
-    detail:{
-      role:'Identity Provider OIDC. Authorization Code + PKCE per l\'Edge (client pubblico), password grant diretto per il service account <code>edge_sync_service</code>. Ruoli: giocatore, admin_locale, admin_piattaforma.',
-      deps:['postgres'],
-      findings:[
-        {sev:'medium', label:'Password grant per servizio interno', text:'Il flusso "diretto" con username/password per <code>edge_sync_service</code> è più debole del client-credentials grant standard per comunicazioni service-to-service, ed espone una password statica riusata a ogni sync.'}
-      ]
-    }},
-  browserAdmin: { x:1300, y:100, w:140, type:'client', kicker:'client', name:'Browser admin', zone:'id',
-    detail:{ role:'Accede alla console Keycloak (porta 9080) e/o alla dashboard statistiche via Gateway (porta 8081).', deps:['keycloak','gateway'], findings:[] }},
+  // --- CENTRAL BACKEND TIER ---
+  gateway: { x:420, y:330, w:170, type:'core', kicker:'spring cloud gateway', name:'Service Gateway (Entry)',
+    cosaFa: 'Unico punto di ingresso REST pubblico (porta 8081). Valida ogni Bearer JWT Token in arrivo interrogando le chiavi JWK di Keycloak, applica il filtro custom di autorizzazione multi-tenant (`TenantVerificationGatewayFilterFactory`), gestisce il CORS e smista tutte le chiamate verso i microservizi interni.',
+    bisogno: ['Rete interna `platform-backend-tier`', 'Keycloak per la verifica delle chiavi JWK', 'Microservizi downstream attivi'],
+    interfaccia: 'Porta HTTP 8081 esposta all\'esterno. Controlla il JWT con Keycloak ed instrada su HTTP verso `partita-service` (8082), `torneo-service` (8083) e `statistiche-service` (8084).'
+  },
+  partita: { x:630, y:70, w:170, type:'core', kicker:'spring boot 3 / java 21', name:'Partita Service',
+    cosaFa: 'Microservizio per la gestione e persistenza delle partite. Riceve le sincronizzazioni massive (Bulk Sync) instradate dal Gateway, convalida la corrispondenza del `localeId` tra path e payload, e auto-registra i nuovi utenti in `platform_db`.',
+    bisogno: ['PostgreSQL (`platform_db`) per il salvataggio dei dati.'],
+    interfaccia: 'REST API interna (Porta 8082, endpoint `/api/v1/locali/{localeId}/partite/sincronizza` e `/api/v1/partite`).'
+  },
+  torneo: { x:630, y:250, w:170, type:'core', kicker:'spring boot 3 / java 21', name:'Torneo Service',
+    cosaFa: 'Microservizio per la gestione dei tornei, delle iscrizioni dei giocatori e del calcolo delle classifiche. Se un nuovo utente s\'iscrive ad un torneo prima di aver mai giocato, ne esegue l\'auto-registrazione sul DB.',
+    bisogno: ['PostgreSQL (`platform_db`) per tornei ed iscrizioni.'],
+    interfaccia: 'REST API interna (Porta 8083, endpoint `/api/v1/tornei` e `/api/v1/tornei/{id}/iscrizioni`).'
+  },
+  statistiche: { x:630, y:430, w:170, type:'core', kicker:'spring boot + thymeleaf', name:'Statistiche Service (BFF)',
+    cosaFa: 'Servizio Backend-for-Frontend (BFF). Eroga le API per le statistiche aggregate e la Dashboard Amministrativa Centrale server-rendered tramite Thymeleaf con sessioni cookie OIDC.',
+    bisogno: ['PostgreSQL (`platform_db`) per l\'elaborazione delle metriche', 'Keycloak IdP per le sessioni admin'],
+    interfaccia: 'REST API & Web UI (Porta 8084, endpoint `/api/v1/statistiche/**`, `/dashboard`, `/auth/**`).'
+  },
+  postgres: { x:630, y:610, w:170, type:'store', kicker:'postgresql 15', name:'PostgreSQL Central DB',
+    cosaFa: 'Database relazionale centrale della piattaforma. Ospita i due database logici separati `platform_db` e `keycloak_db`, ciascuno accessibile esclusivamente con le proprie utenze segregate (platform_user e keycloak_user).',
+    bisogno: ['Volume dati persistente `postgres_data`.'],
+    interfaccia: 'Connessioni JDBC segregate su porta 5432: platform_user -> platform_db, keycloak_user -> keycloak_db.'
+  },
+  keycloak: { x:840, y:370, w:170, type:'id', kicker:'keycloak 24 (oidc)', name:'Keycloak IdP',
+    cosaFa: 'Server di Autenticazione ed Identity Provider centralizzato. Gestisce l\'autenticazione diretta via browser (PKCE) e rilascia i JWT Token. Espone le chiavi pubbliche JWK per permettere al Service Gateway di verificare la validità dei JWT.',
+    bisogno: ['PostgreSQL (`keycloak_db`) per il salvataggio dei realm e degli utenti.'],
+    interfaccia: 'HTTP/OIDC su porta host 9080 (interna 8080). Endpoint `/realms/pissir-realm/protocol/openid-connect/auth`, `/token` e `/certs`.'
+  },
+  browserAdmin: { x:840, y:140, w:170, type:'client', kicker:'client browser', name:'Browser Admin',
+    cosaFa: 'Interfaccia web dell\'Amministratore della Piattaforma per consultare le statistiche globali, creare tornei e gestire la console Keycloak.',
+    bisogno: ['Service Gateway (porta 8081) e Keycloak (porta 9080).'],
+    interfaccia: 'HTTP/Browser verso `http://localhost:8081/dashboard` ed `http://localhost:9080`.'
+  }
 };
 
 const WIRES = [
-  ['browser1','edge1', false],
-  ['sim1','mosquitto1', false],
-  ['mosquitto1','edge1', false],
-  ['edge1','sqlite1', false],
-  ['edge1','keycloak', false],
-  ['edge1','gateway', true],
+  ['browser1','edge1'],
+  ['browser1','keycloak'],
+  ['sim1','mosquitto1'],
+  ['mosquitto1','edge1'],
+  ['edge1','sqlite1'],
+  ['edge1','keycloak'],
+  ['edge1','gateway'],
 
-  ['browser2','edge2', false],
-  ['sim2','mosquitto2', false],
-  ['mosquitto2','edge2', false],
-  ['edge2','sqlite2', false],
-  ['edge2','keycloak', false],
-  ['edge2','gateway', true],
+  ['browser2','edge2'],
+  ['browser2','keycloak'],
+  ['sim2','mosquitto2'],
+  ['mosquitto2','edge2'],
+  ['edge2','sqlite2'],
+  ['edge2','keycloak'],
+  ['edge2','gateway'],
 
-  ['gateway','partita', true],
-  ['gateway','torneo', false],
-  ['gateway','statistiche', false],
-  ['partita','postgres', false],
-  ['torneo','postgres', false],
-  ['statistiche','postgres', false],
-  ['keycloak','postgres', false],
-  ['gateway','keycloak', false],
-  ['browserAdmin','keycloak', false],
-  ['browserAdmin','gateway', false],
+  ['gateway','partita'],
+  ['gateway','torneo'],
+  ['gateway','statistiche'],
+  ['partita','postgres'],
+  ['torneo','postgres'],
+  ['statistiche','postgres'],
+  ['keycloak','postgres'],
+  ['gateway','keycloak'],
+  ['browserAdmin','keycloak'],
+  ['browserAdmin','gateway']
 ];
 
 const FLOWS = {
   login: {
-    label:'Login OIDC', risk:false,
+    label:'1. Login OIDC Giocatore (Diretto su Keycloak)',
     steps:[
-      {nodes:['browser1'], desc:'<span class="tag info">flusso</span>Il giocatore apre la dashboard dell\'Edge locale e clicca "Login".'},
-      {nodes:['browser1','edge1'], desc:'<span class="tag info">flusso</span>L\'Edge Node (client pubblico) avvia Authorization Code Flow con PKCE verso Keycloak — scelta corretta per un client che non può custodire un secret.'},
-      {nodes:['edge1','keycloak'], desc:'<span class="tag info">flusso</span>Keycloak autentica l\'utente e rilascia il codice; l\'Edge lo scambia per access/ID token, verificando il code_verifier PKCE.'},
-      {nodes:['edge1','browser1'], desc:'<span class="tag info">flusso</span>L\'Edge crea una sessione Express in-memory e imposta il cookie di sessione (1 ora, allineata alla scadenza JWT).'},
+      {nodes:['browser1'], desc:'<span class="tag">Passo 1</span>Il giocatore nel Locale 1 apre la dashboard Edge (`http://localhost:3001`) e clicca "Login con Keycloak".'},
+      {nodes:['browser1','edge1'], desc:'<span class="tag">Passo 2</span>L\'Edge Node (oidc-client.js) genera la sfida PKCE e fornisce l\'URL di reindirizzamento.'},
+      {nodes:['browser1','keycloak'], desc:'<span class="tag">Passo 3 [Diretto]</span>Il browser viene reindirizzato **DIRETTAMENTE su Keycloak** (`http://localhost:9080/realms/pissir-realm/.../auth`) senza passare dal Gateway.'},
+      {nodes:['keycloak','edge1'], desc:'<span class="tag">Passo 4</span>Dopo che l\'utente ha inserito le credenziali, Keycloak reindirizza all\'Edge callback con il codice. L\'Edge scambia il codice con Keycloak (`http://keycloak:8080/.../token`) ed ottiene il Bearer JWT.'},
+      {nodes:['edge1','browser1'], desc:'<span class="tag">Passo 5</span>L\'Edge imposta la sessione utente e mostra il giocatore autenticato sulla dashboard.'}
     ]
   },
   match: {
-    label:'Evento sensore → punteggio', risk:false,
+    label:'2. Eventi MQTTS Sensore → SQLite (Offline Resilient)',
     steps:[
-      {nodes:['sim1'], desc:'<span class="tag info">flusso</span>Il simulatore (o un sensore reale) pubblica un evento <code>GOAL</code>/<code>TIRO</code> sul topic <code>locale/BAR_BELVEDERE/eventi</code>.'},
-      {nodes:['sim1','mosquitto1'], desc:'<span class="tag info">flusso</span>Il broker MQTT riceve l\'evento con QoS 1.'},
-      {nodes:['mosquitto1','edge1'], desc:'<span class="tag info">flusso</span>L\'Edge, sottoscritto allo stesso topic, riceve l\'evento e lo passa al motore partite in-memory.'},
-      {nodes:['edge1'], desc:'<span class="tag info">flusso</span><code>game-engine.js</code> aggiorna il punteggio della partita attiva (Map in memoria) e, a fine match, lo scrive nel buffer SQLite locale.'},
+      {nodes:['sim1'], desc:'<span class="tag">Passo 1</span>Il Sensore IoT (o Simulatore) rileva un evento (Gol / Tiro) e compone il messaggio JSON.'},
+      {nodes:['sim1','mosquitto1'], desc:'<span class="tag">Passo 2</span>Invia il messaggio su MQTTS (porta 8883) cifrato con certificato TLS unico del locale.'},
+      {nodes:['mosquitto1','edge1'], desc:'<span class="tag">Passo 3</span>L\'Edge Node riceve l\'evento dal broker Mosquitto via subscription MQTTS e lo passa a `game-engine.js`.'},
+      {nodes:['edge1','sqlite1'], desc:'<span class="tag">Passo 4</span>Il punteggio viene calcolato e persistito immediatamente nella tabella `partite_attive` in SQLite. A fine match la partita conclusa viene trasferita in `partite_buffer`.'}
     ]
   },
   sync: {
-    label:'Sync bulk offline', risk:true,
+    label:'3. Bulk Sync Offline & Controllo JWT Gateway',
     steps:[
-      {nodes:['edge1'], desc:'<span class="tag info">flusso</span>Ogni 2 minuti (cron) o su trigger manuale, l\'Edge legge dal buffer SQLite le partite non ancora sincronizzate.'},
-      {nodes:['edge1','keycloak'], desc:'<span class="tag info">flusso</span>Se non c\'è un token utente disponibile, l\'Edge richiede un token per <code>edge_sync_service</code> via password grant — ad ogni singolo ciclo, senza riuso.'},
-      {nodes:['edge1','gateway'], desc:'<span class="tag critical">criticità</span><b>POST /api/v1/locali/{localeId}/partite/sincronizza</b> — il Gateway richiede solo un JWT valido. Nessuna regola verifica che il token appartenga davvero al <code>localeId</code> nel path.'},
-      {nodes:['gateway','partita'], desc:'<span class="tag critical">criticità</span>Il Gateway instrada al Partita Service. Il metodo <code>sincronizzaPartite(localeId, partite)</code> ignora il <code>localeId</code> di path ai fini della validazione: ogni riga del payload porta il proprio locale e viene salvata così com\'è.'},
-      {nodes:['partita','postgres'], desc:'<span class="tag critical">criticità</span>Giocatori sconosciuti vengono auto-registrati in <code>platform_db</code> a partire dal solo UUID dichiarato nel payload — nessuna verifica che quel <code>sub</code> esista davvero in Keycloak. Un payload forgiato può scrivere risultati e creare identità per qualunque locale.'},
+      {nodes:['edge1','sqlite1'], desc:'<span class="tag">Passo 1</span>Il cron-job dell\'Edge Node legge dal DB SQLite locale le partite concluse non ancora sincronizzate (`sincronizzata = 0`).'},
+      {nodes:['edge1','keycloak'], desc:'<span class="tag">Passo 2</span>L\'Edge richiede direttamente a Keycloak un Bearer JWT via OAuth2 Client Credentials Grant per `edge-sync-client`.'},
+      {nodes:['edge1','gateway'], desc:'<span class="tag">Passo 3</span>L\'Edge invia `POST /api/v1/locali/BAR_BELVEDERE/partite/sincronizza` al **Service Gateway (porta 8081)** includendo l\'`Authorization: Bearer <JWT>`.'},
+      {nodes:['gateway','keycloak'], desc:'<span class="tag">Passo 4 [Verifica JWT]</span>Il Service Gateway interroga le chiavi JWK di Keycloak (`http://keycloak:8080/.../certs`) per **verificare rigorosamente la firma ed la validità del JWT**, ed esegue il filtro custom `TenantVerificationGatewayFilterFactory`.'},
+      {nodes:['gateway','partita'], desc:'<span class="tag">Passo 5</span>Una volta approvato il JWT, il Gateway inoltra la richiesta al `partita-service` sulla rete interna `platform-backend-tier`.'},
+      {nodes:['partita','postgres'], desc:'<span class="tag">Passo 6</span>`PartitaService` valida il `localeId` tra path e payload, salva le partite su PostgreSQL `platform_db` ed auto-registra i nuovi utenti.'},
+      {nodes:['partita','gateway','edge1'], desc:'<span class="tag">Passo 7</span>Il Gateway restituisce 200 OK all\'Edge, che marca le partite come `sincronizzata = 1` nel buffer SQLite.'}
     ]
   },
   tournament: {
-    label:'Classificazione torneo', risk:false,
+    label:'4. Iscrizione Torneo & Validazione JWT Gateway',
     steps:[
-      {nodes:['edge1'], desc:'<span class="tag info">flusso</span>L\'Edge marca localmente la partita come legata a un <code>torneoId</code>, ma non verifica lato client se il torneo è ancora aperto o se entrambi i giocatori sono iscritti.'},
-      {nodes:['edge1','gateway'], desc:'<span class="tag info">flusso</span>Il match arriva al server via lo stesso bulk-sync già visto.'},
-      {nodes:['gateway','partita'], desc:'<span class="tag medium-inline">flusso</span>Il Partita Service controlla finestra temporale e iscrizione di entrambi i giocatori.'},
-      {nodes:['partita','torneo'], desc:'<span class="tag medium-inline">flusso</span>Se una condizione fallisce, la partita viene "declassata" ad amichevole in silenzio (solo un log) — ma resta comunque salvata nello storico generale delle partite.'},
+      {nodes:['browser1','edge1'], desc:'<span class="tag">Passo 1</span>Il giocatore seleziona un torneo attivo dalla dashboard Edge e richiede l\'iscrizione.'},
+      {nodes:['edge1','gateway'], desc:'<span class="tag">Passo 2</span>L\'Edge invia `POST /api/v1/tornei/{torneoId}/iscrizioni` al Service Gateway con l\'`Authorization: Bearer <JWT>`.'},
+      {nodes:['gateway','keycloak'], desc:'<span class="tag">Passo 3 [Verifica JWT]</span>Il Service Gateway controlla la firma del JWT con Keycloak ed autorizza l\'accesso.'},
+      {nodes:['gateway','torneo'], desc:'<span class="tag">Passo 4</span>Il Gateway inoltra la richiesta a `torneo-service`.'},
+      {nodes:['torneo','postgres'], desc:'<span class="tag">Passo 5</span>`TorneoService` controlla se l\'utente esiste in `platform_db.utente`. Se è un nuovo utente, lo auto-registra leggendo lo username dal JWT e salva l\'iscrizione.'}
     ]
   },
   admin: {
-    label:'Dashboard admin', risk:false,
+    label:'5. Dashboard Admin & Statistiche (via Gateway)',
     steps:[
-      {nodes:['browserAdmin'], desc:'<span class="tag info">flusso</span>Un admin apre <code>http://localhost:8081/dashboard</code>.'},
-      {nodes:['browserAdmin','gateway'], desc:'<span class="tag info">flusso</span>Il path è in <code>permitAll()</code> a livello Gateway (nessuna verifica JWT qui).'},
-      {nodes:['gateway','statistiche'], desc:'<span class="tag medium-inline">flusso</span>La richiesta viene proxy-ata a statistiche-service, che gestisce da sé una sessione cookie — un secondo modello di autenticazione rispetto al bearer-JWT usato dalle API, convergente sullo stesso ingresso pubblico.'},
-      {nodes:['statistiche','postgres'], desc:'<span class="tag info">flusso</span>Query aggregate su <code>platform_db</code> per popolare la dashboard Thymeleaf lato server.'},
+      {nodes:['browserAdmin','gateway'], desc:'<span class="tag">Passo 1</span>L\'amministratore naviga su `http://localhost:8081/dashboard` via Service Gateway.'},
+      {nodes:['gateway','statistiche'], desc:'<span class="tag">Passo 2</span>Il Gateway instrada la richiesta a `statistiche-service` (BFF) che gestisce la sessione cookie OIDC.'},
+      {nodes:['statistiche','postgres'], desc:'<span class="tag">Passo 3</span>`StatisticheService` recupera le aggregazioni da `platform_db` e renderizza la dashboard Thymeleaf.'}
     ]
   }
 };
 
 /* ============================================================
-   RENDER
+   RENDER ENGINE
    ============================================================ */
 
 const nodesEl = document.getElementById('nodes');
@@ -466,33 +493,21 @@ const wiresEl = document.getElementById('wires');
 const tooltip = document.getElementById('tooltip');
 const canvas = document.getElementById('canvas');
 
-function severityCounts(detail){
-  let c=0,m=0;
-  (detail.findings||[]).forEach(f=>{ if(f.sev==='critical') c++; else m++; });
-  return {c,m};
-}
-
-// Build node DOM
+// Render Nodes
 Object.entries(NODES).forEach(([id, n])=>{
   const div = document.createElement('div');
   div.className = `node type-${n.type}`;
   div.id = 'node-'+id;
-  div.style.left = (n.x/1600*100)+'%';
-  div.style.top = (n.y/900*100)+'%';
-  div.style.width = n.w+'px';
-
-  const {c,m} = severityCounts(n.detail);
-  let badges = '';
-  if(c>0) badges += `<div class="sev-dot critical" title="${c} critiche">${c}</div>`;
-  if(m>0) badges += `<div class="sev-dot medium" title="${m} medie">${m}</div>`;
+  div.style.left = n.x + 'px';
+  div.style.top = n.y + 'px';
+  div.style.width = n.w + 'px';
 
   div.innerHTML = `
-    <div class="sev-badges">${badges}</div>
     <div class="kicker">${n.kicker}</div>
     <div class="name">${n.name}</div>
   `;
 
-  div.addEventListener('click', ()=> selectNode(id));
+  div.addEventListener('click', ()=> openInspector(id));
   div.addEventListener('mouseenter', (e)=> showTooltip(e, n));
   div.addEventListener('mousemove', (e)=> moveTooltip(e));
   div.addEventListener('mouseleave', hideTooltip);
@@ -500,72 +515,69 @@ Object.entries(NODES).forEach(([id, n])=>{
   nodesEl.appendChild(div);
 });
 
-// Build wires
-WIRES.forEach(([a,b,risk])=>{
+// Render Wires
+WIRES.forEach(([a,b])=>{
   const na = NODES[a], nb = NODES[b];
+  if(!na || !nb) return;
   const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-  const midX = (na.x+nb.x)/2;
-  const d = `M ${na.x} ${na.y} Q ${midX} ${(na.y+nb.y)/2} ${nb.x} ${nb.y}`;
+  const ax = na.x + na.w/2, ay = na.y + 22;
+  const bx = nb.x + nb.w/2, by = nb.y + 22;
+  const midX = (ax+bx)/2;
+  const d = `M ${ax} ${ay} Q ${midX} ${(ay+by)/2} ${bx} ${by}`;
   path.setAttribute('d', d);
-  path.setAttribute('class', 'wire'+(risk?' risk':''));
+  path.setAttribute('class', 'wire');
   path.setAttribute('marker-end','url(#arrow)');
   path.id = `wire-${a}-${b}`;
   wiresEl.appendChild(path);
 });
 
 function showTooltip(e, n){
-  tooltip.innerHTML = `<b>${n.name}</b><br>${n.detail.role.replace(/<[^>]+>/g,'')}`;
+  tooltip.innerHTML = `<b>${n.name}</b>${n.cosaFa.substring(0, 110)}...`;
   tooltip.classList.add('show');
   moveTooltip(e);
 }
 function moveTooltip(e){
   const rect = canvas.getBoundingClientRect();
-  const scrollRect = canvas.parentElement.getBoundingClientRect();
-  tooltip.style.left = (e.clientX - scrollRect.left + canvas.parentElement.scrollLeft) + 'px';
-  tooltip.style.top = (e.clientY - rect.top) + 'px';
+  tooltip.style.left = (e.clientX - rect.left + 15) + 'px';
+  tooltip.style.top = (e.clientY - rect.top + 15) + 'px';
 }
 function hideTooltip(){ tooltip.classList.remove('show'); }
 
-/* ---------- Detail panel ---------- */
-let selectedId = null;
-function selectNode(id){
-  selectedId = id;
+/* ---------- Drawer Inspector ---------- */
+const drawerOverlay = document.getElementById('drawer-overlay');
+const drawer = document.getElementById('drawer');
+const btnCloseDrawer = document.getElementById('btn-close-drawer');
+
+function openInspector(id){
   document.querySelectorAll('.node').forEach(el=>el.classList.remove('selected'));
-  document.getElementById('node-'+id).classList.add('selected');
+  const nodeEl = document.getElementById('node-'+id);
+  if(nodeEl) nodeEl.classList.add('selected');
 
   const n = NODES[id];
-  const panel = document.getElementById('detail-panel');
-  const findingsHtml = (n.detail.findings||[]).map(f=>`
-    <div class="finding ${f.sev==='critical'?'critical':''}">
-      <span class="flabel">${f.sev==='critical'?'⚠ critico':'△ medio'} — ${f.label}</span>
-      ${f.text}
-    </div>`).join('') || '<p style="color:var(--text-faint)">Nessuna criticità specifica rilevata su questo nodo.</p>';
+  document.getElementById('drawer-title').textContent = n.name;
+  document.getElementById('drawer-kicker').textContent = n.kicker;
+  document.getElementById('drawer-cosa-fa').textContent = n.cosaFa;
 
-  const depsHtml = (n.detail.deps||[]).map(d=>`<code>${NODES[d]?NODES[d].name:d}</code>`).join(', ') || '—';
+  const bisognoUl = document.getElementById('drawer-di-cosa-ha-bisogno');
+  bisognoUl.innerHTML = (n.bisogno || []).map(b => `<li>${b}</li>`).join('');
 
-  panel.innerHTML = `
-    <h2>Dettaglio nodo</h2>
-    <div class="detail-head">
-      <p class="detail-title">${n.name}</p>
-    </div>
-    <div class="detail-kicker">${n.kicker}</div>
-    <div class="detail-section">
-      <h3>Ruolo</h3>
-      <p>${n.detail.role}</p>
-    </div>
-    <div class="detail-section">
-      <h3>Dipende da</h3>
-      <p>${depsHtml}</p>
-    </div>
-    <div class="detail-section">
-      <h3>Criticità rilevate</h3>
-      ${findingsHtml}
-    </div>
-  `;
+  document.getElementById('drawer-come-si-interfaccia').innerHTML = n.interfaccia;
+
+  drawerOverlay.classList.add('show');
+  drawer.classList.add('show');
 }
 
+function closeInspector(){
+  drawerOverlay.classList.remove('show');
+  drawer.classList.remove('show');
+  document.querySelectorAll('.node').forEach(el=>el.classList.remove('selected'));
+}
+
+drawerOverlay.addEventListener('click', closeInspector);
+btnCloseDrawer.addEventListener('click', closeInspector);
+
 /* ============================================================
-   FLOWS
+   FLOW CONTROLLER & ANIMATION
    ============================================================ */
 const tabsEl = document.getElementById('flow-tabs');
 let currentFlow = null;
@@ -576,7 +588,7 @@ Object.entries(FLOWS).forEach(([key, f])=>{
   const btn = document.createElement('div');
   btn.className = 'flow-tab';
   btn.id = 'tab-'+key;
-  btn.innerHTML = f.label + (f.risk ? ' <span class="risk-mark">●</span>' : '');
+  btn.textContent = f.label;
   btn.addEventListener('click', ()=> loadFlow(key));
   tabsEl.appendChild(btn);
 });
@@ -593,7 +605,6 @@ function loadFlow(key){
 function clearFlowHighlights(){
   document.querySelectorAll('.node').forEach(el=>el.classList.remove('active-flow'));
   document.querySelectorAll('.wire').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.flow-dot').forEach(el=>el.remove());
 }
 
 function renderStep(){
@@ -607,18 +618,18 @@ function renderStep(){
     if(el) el.classList.add('active-flow');
   });
 
-  if(step.nodes.length===2){
-    const [a,b] = step.nodes;
-    let wire = document.getElementById(`wire-${a}-${b}`) || document.getElementById(`wire-${b}-${a}`);
-    if(wire) wire.classList.add('active');
+  if(step.nodes.length>=2){
+    for(let i=0; i<step.nodes.length-1; i++){
+      const a = step.nodes[i], b = step.nodes[i+1];
+      let wire = document.getElementById(`wire-${a}-${b}`) || document.getElementById(`wire-${b}-${a}`);
+      if(wire) wire.classList.add('active');
+    }
   }
 
   const descEl = document.getElementById('flow-desc');
   descEl.innerHTML = step.desc;
-  descEl.classList.toggle('risk', step.desc.includes('critical'));
 
-  document.getElementById('step-label').textContent =
-    `${flow.label} — passo ${currentStep+1}/${flow.steps.length}`;
+  document.getElementById('step-label').textContent = `${flow.label} — Passo ${currentStep+1}/${flow.steps.length}`;
   document.getElementById('btn-prev').disabled = currentStep===0;
   document.getElementById('btn-next').disabled = currentStep===flow.steps.length-1;
 }
@@ -633,21 +644,21 @@ document.getElementById('btn-next').addEventListener('click', ()=>{
 const playBtn = document.getElementById('btn-play');
 playBtn.addEventListener('click', ()=>{
   if(playTimer){ stopPlay(); return; }
-  if(!currentFlow) loadFlow(Object.keys(FLOWS)[0]);
-  playBtn.textContent = '⏸ pausa';
+  if(!currentFlow) loadFlow('sync');
+  playBtn.textContent = '⏸ Pausa';
   playTimer = setInterval(()=>{
     const flow = FLOWS[currentFlow];
     if(currentStep < flow.steps.length-1){ currentStep++; renderStep(); }
     else { stopPlay(); }
-  }, 2200);
+  }, 2600);
 });
 function stopPlay(){
   clearInterval(playTimer);
   playTimer = null;
-  playBtn.textContent = '▶ play';
+  playBtn.textContent = '▶ Play animazione';
 }
 
-// Init: load first flow (non-risk) so the diagram isn't empty on open
+// Inizializzazione
 loadFlow('sync');
 </script>
 </body>

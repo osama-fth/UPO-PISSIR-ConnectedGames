@@ -11,16 +11,46 @@
 CREATE DATABASE platform_db;
 CREATE DATABASE keycloak_db;
 
--- 2. Connessione al database platform_db per creare schema e tabelle
+-- 2. Creazione utenze segregate con privilegio minimo (Fix M6)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'platform_user') THEN
+        CREATE USER platform_user WITH PASSWORD 'platform_pass123';
+    END IF;
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'keycloak_user') THEN
+        CREATE USER keycloak_user WITH PASSWORD 'keycloak_pass123';
+    END IF;
+END
+$$;
+
+GRANT ALL PRIVILEGES ON DATABASE platform_db TO platform_user;
+GRANT ALL PRIVILEGES ON DATABASE keycloak_db TO keycloak_user;
+
+-- 3. Connessione al database platform_db per creare schema e tabelle
 \connect platform_db;
 
--- 3. Creazione dello schema 'platform_db' dentro il database 'platform_db'
+-- 4. Creazione dello schema 'platform_db' dentro il database 'platform_db'
 -- Le entities JPA usano @Table(schema = "platform_db"), quindi serve
 -- uno schema con questo nome all'interno del database.
 CREATE SCHEMA IF NOT EXISTS platform_db;
 
--- 4. Abilita l'estensione UUID nello schema platform_db
+GRANT ALL PRIVILEGES ON SCHEMA platform_db TO platform_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA platform_db TO platform_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA platform_db TO platform_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA platform_db GRANT ALL ON TABLES TO platform_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA platform_db GRANT ALL ON SEQUENCES TO platform_user;
+
+-- 5. Abilita l'estensione UUID nello schema platform_db
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA platform_db;
+
+-- Permessi per keycloak_db
+\connect keycloak_db;
+GRANT ALL PRIVILEGES ON SCHEMA public TO keycloak_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO keycloak_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO keycloak_user;
+
+-- Ritorno a platform_db per DDL e SEED
+\connect platform_db;
 
 -- ============================================================
 -- TABELLE DDL (coerenti con doc/schema-database.sql)

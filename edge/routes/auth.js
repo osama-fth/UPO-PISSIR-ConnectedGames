@@ -127,6 +127,7 @@ router.get('/callback', async (req, res) => {
         req.session.user = userInfo;
         req.session.tokenSet = {
             accessToken: tokenSet.access_token,
+            refreshToken: tokenSet.refresh_token,
             idToken: tokenSet.id_token,
             expiresAt: tokenSet.expires_at
         };

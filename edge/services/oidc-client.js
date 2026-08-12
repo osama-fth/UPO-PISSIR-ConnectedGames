@@ -218,6 +218,12 @@ async function clientCredentialsAuth(
     return { accessToken: tokenData.access_token };
 }
 
+async function refreshTokens(refreshToken) {
+    if (!oidcClient) throw new Error('Client OIDC non inizializzato');
+    if (!refreshToken) throw new Error('Refresh token non fornito');
+    return await oidcClient.refresh(refreshToken);
+}
+
 module.exports = {
     initOidcClient,
     checkKeycloakHealth,
@@ -227,5 +233,6 @@ module.exports = {
     getUserInfoFromToken,
     getLogoutUrl,
     directPasswordAuth,
-    clientCredentialsAuth
+    clientCredentialsAuth,
+    refreshTokens
 };

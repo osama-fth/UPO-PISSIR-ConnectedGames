@@ -163,16 +163,16 @@ INSERT INTO platform_db.locale (id, nome, tipo, indirizzo) VALUES
 
 -- Utenti (Mappati da Keycloak)
 INSERT INTO platform_db.utente (id, username, email) VALUES
-    ('a0000000-0000-0000-0000-000000000001', 'SuperMario', 'mario.rossi@example.com'),
-    ('a0000000-0000-0000-0000-000000000002', 'Gigio', 'luigi.bianchi@example.com'),
-    ('a0000000-0000-0000-0000-000000000003', 'admin_belvedere', 'admin.belvedere@example.com'),
-    ('a0000000-0000-0000-0000-000000000004', 'admin_roma', 'admin.roma@example.com'),
-    ('a0000000-0000-0000-0000-000000000005', 'admin_piattaforma', 'admin.platform@example.com'),
-    ('a0000000-0000-0000-0000-000000000006', 'edge_sync_service', 'sync.service@example.com'),
-    ('a0000000-0000-0000-0000-000000000007', 'SantAnna', 'anna.verdi@example.com'),
-    ('a0000000-0000-0000-0000-000000000008', 'Paul', 'paolo.neri@example.com'),
-    ('a0000000-0000-0000-0000-000000000009', 'LukeSkywalker', 'luca.gialli@example.com'),
-    ('a0000000-0000-0000-0000-000000000010', 'Saretta', 'sara.viola@example.com');
+    ('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'SuperMario', 'mario.rossi@example.com'),
+    ('8c1c4e92-3d71-4b82-95f3-11a2f64d08b2', 'Gigio', 'luigi.bianchi@example.com'),
+    ('3e7d9b14-8a5f-4c2d-9610-4f51e8a93c71', 'admin_belvedere', 'admin.belvedere@example.com'),
+    ('6b9e2c4f-1d8a-4f53-b290-7c4819e6d035', 'admin_roma', 'admin.roma@example.com'),
+    ('d19f8e32-7c6a-4d10-8b45-2e6f91d84a0c', 'admin_piattaforma', 'admin.platform@example.com'),
+    ('e28a4c10-9b3f-4e61-a572-8d9e03f1b4c7', 'edge_sync_service', 'sync.service@example.com'),
+    ('5a3b7c89-2e1f-4d60-9842-6e71d09f3b5a', 'SantAnna', 'anna.verdi@example.com'),
+    ('9d2e4f10-6c8a-4b53-a719-3f0b2e8c5d61', 'Paul', 'paolo.neri@example.com'),
+    ('7b8c9d01-4e2f-4a63-b581-0d3c4e9f7a2b', 'LukeSkywalker', 'luca.gialli@example.com'),
+    ('1f4e5d60-3c2b-4a81-9b70-8e9f0a1c2d3e', 'Saretta', 'sara.viola@example.com');
 
 -- Giochi
 INSERT INTO platform_db.gioco (id, nome, descrizione) VALUES
@@ -207,15 +207,15 @@ INSERT INTO platform_db.torneo_locale (torneo_id, locale_id) VALUES
 
 -- Iscrizioni torneo (giocatori iscritti ai tornei)
 INSERT INTO platform_db.iscrizione_torneo (torneo_id, utente_id) VALUES
-    ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001'),
-    ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002'),
-    ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000007'),
-    ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000008'),
-    ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000009'),
-    ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000010'),
-    ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001'),
-    ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002'),
-    ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000007'),
-    ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000008'),
-    ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000009'),
-    ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000010');
+    ('b0000000-0000-0000-0000-000000000001', 'f47ac10b-58cc-4372-a567-0e02b2c3d479'),
+    ('b0000000-0000-0000-0000-000000000001', '8c1c4e92-3d71-4b82-95f3-11a2f64d08b2'),
+    ('b0000000-0000-0000-0000-000000000001', '5a3b7c89-2e1f-4d60-9842-6e71d09f3b5a'),
+    ('b0000000-0000-0000-0000-000000000001', '9d2e4f10-6c8a-4b53-a719-3f0b2e8c5d61'),
+    ('b0000000-0000-0000-0000-000000000001', '7b8c9d01-4e2f-4a63-b581-0d3c4e9f7a2b'),
+    ('b0000000-0000-0000-0000-000000000001', '1f4e5d60-3c2b-4a81-9b70-8e9f0a1c2d3e'),
+    ('b0000000-0000-0000-0000-000000000002', 'f47ac10b-58cc-4372-a567-0e02b2c3d479'),
+    ('b0000000-0000-0000-0000-000000000002', '8c1c4e92-3d71-4b82-95f3-11a2f64d08b2'),
+    ('b0000000-0000-0000-0000-000000000002', '5a3b7c89-2e1f-4d60-9842-6e71d09f3b5a'),
+    ('b0000000-0000-0000-0000-000000000002', '9d2e4f10-6c8a-4b53-a719-3f0b2e8c5d61'),
+    ('b0000000-0000-0000-0000-000000000002', '7b8c9d01-4e2f-4a63-b581-0d3c4e9f7a2b'),
+    ('b0000000-0000-0000-0000-000000000002', '1f4e5d60-3c2b-4a81-9b70-8e9f0a1c2d3e');

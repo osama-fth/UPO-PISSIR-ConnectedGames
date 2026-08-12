@@ -975,7 +975,7 @@ components:
         utenteId:
           type: string
           format: uuid
-          example: "a0000000-0000-0000-0000-000000000001"
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
 
     IscrizioneTorneoResponse:
       type: object
@@ -1136,7 +1136,7 @@ components:
         utenteId:
           type: string
           format: uuid
-          example: "a0000000-0000-0000-0000-000000000001"
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         username:
           type: string
           example: "SuperMario"

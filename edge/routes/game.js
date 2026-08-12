@@ -1,28 +1,14 @@
-// ============================================================
-// routes/game.js — Rotte di Gioco
-// Connected Games Platform (PISSIR A.A. 2025/2026)
-// ============================================================
-// Gestisce il flusso di gioco: selezione, avvio con login
-// di 2 giocatori, eventi di gioco, e risultato finale.
-// Gli eventi di gioco simulano il pattern MQTT:
-// UI → POST rotta → publish MQTT → subscribe Edge → aggiorna stato
-// ============================================================
+// Gestione ciclo di vita della partita (avvio autenticato o ospite, simulazione eventi MQTT e stato finale).
 
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
-const { checkKeycloakHealth, directPasswordAuth, clientCredentialsAuth } = require('../services/oidc-client');
-const { creaPartita, processaEvento, pubblicaEventoMqtt, getMatch, removeMatch } = require('../services/game-engine');
+const { directPasswordAuth, clientCredentialsAuth } = require('../services/oidc-client');
+const { creaPartita, pubblicaEventoMqtt, getMatch, removeMatch } = require('../services/game-engine');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
-const KEYCLOAK_INTERNAL_URL = process.env.KEYCLOAK_INTERNAL_URL || 'http://keycloak:8080/realms/pissir-realm';
-const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'edge-client';
-
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
 
-/**
- * Helper: ottiene gli header di autenticazione Bearer per le chiamate verso il Central Gateway.
- */
+// Recupera i token JWT di sessione o di servizio per le chiamate verso il Gateway centrale
 async function getGatewayAuthHeaders(req) {
     let token = req?.session?.tokenSet?.accessToken;
     if (!token) {
@@ -36,9 +22,7 @@ async function getGatewayAuthHeaders(req) {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
-/**
- * Helper: recupera i tornei attivi pertinenti per questo locale
- */
+// Recupera i tornei attivi per la selezione in fase di avvio partita
 async function getTorneiAttiviLocale(req) {
     try {
         const headers = await getGatewayAuthHeaders(req);
@@ -55,12 +39,7 @@ async function getTorneiAttiviLocale(req) {
     }
 }
 
-/**
- * POST /game/start
- * Avvia una nuova partita. Richiede l'autenticazione di 2 giocatori.
- * Entrambi i giocatori si autenticano con username e password
- * via Direct Access Grant.
- */
+// Avvia una partita chiedendo le credenziali Direct Access Grant a entrambi i giocatori
 router.post('/start', async (req, res) => {
     try {
         const { giocoId, player1Username, player1Password, player2Username, player2Password, torneoId } = req.body;
@@ -94,7 +73,6 @@ router.post('/start', async (req, res) => {
             });
         }
 
-        // Controlla il ruolo giocatore per entrambi
         if (!giocatore1.roles.includes('giocatore') || !giocatore2.roles.includes('giocatore')) {
             return res.status(403).render('game-select', {
                 title: 'Seleziona Gioco',
@@ -104,7 +82,6 @@ router.post('/start', async (req, res) => {
             });
         }
 
-        // Controlla che non sia lo stesso giocatore
         if (giocatore1.id === giocatore2.id) {
             return res.status(400).render('game-select', {
                 title: 'Seleziona Gioco',
@@ -114,7 +91,7 @@ router.post('/start', async (req, res) => {
             });
         }
 
-        // Se è stata selezionata una partita di torneo, verifica che ENTRAMBI i giocatori siano iscritti
+        // Se la partita fa parte di un torneo, verifica che entrambi i giocatori siano iscritti
         const selectedTorneo = torneoId ? torneoId : null;
         if (selectedTorneo) {
             try {
@@ -130,14 +107,12 @@ router.post('/start', async (req, res) => {
                 const p2Iscritto = iscrittiIds.includes(giocatore2.id);
 
                 if (!p1Iscritto || !p2Iscritto) {
-                    const nonIscritto = !p1Iscritto
-                        ? giocatore1.username
-                        : giocatore2.username;
+                    const nonIscritto = !p1Iscritto ? giocatore1.username : giocatore2.username;
                     return res.status(403).render('game-select', {
                         title: 'Seleziona Gioco',
                         localeId: LOCALE_ID,
                         torneiAttivi: await getTorneiAttiviLocale(req),
-                        error: `Impossibile avviare la partita: "${nonIscritto}" non è iscritto a questo torneo. Entrambi i giocatori devono essere iscritti al torneo selezionato.`
+                        error: `Impossibile avviare la partita: "${nonIscritto}" non è iscritto a questo torneo.`
                     });
                 }
             } catch (torneoErr) {
@@ -150,12 +125,8 @@ router.post('/start', async (req, res) => {
             }
         }
 
-        // Crea la partita
         const match = creaPartita(giocoId, giocatore1, giocatore2, selectedTorneo);
-
-        // Redirect alla pagina di gioco
         return res.redirect(`/game/${match.id}`);
-
     } catch (err) {
         console.error(`[Game ${LOCALE_ID}] Errore avvio partita:`, err.message);
         return res.status(500).render('error', {
@@ -165,13 +136,7 @@ router.post('/start', async (req, res) => {
     }
 });
 
-/**
- * POST /game/start-guest
- * Avvia una nuova partita in modalità Ospite.
- * Non richiede autenticazione Keycloak: i giocatori inseriscono
- * solo un nome di visualizzazione. I player_id sono NULL,
- * quindi la partita NON verrà salvata su SQLite (UC1.1).
- */
+// Avvia una partita amichevole senza autenticazione Keycloak (id null, non salvata in DB)
 router.post('/start-guest', (req, res) => {
     try {
         const { giocoId, guest1Name, guest2Name } = req.body;
@@ -183,7 +148,6 @@ router.post('/start-guest', (req, res) => {
             });
         }
 
-        // Sanitizza i nomi: rimuovi tag HTML e trim
         const nome1 = (guest1Name || '').replace(/<[^>]*>/g, '').trim();
         const nome2 = (guest2Name || '').replace(/<[^>]*>/g, '').trim();
 
@@ -203,15 +167,12 @@ router.post('/start-guest', (req, res) => {
             });
         }
 
-        // Crea giocatori ospite con id NULL (partita non salvata su SQLite)
         const giocatore1 = { id: null, username: nome1 };
         const giocatore2 = { id: null, username: nome2 };
 
         const match = creaPartita(giocoId, giocatore1, giocatore2);
-
         console.log(`[Game ${LOCALE_ID}] Partita ospite ${match.id} avviata: ${nome1} vs ${nome2}`);
         return res.redirect(`/game/${match.id}`);
-
     } catch (err) {
         console.error(`[Game ${LOCALE_ID}] Errore avvio partita ospite:`, err.message);
         return res.status(500).render('error', {
@@ -221,11 +182,7 @@ router.post('/start-guest', (req, res) => {
     }
 });
 
-/**
- * GET /game/:matchId
- * Mostra la pagina di gioco attiva con l'interfaccia per
- * Calciobalilla o Freccette.
- */
+// Renderizza la vista di gioco in corso o il risultato finale
 router.get('/:matchId', (req, res) => {
     const match = getMatch(req.params.matchId);
 
@@ -251,12 +208,7 @@ router.get('/:matchId', (req, res) => {
     });
 });
 
-/**
- * POST /game/:matchId/event
- * Riceve un evento di gioco dall'interfaccia.
- * L'evento viene processato direttamente dal game engine
- * (simulando il percorso MQTT: UI → publish → subscribe → processa).
- */
+// Invia un evento di gioco al broker MQTT simulando la rilevazione da sensori fisici
 router.post('/:matchId/event', (req, res) => {
     try {
         const match = getMatch(req.params.matchId);
@@ -267,24 +219,15 @@ router.post('/:matchId/event', (req, res) => {
             return res.status(400).json({ error: 'Partita già terminata' });
         }
 
-        const evento = req.body;
-
-        // Pubblica l'evento su Mosquitto (Simula il sensore IoT hardware).
-        // Il GameEngine ascolta l'evento in background sul topic MQTT.
-        pubblicaEventoMqtt(req.params.matchId, evento);
-
+        pubblicaEventoMqtt(req.params.matchId, req.body);
         return res.json({ success: true, message: 'Evento inviato al broker MQTT' });
-
     } catch (err) {
         console.error(`[Game ${LOCALE_ID}] Errore evento:`, err.message);
         return res.status(400).json({ error: err.message });
     }
 });
 
-/**
- * GET /game/:matchId/status
- * Endpoint JSON per polling dello stato partita.
- */
+// Ritorna lo stato aggiornato della partita per l'aggiornamento dinamico in pagina via Polling/AJAX
 router.get('/:matchId/status', (req, res) => {
     const match = getMatch(req.params.matchId);
     if (!match) {
@@ -307,10 +250,7 @@ router.get('/:matchId/status', (req, res) => {
     });
 });
 
-/**
- * GET /game/:matchId/result
- * Pagina di risultato della partita terminata.
- */
+// Mostra la pagina finale e programma il cleanup dalla memoria
 router.get('/:matchId/result', (req, res) => {
     const match = getMatch(req.params.matchId);
     if (!match) {
@@ -326,12 +266,9 @@ router.get('/:matchId/result', (req, res) => {
         localeId: LOCALE_ID
     });
 
-    // Cleanup: rimuovi dalla memoria dopo che il risultato è stato visualizzato
     if (match.stato === 'TERMINATA') {
-        setTimeout(() => removeMatch(match.id), 60000); // Rimuovi dopo 1 minuto
+        setTimeout(() => removeMatch(match.id), 60000);
     }
 });
-
-
 
 module.exports = router;

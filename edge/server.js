@@ -1,16 +1,4 @@
-// ============================================================
-// server.js — Edge Gateway (Node.js / Express)
-// Connected Games Platform (PISSIR A.A. 2025/2026)
-// ============================================================
-// Punto di ingresso dell'Edge Node. Gestisce:
-// - Autenticazione OIDC (Keycloak Authorization Code Flow)
-// - Guest Mode (fallback offline)
-// - Connessione MQTT al broker Mosquitto locale
-// - Database SQLite locale (buffer offline)
-// - Logica giochi (Calciobalilla + Freccette)
-// - Sincronizzazione partite verso il Server Centrale
-// - Interfaccia web per giocatori e admin locale
-// ============================================================
+// Entry point dell'Edge Node Gateway (Express, OIDC Keycloak, MQTT, SQLite e Sync).
 
 const express = require('express');
 const session = require('express-session');
@@ -30,33 +18,25 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 
-// ============================================================
-// VIEW ENGINE (EJS)
-// ============================================================
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// ============================================================
-// MIDDLEWARE
-// ============================================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Sessione in-memory (sufficiente per un prototipo single-instance)
 app.use(session({
     name: `edge.${LOCALE_ID.toLowerCase()}.sid`,
     secret: process.env.SESSION_SECRET || 'dev-session-secret-change-me',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // HTTP in sviluppo (no HTTPS)
-        maxAge: 3600000, // 1 ora, allineato con la scadenza JWT Keycloak
+        secure: false,
+        maxAge: 3600000,
         httpOnly: true
     }
 }));
 
-// Rende disponibili variabili globali a tutte le views EJS
 app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.localeId = LOCALE_ID;
@@ -64,9 +44,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// ============================================================
-// HEALTH CHECK (per Docker healthcheck)
-// ============================================================
+// Endpoint per verificare lo stato di salute del container
 app.get('/health', (req, res) => {
     res.json({
         status: 'UP',
@@ -76,17 +54,11 @@ app.get('/health', (req, res) => {
     });
 });
 
-// ============================================================
-// ROUTES
-// ============================================================
 app.use('/auth', authRoutes);
 app.use('/game', gameRoutes);
 app.use('/sync', syncRoutes);
 app.use('/', dashboardRoutes);
 
-// ============================================================
-// ERROR HANDLER
-// ============================================================
 app.use((err, req, res, _next) => {
     console.error(`[Edge ${LOCALE_ID}] Errore:`, err.message);
     res.status(500).render('error', {
@@ -95,23 +67,19 @@ app.use((err, req, res, _next) => {
     });
 });
 
-// ============================================================
-// AVVIO
-// ============================================================
+// Inizializza SQLite, OIDC Keycloak, la connessione MQTT ed avvia il cron sync
 async function start() {
     console.log(`[Edge ${LOCALE_ID}] Avvio in corso...`);
 
-    // 1. Inizializza il database SQLite locale
     try {
         initDatabase();
         console.log(`[Edge ${LOCALE_ID}] Database SQLite inizializzato`);
         caricaPartiteAttiveDaDb();
     } catch (err) {
         console.error(`[Edge ${LOCALE_ID}] Errore inizializzazione SQLite:`, err.message);
-        process.exit(1); // Critico: senza DB non possiamo salvare partite
+        process.exit(1);
     }
 
-    // 2. Inizializza il client OIDC (Keycloak)
     try {
         await initOidcClient();
         console.log(`[Edge ${LOCALE_ID}] Client OIDC inizializzato`);
@@ -120,7 +88,6 @@ async function start() {
         console.warn(`[Edge ${LOCALE_ID}] L'autenticazione Keycloak sarà tentata al primo login`);
     }
 
-    // 3. Connetti al broker MQTT
     try {
         connectMqtt();
         console.log(`[Edge ${LOCALE_ID}] Connessione MQTT avviata`);
@@ -128,11 +95,9 @@ async function start() {
         console.warn(`[Edge ${LOCALE_ID}] MQTT non disponibile: ${err.message}`);
     }
 
-    // 4. Avvia il cron-job di sincronizzazione (ogni 5 minuti)
     avviaCronSync();
     console.log(`[Edge ${LOCALE_ID}] Cron-job sincronizzazione avviato`);
 
-    // 5. Avvia il server HTTP
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`[Edge ${LOCALE_ID}] Server avviato su http://0.0.0.0:${PORT}`);
         console.log(`[Edge ${LOCALE_ID}] Dashboard: http://localhost:${PORT}`);

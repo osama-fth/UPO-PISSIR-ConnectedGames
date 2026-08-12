@@ -1,18 +1,14 @@
-// ============================================================
-// routes/dashboard.js — Dashboard Edge
-// Connected Games Platform (PISSIR A.A. 2025/2026)
-// ============================================================
+// Rotte per la Dashboard Edge (Kiosk Mode e viste riservate/amministrative).
 
 const express = require('express');
 const router = express.Router();
 const { requireAuth, requireAdminAccess, canAdminCurrentLocale } = require('../middleware/auth');
-const { getStatsLocale, getStatsGiocatore } = require('../services/sqlite-db');
+const { getStatsLocale } = require('../services/sqlite-db');
 const { getActiveMatches } = require('../services/game-engine');
 const { directPasswordAuth, clientCredentialsAuth } = require('../services/oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 
-// Giochi installati per locale (coerente con init-db.sql)
 const INSTALLAZIONI = {
     'BAR_BELVEDERE': [
         { id: 'calciobalilla-1', giocoId: 'calciobalilla', nome: 'Calciobalilla' },
@@ -26,10 +22,7 @@ const INSTALLAZIONI = {
 
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
 
-/**
- * Helper: formatta una data string in ISO 8601 con offset Rome (+02:00 CEST / +01:00 CET).
- * Usa l'offset corrente di Europe/Rome.
- */
+// Formatta una stringa di data/ora in ISO 8601 mantenendo il fuso orario di Roma
 function formatRomeIso(dateStr) {
     if (!dateStr) return null;
     let cleanStr = dateStr.trim();
@@ -38,7 +31,7 @@ function formatRomeIso(dateStr) {
     } else if (cleanStr.length === 16) {
         cleanStr += ':00';
     }
-    // Calcolo dell'offset di Roma per la data specificata (CEST +02:00 / CET +01:00)
+
     const testDate = new Date(cleanStr + 'Z');
     const year = testDate.getUTCFullYear();
     const mar31 = new Date(Date.UTC(year, 2, 31));
@@ -51,9 +44,7 @@ function formatRomeIso(dateStr) {
     return `${cleanStr}${offset}`;
 }
 
-/**
- * Helper: ottiene gli header di autenticazione Bearer per le chiamate verso il Central Gateway.
- */
+// Recupera i token JWT di sessione o di servizio per le chiamate verso il Gateway centrale
 async function getGatewayAuthHeaders(req) {
     let token = req?.session?.tokenSet?.accessToken;
     if (!token) {
@@ -67,34 +58,25 @@ async function getGatewayAuthHeaders(req) {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
-/**
- * Fetch tutti i tornei e filtra per questo locale.
- */
+// Interroga il Gateway per ottenere i tornei associati al locale corrente
 async function fetchTorneiLocale(req) {
     try {
         const headers = await getGatewayAuthHeaders(req);
         const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei`, { headers });
         if (!response.ok) return [];
         const all = await response.json();
-        // Filtra per LOCALE_ID: se localiIds è vuoto/null, mostra a tutti
-        return all.filter(t =>
-            !t.localiIds || t.localiIds.length === 0 || t.localiIds.includes(LOCALE_ID)
-        );
+        return all.filter(t => !t.localiIds || t.localiIds.length === 0 || t.localiIds.includes(LOCALE_ID));
     } catch (err) {
         console.error(`[Dashboard ${LOCALE_ID}] Errore fetch tornei:`, err.message);
         return [];
     }
 }
 
-/**
- * GET /
- * Home Page (Kiosk Mode). Pubblica.
- */
+// Landing page pubblica dell'Edge Node per l'avvio delle partite
 router.get('/', async (req, res) => {
     const installazioni = INSTALLAZIONI[LOCALE_ID] || [];
     const activeGames = getActiveMatches();
     const torneiLocale = await fetchTorneiLocale(req);
-    // Nella home mostriamo solo tornei ATTIVI (per la selezione partita)
     const torneiAttivi = torneiLocale.filter(t => t.stato === 'ATTIVO');
 
     res.render('game-select', {
@@ -106,10 +88,7 @@ router.get('/', async (req, res) => {
     });
 });
 
-/**
- * GET /dashboard
- * Dashboard principale dell'Edge (Privata).
- */
+// Dashboard riservata: combina statistiche locali (SQLite) e sincronizzate nel Cloud
 router.get('/dashboard', requireAuth, async (req, res) => {
     const user = req.session.user;
     const installazioni = INSTALLAZIONI[LOCALE_ID] || [];
@@ -124,7 +103,6 @@ router.get('/dashboard', requireAuth, async (req, res) => {
 
     let stats = { ...localStats };
 
-    // Arricchisce le statistiche dell'Edge con le partite censite nel Cloud per questo locale
     try {
         let tokenToUse = req.session.tokenSet?.accessToken;
         if (!tokenToUse) {
@@ -136,35 +114,27 @@ router.get('/dashboard', requireAuth, async (req, res) => {
             }
         }
 
-        const headers = {};
-        if (tokenToUse) {
-            headers['Authorization'] = `Bearer ${tokenToUse}`;
-        }
-
+        const headers = tokenToUse ? { 'Authorization': `Bearer ${tokenToUse}` } : {};
         const centralRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/partite?localeId=${LOCALE_ID}&page=0&size=100`, { headers });
         if (centralRes.ok) {
             const centralData = await centralRes.json();
-            const centralPartite = (centralData.content || []).map(p => {
-                let giocoIdNormalized = p.giocoId || (p.nomeGioco ? p.nomeGioco.toLowerCase() : 'calciobalilla');
-                return {
-                    id: p.id,
-                    installazione_id: p.installazioneId,
-                    locale_id: p.localeId,
-                    gioco_id: giocoIdNormalized,
-                    giocatore_1_id: p.giocatore1Id,
-                    giocatore_1_username: p.giocatore1Username,
-                    giocatore_2_id: p.giocatore2Id,
-                    giocatore_2_username: p.giocatore2Username,
-                    punteggio_1: p.punteggio1,
-                    punteggio_2: p.punteggio2,
-                    data_inizio: p.dataInizio,
-                    data_fine: p.dataFine,
-                    torneo_id: p.torneoId,
-                    sincronizzata: 1
-                };
-            });
+            const centralPartite = (centralData.content || []).map(p => ({
+                id: p.id,
+                installazione_id: p.installazioneId,
+                locale_id: p.localeId,
+                gioco_id: p.giocoId || (p.nomeGioco ? p.nomeGioco.toLowerCase() : 'calciobalilla'),
+                giocatore_1_id: p.giocatore1Id,
+                giocatore_1_username: p.giocatore1Username,
+                giocatore_2_id: p.giocatore2Id,
+                giocatore_2_username: p.giocatore2Username,
+                punteggio_1: p.punteggio1,
+                punteggio_2: p.punteggio2,
+                data_inizio: p.dataInizio,
+                data_fine: p.dataFine,
+                torneo_id: p.torneoId,
+                sincronizzata: 1
+            }));
 
-            // Unisci partite dal Cloud e partite locali non ancora sincronizzate
             const localUnsynced = (localStats.ultimePartite || []).filter(p => !p.sincronizzata);
             const mergedMap = new Map();
 
@@ -175,7 +145,6 @@ router.get('/dashboard', requireAuth, async (req, res) => {
                 (a, b) => new Date(b.data_fine) - new Date(a.data_fine)
             );
 
-            // Aggregazioni per gioco
             const giocoStatsMap = {};
             combinedPartite.forEach(p => {
                 const gId = p.gioco_id || 'calciobalilla';
@@ -206,7 +175,6 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         console.error(`[Dashboard ${LOCALE_ID}] Errore fetch partite centrali per locale:`, errCentral.message);
     }
 
-    // Statistiche personali del giocatore
     let playerStats = null;
     if (user && user.id && !user.isGuest) {
         try {
@@ -248,11 +216,8 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     }
 
     const isAdmin = canAdminCurrentLocale(user);
-
-    // Fetch tornei filtrati per locale
     const torneiLocale = await fetchTorneiLocale(req);
 
-    // Per ogni torneo, aggiungi info iscrizione utente corrente
     let torneiConStato = [];
     if (!user.isGuest && user.id) {
         const headers = await getGatewayAuthHeaders(req);
@@ -289,10 +254,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     });
 });
 
-/**
- * GET /tornei/:torneoId/dettaglio e /dashboard/tornei/:torneoId/dettaglio
- * Dettaglio torneo: classifica + iscritti
- */
+// Restituisce dettagli e classifica in tempo reale di un torneo
 router.get(['/tornei/:torneoId/dettaglio', '/dashboard/tornei/:torneoId/dettaglio'], async (req, res) => {
     try {
         const { torneoId } = req.params;
@@ -317,10 +279,7 @@ router.get(['/tornei/:torneoId/dettaglio', '/dashboard/tornei/:torneoId/dettagli
     }
 });
 
-/**
- * POST /tornei/iscriviti e /dashboard/tornei/iscriviti
- * Iscrive l'utente corrente a un torneo.
- */
+// Gestione iscrizione dell'utente a un torneo tramite Gateway
 router.post(['/tornei/iscriviti', '/dashboard/tornei/iscriviti'], requireAuth, async (req, res) => {
     try {
         const { torneoId } = req.body;
@@ -346,10 +305,7 @@ router.post(['/tornei/iscriviti', '/dashboard/tornei/iscriviti'], requireAuth, a
     }
 });
 
-/**
- * POST /tornei/disiscrivi e /dashboard/tornei/disiscrivi
- * Disiscrive l'utente corrente da un torneo.
- */
+// Annullamento iscrizione utente da un torneo
 router.post(['/tornei/disiscrivi', '/dashboard/tornei/disiscrivi'], requireAuth, async (req, res) => {
     try {
         const { torneoId } = req.body;
@@ -371,10 +327,7 @@ router.post(['/tornei/disiscrivi', '/dashboard/tornei/disiscrivi'], requireAuth,
     }
 });
 
-/**
- * POST /tornei/cancella e /dashboard/tornei/cancella
- * Cancella un torneo (solo admin, solo se NON_ATTIVO).
- */
+// Cancellazione torneo (riservata agli amministratori per tornei non ancora attivi)
 router.post(['/tornei/cancella', '/dashboard/tornei/cancella'], requireAuth, requireAdminAccess, async (req, res) => {
     try {
         const { torneoId } = req.body;
@@ -395,10 +348,7 @@ router.post(['/tornei/cancella', '/dashboard/tornei/cancella'], requireAuth, req
     }
 });
 
-/**
- * POST /tornei/crea e /dashboard/tornei/crea
- * Crea un nuovo torneo (solo per Admin).
- */
+// Creazione nuovo torneo da parte dell'amministratore
 router.post(['/tornei/crea', '/dashboard/tornei/crea'], requireAuth, requireAdminAccess, async (req, res) => {
     try {
         const { nome, giocoId, dataInizio, dataFine, localiIds } = req.body;

@@ -1,7 +1,4 @@
-# ============================================================
-# service-core — application.yml
-# Connected Games Platform (PISSIR A.A. 2025/2026)
-# ============================================================
+# Configurazione partita-service: connessione PostgreSQL e Resource Server JWT Keycloak.
 
 server:
   port: 8082

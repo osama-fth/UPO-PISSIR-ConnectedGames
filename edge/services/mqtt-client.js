@@ -1,11 +1,4 @@
-// ============================================================
-// services/mqtt-client.js — Client MQTTS (Mosquitto con TLS)
-// Connected Games Platform (PISSIR A.A. 2025/2026)
-// ============================================================
-// Gestisce la connessione sicura (MQTTS) al broker Mosquitto locale.
-// Si sottoscrive al topic `locale/{LOCALE_ID}/eventi` per
-// ricevere gli eventi dai sensori/simulatori.
-// ============================================================
+// Gestione delle connessioni MQTTS al broker Mosquitto locale (subscriber per sensori, publisher per simulazione).
 
 const fs = require('fs');
 const mqtt = require('mqtt');
@@ -15,17 +8,12 @@ const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtts://localhost:8883';
 const MQTT_CA_PATH = process.env.MQTT_CA_PATH || null;
 
-// Credenziali Edge (Sola lettura/sottoscrizione)
 const MQTT_SUB_USER = process.env.MQTT_SUB_USER || 'edge-client';
 const MQTT_SUB_PASSWORD = process.env.MQTT_SUB_PASSWORD || '';
-
-// Credenziali Simulatore (Sola scrittura/pubblicazione)
 const MQTT_PUB_USER = process.env.MQTT_PUB_USER || 'simulator';
 const MQTT_PUB_PASSWORD = process.env.MQTT_PUB_PASSWORD || '';
 
 const TOPIC = `locale/${LOCALE_ID}/eventi`;
-
-// Event emitter per distribuire gli eventi MQTT ai consumer interni
 const mqttEvents = new EventEmitter();
 
 let clientSub = null;
@@ -33,14 +21,10 @@ let clientPub = null;
 let connectionStatusSub = 'disconnected';
 let connectionStatusPub = 'disconnected';
 
-/**
- * Connette ai broker MQTT locali con due client separati:
- * uno per la subscribe (Edge) e uno per la publish (Simulatore).
- */
+// Crea due client MQTTS distinti (lettore sensori e scrittore simulatori) con opzioni TLS
 function connectMqtt() {
     console.log(`[MQTT] Connessione a ${MQTT_BROKER_URL} (SUB come '${MQTT_SUB_USER}', PUB come '${MQTT_PUB_USER}')...`);
 
-    // Opzioni TLS per i client MQTT (Fix C2)
     const tlsOptions = {
         clean: true,
         reconnectPeriod: 5000,
@@ -52,11 +36,9 @@ function connectMqtt() {
         tlsOptions.ca = [fs.readFileSync(MQTT_CA_PATH)];
         tlsOptions.rejectUnauthorized = true;
     } else {
-        // Disabilitato solo se certificato CA non fornito (es. dev container locale senza CA condivisa)
         tlsOptions.rejectUnauthorized = process.env.MQTT_REJECT_UNAUTHORIZED === 'true';
     }
 
-    // --- CLIENT SUBSCRIBE (Edge) ---
     clientSub = mqtt.connect(MQTT_BROKER_URL, {
         ...tlsOptions,
         username: MQTT_SUB_USER,
@@ -68,7 +50,6 @@ function connectMqtt() {
         connectionStatusSub = 'connected';
         console.log(`[MQTT SUB] Connesso al broker come ${MQTT_SUB_USER}`);
 
-        // Sottoscrizione al topic del locale (Edge è solo lettore)
         clientSub.subscribe(TOPIC, { qos: 1 }, (err) => {
             if (err) {
                 console.error(`[MQTT SUB] Errore sottoscrizione a ${TOPIC}:`, err.message);
@@ -97,7 +78,6 @@ function connectMqtt() {
     clientSub.on('close', () => { connectionStatusSub = 'disconnected'; });
     clientSub.on('offline', () => { connectionStatusSub = 'offline'; });
 
-    // --- CLIENT PUBLISH (Simulatore) ---
     clientPub = mqtt.connect(MQTT_BROKER_URL, {
         ...tlsOptions,
         username: MQTT_PUB_USER,
@@ -122,10 +102,6 @@ function connectMqtt() {
     return { clientSub, clientPub };
 }
 
-/**
- * Pubblica un messaggio sul topic del locale.
- * Usa il client PUB (con ruolo 'simulator').
- */
 function publishEvent(eventData) {
     if (!clientPub || connectionStatusPub !== 'connected') {
         console.warn('[MQTT PUB] Impossibile pubblicare: client PUB non connesso');

@@ -1,18 +1,6 @@
-// ============================================================
-// routes/auth.js — Rotte di Autenticazione OIDC
-// Connected Games Platform (PISSIR A.A. 2025/2026)
-// ============================================================
-// Implementa il flusso Authorization Code Flow con Keycloak:
-// 1. /auth/login — Pagina di login con check stato Keycloak
-// 2. /auth/start — Redirect a Keycloak per autenticazione
-// 3. /auth/callback — Callback OIDC, scambio codice per token
-// 4. /auth/register — Redirect a pagina registrazione Keycloak
-// 5. /auth/guest — Accesso in modalità Ospite (offline)
-// 6. /auth/logout — Logout con distruzione sessione
-// ============================================================
+// Gestione rotte di autenticazione OIDC (Keycloak Authorization Code Flow con PKCE) e Guest Mode offline.
 
 const express = require('express');
-const crypto = require('crypto');
 const router = express.Router();
 
 const {
@@ -21,20 +9,13 @@ const {
     getRegistrationUrl,
     exchangeCode,
     getUserInfoFromToken,
-    getLogoutUrl,
-    isOidcAvailable
+    getLogoutUrl
 } = require('../services/oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 
-/**
- * GET /auth/login
- * Mostra la pagina di login.
- * Controlla se Keycloak è raggiungibile per decidere
- * se mostrare il pulsante di login o il fallback Guest.
- */
+// Mostra la vista di login verfificando preliminarmente lo stato di Keycloak
 router.get('/login', async (req, res) => {
-    // Se già autenticato, redirect alla dashboard
     if (req.session.user) {
         return res.redirect('/dashboard');
     }
@@ -53,30 +34,20 @@ router.get('/login', async (req, res) => {
     });
 });
 
-/**
- * GET /auth/start
- * Avvia il flusso OIDC Authorization Code Flow.
- * Genera state e nonce, li salva in sessione,
- * e fa il redirect a Keycloak.
- */
+// Inizia il flusso di autenticazione OIDC salvando state e verifier PKCE in sessione
 router.get('/start', async (req, res) => {
     try {
-        // Verifica che Keycloak sia raggiungibile
         const online = await checkKeycloakHealth();
         if (!online) {
             return res.redirect('/auth/login?error=keycloak_unreachable');
         }
 
-        // Genera dati di auth (state, nonce, url PKCE con code_challenge)
         const authData = generateAuthData();
-
-        // Salva in sessione per la verifica nel callback
         req.session.oidcState = authData.state;
         req.session.oidcNonce = authData.nonce;
-        req.session.oidcCodeVerifier = authData.code_verifier; // PKCE verifier
+        req.session.oidcCodeVerifier = authData.code_verifier;
 
         console.log(`[Auth ${LOCALE_ID}] Redirect a Keycloak per autenticazione (PKCE attivo)`);
-
         return res.redirect(authData.url);
     } catch (err) {
         console.error(`[Auth ${LOCALE_ID}] Errore avvio OIDC:`, err.message);
@@ -84,10 +55,7 @@ router.get('/start', async (req, res) => {
     }
 });
 
-/**
- * GET /auth/register
- * Redirect alla pagina di registrazione di Keycloak.
- */
+// Reindirizza al form di registrazione utente su Keycloak
 router.get('/register', async (req, res) => {
     try {
         const online = await checkKeycloakHealth();
@@ -96,11 +64,9 @@ router.get('/register', async (req, res) => {
         }
 
         const authData = getRegistrationUrl();
-        
-        // Salva in sessione per la verifica nel callback (come nel login)
         req.session.oidcState = authData.state;
         req.session.oidcNonce = authData.nonce;
-        req.session.oidcCodeVerifier = authData.code_verifier; // PKCE verifier
+        req.session.oidcCodeVerifier = authData.code_verifier;
 
         console.log(`[Auth ${LOCALE_ID}] Redirect a Keycloak per registrazione (PKCE attivo)`);
         return res.redirect(authData.url);
@@ -110,17 +76,11 @@ router.get('/register', async (req, res) => {
     }
 });
 
-/**
- * GET /auth/callback
- * Callback invocato da Keycloak dopo il login/registrazione.
- * Scambia l'authorization code per i token (backend-to-backend)
- * e salva le informazioni utente in sessione.
- */
+// Callback di ritorno da Keycloak: convalida lo state, effettua lo scambio token e popola la sessione
 router.get('/callback', async (req, res) => {
     try {
         const { code, state, error, error_description } = req.query;
 
-        // Keycloak ha restituito un errore (es. utente ha annullato)
         if (error) {
             console.warn(`[Auth ${LOCALE_ID}] Keycloak errore: ${error} - ${error_description}`);
             return res.redirect(`/auth/login?error=${error}`);
@@ -130,7 +90,6 @@ router.get('/callback', async (req, res) => {
             return res.redirect('/auth/login?error=missing_code');
         }
 
-        // Verifica state anti-CSRF
         const savedState = req.session.oidcState;
         const savedNonce = req.session.oidcNonce;
         const savedCodeVerifier = req.session.oidcCodeVerifier;
@@ -139,41 +98,32 @@ router.get('/callback', async (req, res) => {
             console.error(`[Auth ${LOCALE_ID}] State mismatch: atteso ${savedState}, ricevuto ${state}`);
             return res.redirect('/auth/login?error=state_mismatch');
         }
-        
+
         if (!savedCodeVerifier) {
             console.error(`[Auth ${LOCALE_ID}] Code Verifier mancante in sessione per PKCE`);
             return res.redirect('/auth/login?error=pkce_error');
         }
 
-        // Scambio authorization code → token (backend-to-backend via rete Docker)
-        // Passiamo req.query completo a openid-client (incluso 'iss' e altri parametri previsti da Keycloak)
         const tokenSet = await exchangeCode(req.query, savedState, savedNonce, savedCodeVerifier);
-        console.log(`[Auth ${LOCALE_ID}] Token ottenuto, scadenza: ${tokenSet.expires_at}`);
-
-        // Estrai informazioni utente dal token JWT
         const userInfo = getUserInfoFromToken(tokenSet);
 
-        // Controllo Sicurezza: Isolamento Amministratore Locale
+        // Impedisce che un admin di un altro locale possa amministrare il locale corrente
         if (userInfo.roles.includes('admin_locale') && userInfo.localeId !== LOCALE_ID) {
-            console.error(`[Auth ${LOCALE_ID}] Accesso negato: admin_locale del locale ${userInfo.localeId} ha tentato accesso su ${LOCALE_ID}`);
-            
-            // Distruggiamo la sessione Single Sign-On (SSO) su Keycloak
-            // in modo che l'utente non rimanga bloccato con l'account sbagliato
+            console.error(`[Auth ${LOCALE_ID}] Accesso negato: admin_locale del locale ${userInfo.localeId} su ${LOCALE_ID}`);
+
             const edgePublicUrl = process.env.EDGE_PUBLIC_URL || `http://localhost:${process.env.PORT || 3001}`;
             const logoutUrl = getLogoutUrl(
                 tokenSet.id_token,
                 `${edgePublicUrl}/auth/login?error=unauthorized_locale`
             );
-            
-            // Pulisci state/nonce/verifier dalla sessione per sicurezza
+
             delete req.session.oidcState;
             delete req.session.oidcNonce;
             delete req.session.oidcCodeVerifier;
-            
+
             return res.redirect(logoutUrl);
         }
 
-        // Salva in sessione
         req.session.user = userInfo;
         req.session.tokenSet = {
             accessToken: tokenSet.access_token,
@@ -181,27 +131,19 @@ router.get('/callback', async (req, res) => {
             expiresAt: tokenSet.expires_at
         };
 
-        // Pulisci state/nonce/verifier dalla sessione
         delete req.session.oidcState;
         delete req.session.oidcNonce;
         delete req.session.oidcCodeVerifier;
 
         console.log(`[Auth ${LOCALE_ID}] Utente autenticato: ${userInfo.username} (${userInfo.roles.join(', ')})`);
-
         return res.redirect('/dashboard');
-
     } catch (err) {
         console.error(`[Auth ${LOCALE_ID}] Errore callback OIDC:`, err.message);
         return res.redirect('/auth/login?error=token_exchange_failed');
     }
 });
 
-/**
- * POST /auth/guest
- * Accesso in modalità Ospite.
- * Attivato quando Keycloak non è raggiungibile (UC1 - Scenario Alternativo).
- * L'utente può giocare ma i dati non vengono salvati.
- */
+// Attiva la modalità Guest (offline) senza salvataggio dati su Server Centrale
 router.post('/guest', (req, res) => {
     req.session.user = {
         id: null,
@@ -218,10 +160,7 @@ router.post('/guest', (req, res) => {
     return res.redirect('/dashboard');
 });
 
-/**
- * GET /auth/logout
- * Distrugge la sessione locale e fa il logout su Keycloak.
- */
+// Distrugge la sessione locale e reindirizza al logout di Keycloak
 router.get('/logout', (req, res) => {
     const idToken = req.session.tokenSet?.idToken;
     const isGuest = req.session.user?.isGuest;
@@ -231,13 +170,11 @@ router.get('/logout', (req, res) => {
             console.error(`[Auth ${LOCALE_ID}] Errore distruzione sessione:`, err.message);
         }
 
-        // Se era un utente Keycloak, redirect al logout di Keycloak
         if (!isGuest && idToken) {
             const logoutUrl = getLogoutUrl(idToken);
             return res.redirect(logoutUrl);
         }
 
-        // Se era un Ospite, torna alla pagina di login
         return res.redirect('/auth/login');
     });
 });

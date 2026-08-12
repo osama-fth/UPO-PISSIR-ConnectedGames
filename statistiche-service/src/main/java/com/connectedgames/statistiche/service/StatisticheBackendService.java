@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+// Servizio per la lettura ed aggregazione delle metriche statistiche per Dashboard Super Admin, Locali ed Utenti
 @Service
 public class StatisticheBackendService {
 

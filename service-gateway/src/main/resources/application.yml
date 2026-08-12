@@ -1,11 +1,4 @@
-# ============================================================
-# service-gateway — application.yml
-# Connected Games Platform (PISSIR A.A. 2025/2026)
-# ============================================================
-# Il Gateway e' l'unico punto di ingresso REST pubblico.
-# Convalida i JWT rilasciati da Keycloak e instrada le
-# richieste verso service-core sulla rete interna backend-tier.
-# ============================================================
+# Configurazione Spring Cloud Gateway: routing reattivo dei microservizi e verifica dei token JWT Keycloak.
 
 server:
   port: 8081
@@ -16,13 +9,8 @@ spring:
 
   cloud:
     gateway:
-      # ============================================================
-      # ROUTING — Proxy verso service-core
-      # ============================================================
-      # Tutte le richieste API vengono inoltrate a service-core che
-      # risiede sulla rete interna backend-tier (porta 8082).
       routes:
-        # --- Sincronizzazione massiva partite (Bulk Sync) ---
+        # Sincronizzazione massiva partite (Bulk Sync)
         - id: partite-sincronizza
           uri: ${PARTITA_SERVICE_URL:http://partita-service:8082}
           predicates:
@@ -36,40 +24,37 @@ spring:
                 statuses: BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
                 methods: POST
 
-        # --- Lista giochi installati in un locale ---
+        # Lista giochi installati in un locale
         - id: locali-giochi
           uri: ${PARTITA_SERVICE_URL:http://partita-service:8082}
           predicates:
             - Path=/api/v1/locali/{localeId}/giochi
             - Method=GET
 
-        # --- Partite e Utenti (UI API) ---
+        # Partite e Utenti (UI API)
         - id: partita-service-api
           uri: ${PARTITA_SERVICE_URL:http://partita-service:8082}
           predicates:
             - Path=/api/v1/utenti, /api/v1/utenti/**, /api/v1/partite, /api/v1/partite/**
 
-        # --- Gestione Tornei ---
+        # Gestione Tornei
         - id: tornei-service-routes
           uri: ${TORNEO_SERVICE_URL:http://torneo-service:8083}
           predicates:
             - Path=/api/v1/tornei, /api/v1/tornei/**
 
-        # --- Statistiche globali (Dashboard Admin API) ---
+        # Statistiche globali (Dashboard Admin API)
         - id: statistiche-globali-api
           uri: ${STATISTICHE_SERVICE_URL:http://statistiche-service:8084}
           predicates:
             - Path=/api/v1/statistiche/**
 
-        # --- Statistiche UI ---
+        # Statistiche UI
         - id: statistiche-ui
           uri: ${STATISTICHE_SERVICE_URL:http://statistiche-service:8084}
           predicates:
             - Path=/, /dashboard, /utenti, /partite, /tornei, /auth/**, /css/**, /js/**, /images/**
 
-      # ============================================================
-      # GLOBAL CORS — Origini e metodi ristretti per sicurezza (M3)
-      # ============================================================
       globalcors:
         cors-configurations:
           '[/**]':
@@ -78,9 +63,6 @@ spring:
             allowedHeaders: "*"
             allowCredentials: false
 
-  # ============================================================
-  # SECURITY — Validazione JWT (Keycloak Resource Server)
-  # ============================================================
   security:
     oauth2:
       resourceserver:
@@ -88,9 +70,6 @@ spring:
           issuer-uri: ${JWT_ISSUER_URI:http://localhost:9080/realms/pissir-realm}
           jwk-set-uri: http://keycloak:8080/realms/pissir-realm/protocol/openid-connect/certs
 
-# ============================================================
-# ACTUATOR — Health check per Docker
-# ============================================================
 management:
   endpoints:
     web:
@@ -107,18 +86,12 @@ management:
     livenessstate:
       enabled: true
 
-# ============================================================
-# LOGGING — Livello informativo per debugging
-# ============================================================
 logging:
   level:
     com.connectedgames.gateway: DEBUG
     org.springframework.cloud.gateway: INFO
     org.springframework.security: INFO
 
-# ============================================================
-# SWAGGER UI — Esposizione Documentazione API
-# ============================================================
 springdoc:
   swagger-ui:
     path: /docs

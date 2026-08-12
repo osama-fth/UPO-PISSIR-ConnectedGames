@@ -360,9 +360,9 @@
     </div>
 </div>
 
-<!-- ============================================================ -->
+
 <!-- MODALE 1: DETTAGLIO UTENTE -->
-<!-- ============================================================ -->
+
 <div class="modal fade" id="modalUtente" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -414,9 +414,9 @@
     </div>
 </div>
 
-<!-- ============================================================ -->
+
 <!-- MODALE 2: DETTAGLIO LOCALE -->
-<!-- ============================================================ -->
+
 <div class="modal fade" id="modalLocale" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -472,9 +472,9 @@
     </div>
 </div>
 
-<!-- ============================================================ -->
+
 <!-- MODALE 3: CLASSIFICA TORNEO -->
-<!-- ============================================================ -->
+
 <div class="modal fade" id="modalTorneo" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -524,9 +524,9 @@
         if (el) el.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // ============================================================
+
     // GRAFICI INTERATTIVI (Chart.js)
-    // ============================================================
+
     document.addEventListener("DOMContentLoaded", () => {
         // Grafico 1: Giochi Donut Chart
         const giochiData = /*[[${stats.giochiPiuUtilizzati}]]*/ [];
@@ -588,9 +588,9 @@
         }
     });
 
-    // ============================================================
+
     // FILTRA TABELLA TORNEI
-    // ============================================================
+
     function filterTornei(stato) {
         document.querySelectorAll('#filter-all, #filter-attivo, #filter-concluso').forEach(b => b.classList.remove('active'));
         if (stato === 'ALL') document.getElementById('filter-all').classList.add('active');
@@ -609,9 +609,9 @@
         scrollToElement('section-tornei');
     }
 
-    // ============================================================
+
     // MODALE UTENTE
-    // ============================================================
+
     function apriModalUtente(id, username) {
         const modal = new bootstrap.Modal(document.getElementById('modalUtente'));
         document.getElementById('modalUtenteTitle').innerText = 'Dettaglio Giocatore — ' + username;
@@ -639,9 +639,9 @@
             });
     }
 
-    // ============================================================
+
     // MODALE LOCALE
-    // ============================================================
+
     function apriModalLocale(id, nome) {
         const modal = new bootstrap.Modal(document.getElementById('modalLocale'));
         document.getElementById('modalLocaleTitle').innerText = 'Dettaglio Locale — ' + nome;
@@ -679,9 +679,9 @@
             });
     }
 
-    // ============================================================
+
     // MODALE TORNEO
-    // ============================================================
+
     function apriModalTorneo(id, nome) {
         const modal = new bootstrap.Modal(document.getElementById('modalTorneo'));
         document.getElementById('modalTorneoTitle').innerText = 'Classifica Torneo — ' + nome;

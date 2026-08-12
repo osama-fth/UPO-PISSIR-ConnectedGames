@@ -1,11 +1,4 @@
--- ============================================================
--- init-db.sql — Inizializzazione PostgreSQL
--- Connected Games Platform (PISSIR A.A. 2025/2026)
--- ============================================================
--- Questo script viene eseguito automaticamente da PostgreSQL
--- al primo avvio del container tramite il volume mount in
--- /docker-entrypoint-initdb.d/
--- ============================================================
+-- Inizializzazione database PostgreSQL, schemi di dominio, utenze segregate e tabelle di supporto.
 
 -- 1. Creazione database separati per la piattaforma e Keycloak
 CREATE DATABASE platform_db;
@@ -152,9 +145,6 @@ CREATE TABLE IF NOT EXISTS platform_db.evento_partita (
     timestamp_evento TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
--- ============================================================
--- DATI SEED (popolamento iniziale per demo e test)
--- ============================================================
 
 -- Locali
 INSERT INTO platform_db.locale (id, nome, tipo, indirizzo) VALUES

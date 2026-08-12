@@ -1,11 +1,4 @@
-// ============================================================
-// services/sqlite-db.js — Database SQLite Locale (Buffer Offline)
-// Connected Games Platform (PISSIR A.A. 2025/2026)
-// ============================================================
-// Gestisce il database SQLite locale usato come buffer offline
-// per le partite giocate sull'Edge. Le partite vengono salvate
-// qui e successivamente sincronizzate con il Server Centrale.
-// ============================================================
+// Inizializzazione e gestione del database SQLite locale per la persistenza offline di partite e stati in corso.
 
 const Database = require('better-sqlite3');
 const path = require('path');
@@ -15,18 +8,12 @@ const DB_PATH = path.join(__dirname, '..', 'data', 'edge.sqlite3');
 
 let db = null;
 
-/**
- * Inizializza il database SQLite e crea le tabelle necessarie.
- * Chiamato una volta all'avvio del server Edge.
- */
+// Inizializza le tabelle SQLite (partite_attive e partite_buffer) abilitando la modalità WAL
 function initDatabase() {
     db = new Database(DB_PATH);
-
-    // Abilita WAL mode per migliori performance in lettura/scrittura concorrente
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
 
-    // Tabella partite_attive: persistenza in-memory per resilienza a riavvii container (Fix C1)
     db.exec(`
         CREATE TABLE IF NOT EXISTS partite_attive (
             id TEXT PRIMARY KEY,
@@ -35,7 +22,6 @@ function initDatabase() {
         )
     `);
 
-    // Tabella partite_buffer: buffer locale prima della sincronizzazione
     db.exec(`
         CREATE TABLE IF NOT EXISTS partite_buffer (
             id TEXT PRIMARY KEY,
@@ -56,7 +42,6 @@ function initDatabase() {
         )
     `);
 
-    // Indice per query di sincronizzazione
     db.exec(`
         CREATE INDEX IF NOT EXISTS idx_partite_sync 
         ON partite_buffer(sincronizzata) WHERE sincronizzata = 0
@@ -66,9 +51,6 @@ function initDatabase() {
     return db;
 }
 
-/**
- * Salva o aggiorna lo stato di una partita attiva nel DB SQLite (Fix C1).
- */
 function salvaPartitaAttiva(match) {
     const stmt = db.prepare(`
         INSERT INTO partite_attive (id, state_json, updated_at)
@@ -78,28 +60,18 @@ function salvaPartitaAttiva(match) {
     stmt.run(match.id, JSON.stringify(match));
 }
 
-/**
- * Rimuove una partita attiva terminata dal DB SQLite (Fix C1).
- */
 function rimuoviPartitaAttiva(matchId) {
     const stmt = db.prepare(`DELETE FROM partite_attive WHERE id = ?`);
     stmt.run(matchId);
 }
 
-/**
- * Recupera tutte le partite attive salvate nel DB SQLite (Fix C1).
- */
 function getPartiteAttiveSalvate() {
     const stmt = db.prepare(`SELECT state_json FROM partite_attive`);
     const rows = stmt.all();
     return rows.map(r => JSON.parse(r.state_json));
 }
 
-/**
- * Salva una partita completata nel buffer locale.
- * @param {Object} partita - Dati della partita
- * @returns {Object} La partita salvata
- */
+// Inserisce una partita terminata nel buffer offline SQLite
 function salvaPartita(partita) {
     const stmt = db.prepare(`
         INSERT INTO partite_buffer 
@@ -129,10 +101,6 @@ function salvaPartita(partita) {
     return partita;
 }
 
-/**
- * Recupera tutte le partite non ancora sincronizzate.
- * @returns {Array} Lista di partite da sincronizzare
- */
 function getPartiteNonSincronizzate() {
     const stmt = db.prepare(`
         SELECT * FROM partite_buffer WHERE sincronizzata = 0 ORDER BY created_at ASC
@@ -140,11 +108,6 @@ function getPartiteNonSincronizzate() {
     return stmt.all();
 }
 
-/**
- * Segna le partite come sincronizzate dopo conferma dal Server Centrale.
- * @param {Array<string>} ids - Lista di UUID delle partite sincronizzate
- * @returns {number} Numero di partite aggiornate
- */
 function segnaComeSincronizzate(ids) {
     if (!ids || ids.length === 0) return 0;
 
@@ -158,10 +121,6 @@ function segnaComeSincronizzate(ids) {
     return result.changes;
 }
 
-/**
- * Statistiche locali: conteggi e aggregazioni dal buffer SQLite.
- * @returns {Object} Statistiche aggregate
- */
 function getStatsLocale() {
     const totale = db.prepare(`SELECT COUNT(*) as count FROM partite_buffer`).get();
     const nonSync = db.prepare(`SELECT COUNT(*) as count FROM partite_buffer WHERE sincronizzata = 0`).get();
@@ -186,11 +145,6 @@ function getStatsLocale() {
     };
 }
 
-/**
- * Statistiche per un giocatore specifico.
- * @param {string} giocatoreId - UUID del giocatore
- * @returns {Object} Statistiche del giocatore
- */
 function getStatsGiocatore(giocatoreId) {
     const partite = db.prepare(`
         SELECT * FROM partite_buffer 
@@ -221,9 +175,6 @@ function getStatsGiocatore(giocatoreId) {
     };
 }
 
-/**
- * Restituisce l'istanza del database (per uso avanzato).
- */
 function getDb() {
     return db;
 }

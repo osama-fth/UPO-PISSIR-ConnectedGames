@@ -30,6 +30,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+// Servizio di gestione e sincronizzazione delle partite con auto-registrazione automatica degli utenti
 @Service
 public class PartitaService {
 
@@ -53,10 +54,7 @@ public class PartitaService {
         this.torneoRepo = torneoRepo;
     }
 
-    // ================================================================
-    // Sincronizzazione bulk (esistente, con auto-registrazione utente)
-    // ================================================================
-
+    // Processa il caricamento massivo delle partite dagli Edge Node garantendo l'idempotenza
     @Transactional
     public SyncResultResponse sincronizzaPartite(String localeId, List<PartitaSyncInput> partite) {
         List<UUID> salvate = new ArrayList<>();
@@ -64,7 +62,6 @@ public class PartitaService {
 
         for (PartitaSyncInput input : partite) {
             try {
-                // Fix C4: Verifica che il localeId del payload corrisponda a quello del path della richiesta
                 if (localeId != null && !localeId.equalsIgnoreCase(input.localeId())) {
                     throw new IllegalArgumentException("localeId del payload ('" + input.localeId() + "') non corrisponde a quello del path ('" + localeId + "')");
                 }
@@ -84,13 +81,11 @@ public class PartitaService {
                     .orElseThrow(() -> new IllegalArgumentException("Locale non trovato: " + input.localeId()));
                 partita.setLocale(locale);
 
-                // Auto-registrazione giocatore 1
                 if (input.giocatore1Id() != null) {
                     Utente g1 = trovaORegistraUtente(input.giocatore1Id(), input.giocatore1Username());
                     partita.setGiocatore1(g1);
                 }
 
-                // Auto-registrazione giocatore 2
                 if (input.giocatore2Id() != null) {
                     Utente g2 = trovaORegistraUtente(input.giocatore2Id(), input.giocatore2Username());
                     partita.setGiocatore2(g2);
@@ -108,14 +103,10 @@ public class PartitaService {
                         Torneo torneo = torneoOpt.get();
                         OffsetDateTime now = OffsetDateTime.now();
 
-                        // 1. Validazione finestra temporale
                         boolean inTime = !now.isBefore(torneo.getDataInizio()) && !now.isAfter(torneo.getDataFine());
-                        
-                        // 2. Validazione iscrizione giocatori
                         long iscritti = partitaRepo.countIscrizioniByTorneoIdAndGiocatoriId(torneo.getId(), input.giocatore1Id(), input.giocatore2Id());
                         boolean bothEnrolled = (iscritti == 2);
                         
-                        // Se gioca con l'ospite (id nullo), non può essere classificato
                         if (input.giocatore1Id() == null || input.giocatore2Id() == null) {
                             bothEnrolled = false;
                         }
@@ -144,27 +135,17 @@ public class PartitaService {
         return SyncResultResponse.of(salvate, fallite);
     }
 
-    /**
-     * Cerca un utente per ID (keycloak sub). Se non trovato, lo registra
-     * automaticamente con l'username fornito dall'Edge.
-     * Questo meccanismo garantisce che tutti i giocatori che giocano
-     * almeno una partita siano censiti in platform_db.utente.
-     * 
-     * NOTE (C4 Security Architecture):
-     * La protezione dell'endpoint da payload/UUID arbitrari viene garantita
-     * a monte al Service Gateway tramite il filtro TenantVerificationGatewayFilterFactory.
-     */
+    // Auto-registra l'utente in platform_db se presente solo in Keycloak ma non ancora nel database locale
     private Utente trovaORegistraUtente(UUID keycloakSub, String username) {
         Optional<Utente> existing = utenteRepo.findById(keycloakSub);
         if (existing.isPresent()) {
             return existing.get();
         }
 
-        // Utente non presente in platform_db → auto-registrazione
         Utente nuovo = new Utente();
         nuovo.setId(keycloakSub);
         nuovo.setUsername(username != null ? username : "user_" + keycloakSub.toString().substring(0, 8));
-        nuovo.setEmail(null); // Email non disponibile dal payload, resta in Keycloak
+        nuovo.setEmail(null);
         nuovo.setDataRegistrazione(OffsetDateTime.now());
 
         Utente salvato = utenteRepo.saveAndFlush(nuovo);
@@ -172,18 +153,11 @@ public class PartitaService {
         return salvato;
     }
 
-    // ================================================================
-    // Nuove API — Lista e dettaglio partite (Fase 3)
-    // ================================================================
-
-    /**
-     * Recupera tutte le partite con paginazione e filtri opzionali.
-     */
+    // Recupera la lista delle partite filtrate per locale, gioco o giocatore con ordinamento decrescente per data
     @Transactional(readOnly = true)
     public Page<PartitaDetailResponse> getPartite(String localeId, String giocoId, UUID giocatoreId,
                                                    int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dataFine"));
-
         Page<Partita> partite;
 
         if (giocatoreId != null) {
@@ -201,9 +175,6 @@ public class PartitaService {
         return partite.map(PartitaDetailResponse::from);
     }
 
-    /**
-     * Recupera il dettaglio di una singola partita per ID.
-     */
     @Transactional(readOnly = true)
     public PartitaDetailResponse getPartitaById(UUID partitaId) {
         Partita partita = partitaRepo.findById(partitaId)
@@ -211,9 +182,6 @@ public class PartitaService {
         return PartitaDetailResponse.from(partita);
     }
 
-    /**
-     * Recupera le partite giocate da un utente specifico.
-     */
     @Transactional(readOnly = true)
     public Page<PartitaDetailResponse> getPartiteByUtente(UUID utenteId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dataFine"));

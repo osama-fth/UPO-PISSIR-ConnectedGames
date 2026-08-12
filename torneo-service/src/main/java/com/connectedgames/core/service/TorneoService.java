@@ -18,8 +18,6 @@ import com.connectedgames.core.entity.Utente;
 import com.connectedgames.core.repository.GiocoRepository;
 import com.connectedgames.core.repository.IscrizioneTorneoRepository;
 import com.connectedgames.core.repository.LocaleRepository;
-import com.connectedgames.core.repository.PartitaRepository;
-import com.connectedgames.core.repository.TorneoRepository;
 import com.connectedgames.core.repository.UtenteRepository;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -37,6 +35,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+// Servizio di gestione dei tornei, calcolo lazy delle classifiche ed iscrizioni dei giocatori
 @Service
 public class TorneoService {
 
@@ -129,12 +128,12 @@ public class TorneoService {
         return TorneoResponse.of(t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(), t.getStato(), t.getDataInizio(), t.getDataFine(), localiIds);
     }
 
+    // Iscrive un utente al torneo con auto-registrazione automatica in platform_db se non ancora presente
     @Transactional
     public IscrizioneTorneoResponse iscriviGiocatore(UUID torneoId, UUID utenteId) {
         Torneo torneo = torneoRepo.findById(torneoId)
             .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
 
-        // Auto-registrazione utente in platform_db se non ha ancora mai giocato partite
         Utente utente = utenteRepo.findById(utenteId)
             .orElseGet(() -> {
                 String username = null;
@@ -185,6 +184,7 @@ public class TorneoService {
             .toList();
     }
 
+    // Calcola live la classifica del torneo ordinando per percentuale vittorie, vittorie e partite giocate
     @Transactional(readOnly = true)
     public ClassificaTorneoResponse getClassifica(UUID torneoId) {
         Torneo torneo = torneoRepo.findById(torneoId)
@@ -228,12 +228,10 @@ public class TorneoService {
             classifica.add(new VoceClassifica(0, playerUsername, s.giocate, s.vinte, roundedPerc, metrica));
         }
 
-        // Ordina per percentuale vittorie decrescente, poi partite vinte, poi partite giocate
         classifica.sort(Comparator.comparingDouble(VoceClassifica::percentualeVittorie).reversed()
             .thenComparingInt(VoceClassifica::partiteVinte).reversed()
             .thenComparingLong(VoceClassifica::partiteGiocate).reversed());
 
-        // Assegna posizioni
         List<VoceClassifica> classificaFinale = new ArrayList<>();
         for (int i = 0; i < classifica.size(); i++) {
             VoceClassifica v = classifica.get(i);
@@ -276,6 +274,7 @@ public class TorneoService {
         iscrizioneRepo.deleteByTorneoIdAndUtenteId(torneoId, utenteId);
     }
 
+    // Calcola dinamica del valore di stato (NON_ATTIVO, ATTIVO, CONCLUSO) rispetto all'ora corrente
     private String calcolaStatoLazy(Torneo torneo) {
         OffsetDateTime now = OffsetDateTime.now();
         if (now.isBefore(torneo.getDataInizio())) {

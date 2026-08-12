@@ -1,9 +1,4 @@
--- ============================================================
--- seed.sql — Popolamento Partite per Demo Dashboard
--- Connected Games Platform (PISSIR A.A. 2025/2026)
--- ============================================================
--- Questo script inserisce partite di esempio per popolare le
--- dashboard e le classifiche dei tornei.
+-- Script di popolamento iniziale con partite e risultati di esempio per i tornei demo.
 
 \connect platform_db;
 

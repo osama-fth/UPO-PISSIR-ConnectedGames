@@ -1,6 +1,4 @@
-# docker-compose.yml
-# Connected Games Platform — Orchestrazione Multi-Container
-# Progetto di Laboratorio PISSIR — A.A. 2025/2026 — UPO
+# Orchestrazione multi-container della Connected Games Platform (Postgres, Keycloak, Microservizi Spring, Edge Node Express e Mosquitto MQTTS).
 
 networks:
   backend-tier:

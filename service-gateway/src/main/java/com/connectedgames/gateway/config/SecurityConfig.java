@@ -20,17 +20,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+// Configurazione di sicurezza reattiva (WebFlux) del Gateway: rotta API REST protette da JWT e UI/Docs aperte
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-
         http
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .authorizeExchange(exchange -> exchange
-
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/actuator/health", "/actuator/health/**"))
                 .permitAll()
 
@@ -40,25 +39,22 @@ public class SecurityConfig {
                     "/swagger-resources/**", "/configuration/ui", "/configuration/security"
                 )).permitAll()
 
-                // Superficie UI server-rendered (statistiche-service - BFF Pattern):
-                // Le pagine UI del browser ("/", "/dashboard", "/utenti", "/partite", "/tornei") usano sessioni OIDC cookie-based.
-                // Il Gateway permette il caricamento della pagina HTML e delega l'autenticazione OIDC a statistiche-service,
-                // mentre TUTTE le API REST (/api/v1/**) richiedono obbligatoriamente il token JWT Bearer Keycloak.
+                // Pagine UI del BFF cookie-based permessa a livello gateway
                 .matchers(ServerWebExchangeMatchers.pathMatchers(
                     "/", "/dashboard", "/utenti", "/partite", "/tornei", "/auth/**", "/css/**", "/js/**", "/images/**"
                 )).permitAll()
 
-                // API statistiche — richiede ruolo admin_piattaforma
+                // API statistiche limitate a admin_piattaforma
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/api/v1/statistiche/**"))
                 .hasRole("admin_piattaforma")
-                
-                // POST crea torneo e DELETE torneo — richiede ruoli admin
+
+                // Operazioni amministrative sui tornei
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei"))
                 .hasAnyRole("admin_piattaforma", "admin_locale")
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tornei/*"))
                 .hasAnyRole("admin_piattaforma", "admin_locale")
 
-                // Tutte le chiamate API REST (/api/v1/**) necessitano di token JWT Bearer Keycloak valido
+                // Tutte le REST API (/api/v1/**) richiedono JWT Bearer valido
                 .anyExchange()
                 .authenticated()
             )
@@ -75,6 +71,7 @@ public class SecurityConfig {
         return new ReactiveJwtAuthenticationConverterAdapter(jwtAuthenticationConverter);
     }
 
+    // Convertitore dei ruoli realm di Keycloak nel prefisso Spring ROLE_
     static class GrantedAuthoritiesExtractor implements Converter<Jwt, Collection<GrantedAuthority>> {
         @Override
         public Collection<GrantedAuthority> convert(Jwt jwt) {

@@ -11,23 +11,38 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
-const { checkKeycloakHealth, directPasswordAuth } = require('../services/oidc-client');
+const { checkKeycloakHealth, directPasswordAuth, clientCredentialsAuth } = require('../services/oidc-client');
 const { creaPartita, processaEvento, pubblicaEventoMqtt, getMatch, removeMatch } = require('../services/game-engine');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 const KEYCLOAK_INTERNAL_URL = process.env.KEYCLOAK_INTERNAL_URL || 'http://keycloak:8080/realms/pissir-realm';
 const KEYCLOAK_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'edge-client';
 
-
-
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
+
+/**
+ * Helper: ottiene gli header di autenticazione Bearer per le chiamate verso il Central Gateway.
+ */
+async function getGatewayAuthHeaders(req) {
+    let token = req?.session?.tokenSet?.accessToken;
+    if (!token) {
+        try {
+            const auth = await clientCredentialsAuth().catch(() => directPasswordAuth('edge_sync_service', 'syncpassword'));
+            token = auth.accessToken;
+        } catch (err) {
+            console.error(`[Game ${LOCALE_ID}] Impossibile ottenere token per Gateway:`, err.message);
+        }
+    }
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
 
 /**
  * Helper: recupera i tornei attivi pertinenti per questo locale
  */
-async function getTorneiAttiviLocale() {
+async function getTorneiAttiviLocale(req) {
     try {
-        const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei`);
+        const headers = await getGatewayAuthHeaders(req);
+        const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei`, { headers });
         if (!response.ok) return [];
         const all = await response.json();
         return all.filter(t =>
@@ -61,7 +76,7 @@ router.post('/start', async (req, res) => {
             return res.status(400).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
-                torneiAttivi: await getTorneiAttiviLocale(),
+                torneiAttivi: await getTorneiAttiviLocale(req),
                 error: 'Inserisci le credenziali per entrambi i giocatori.'
             });
         }
@@ -74,7 +89,7 @@ router.post('/start', async (req, res) => {
             return res.status(401).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
-                torneiAttivi: await getTorneiAttiviLocale(),
+                torneiAttivi: await getTorneiAttiviLocale(req),
                 error: `Autenticazione fallita: ${authErr.message}`
             });
         }
@@ -84,7 +99,7 @@ router.post('/start', async (req, res) => {
             return res.status(403).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
-                torneiAttivi: await getTorneiAttiviLocale(),
+                torneiAttivi: await getTorneiAttiviLocale(req),
                 error: 'Entrambi gli utenti devono avere il ruolo "giocatore" per poter giocare.'
             });
         }
@@ -94,7 +109,7 @@ router.post('/start', async (req, res) => {
             return res.status(400).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
-                torneiAttivi: await getTorneiAttiviLocale(),
+                torneiAttivi: await getTorneiAttiviLocale(req),
                 error: 'I due giocatori devono essere diversi.'
             });
         }
@@ -103,7 +118,8 @@ router.post('/start', async (req, res) => {
         const selectedTorneo = torneoId ? torneoId : null;
         if (selectedTorneo) {
             try {
-                const iscRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${selectedTorneo}/iscrizioni`);
+                const headers = await getGatewayAuthHeaders(req);
+                const iscRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${selectedTorneo}/iscrizioni`, { headers });
                 if (!iscRes.ok) {
                     throw new Error(`Impossibile verificare le iscrizioni al torneo (status ${iscRes.status})`);
                 }
@@ -120,7 +136,7 @@ router.post('/start', async (req, res) => {
                     return res.status(403).render('game-select', {
                         title: 'Seleziona Gioco',
                         localeId: LOCALE_ID,
-                        torneiAttivi: await getTorneiAttiviLocale(),
+                        torneiAttivi: await getTorneiAttiviLocale(req),
                         error: `Impossibile avviare la partita: "${nonIscritto}" non è iscritto a questo torneo. Entrambi i giocatori devono essere iscritti al torneo selezionato.`
                     });
                 }
@@ -128,7 +144,7 @@ router.post('/start', async (req, res) => {
                 return res.status(500).render('game-select', {
                     title: 'Seleziona Gioco',
                     localeId: LOCALE_ID,
-                    torneiAttivi: await getTorneiAttiviLocale(),
+                    torneiAttivi: await getTorneiAttiviLocale(req),
                     error: `Errore verifica iscrizioni torneo: ${torneoErr.message}`
                 });
             }

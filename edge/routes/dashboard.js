@@ -8,7 +8,7 @@ const router = express.Router();
 const { requireAuth, requireAdminAccess, canAdminCurrentLocale } = require('../middleware/auth');
 const { getStatsLocale, getStatsGiocatore } = require('../services/sqlite-db');
 const { getActiveMatches } = require('../services/game-engine');
-const { directPasswordAuth } = require('../services/oidc-client');
+const { directPasswordAuth, clientCredentialsAuth } = require('../services/oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 
@@ -52,12 +52,28 @@ function formatRomeIso(dateStr) {
 }
 
 /**
- * Fetch tutti i tornei e filtra per questo locale.
- * GET /api/v1/tornei è pubblico.
+ * Helper: ottiene gli header di autenticazione Bearer per le chiamate verso il Central Gateway.
  */
-async function fetchTorneiLocale() {
+async function getGatewayAuthHeaders(req) {
+    let token = req?.session?.tokenSet?.accessToken;
+    if (!token) {
+        try {
+            const auth = await clientCredentialsAuth().catch(() => directPasswordAuth('edge_sync_service', 'syncpassword'));
+            token = auth.accessToken;
+        } catch (err) {
+            console.error(`[Dashboard ${LOCALE_ID}] Impossibile ottenere token per Gateway:`, err.message);
+        }
+    }
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+/**
+ * Fetch tutti i tornei e filtra per questo locale.
+ */
+async function fetchTorneiLocale(req) {
     try {
-        const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei`);
+        const headers = await getGatewayAuthHeaders(req);
+        const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei`, { headers });
         if (!response.ok) return [];
         const all = await response.json();
         // Filtra per LOCALE_ID: se localiIds è vuoto/null, mostra a tutti
@@ -77,7 +93,7 @@ async function fetchTorneiLocale() {
 router.get('/', async (req, res) => {
     const installazioni = INSTALLAZIONI[LOCALE_ID] || [];
     const activeGames = getActiveMatches();
-    const torneiLocale = await fetchTorneiLocale();
+    const torneiLocale = await fetchTorneiLocale(req);
     // Nella home mostriamo solo tornei ATTIVI (per la selezione partita)
     const torneiAttivi = torneiLocale.filter(t => t.stato === 'ATTIVO');
 
@@ -234,15 +250,15 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     const isAdmin = canAdminCurrentLocale(user);
 
     // Fetch tornei filtrati per locale
-    const torneiLocale = await fetchTorneiLocale();
+    const torneiLocale = await fetchTorneiLocale(req);
 
     // Per ogni torneo, aggiungi info iscrizione utente corrente
     let torneiConStato = [];
     if (!user.isGuest && user.id) {
-        const token = req.session.tokenSet?.accessToken;
+        const headers = await getGatewayAuthHeaders(req);
         torneiConStato = await Promise.all(torneiLocale.map(async t => {
             try {
-                const iscRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${t.id}/iscrizioni`);
+                const iscRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${t.id}/iscrizioni`, { headers });
                 const iscrizioniList = iscRes.ok ? (await iscRes.json()) : [];
                 const isIscritto = iscrizioniList.some(i => i.utenteId === user.id);
                 return {
@@ -280,10 +296,11 @@ router.get('/dashboard', requireAuth, async (req, res) => {
 router.get(['/tornei/:torneoId/dettaglio', '/dashboard/tornei/:torneoId/dettaglio'], async (req, res) => {
     try {
         const { torneoId } = req.params;
+        const headers = await getGatewayAuthHeaders(req);
         const [torneoRes, classificaRes, iscrittiRes] = await Promise.all([
-            fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${torneoId}`),
-            fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${torneoId}/classifica`),
-            fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${torneoId}/iscrizioni`)
+            fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${torneoId}`, { headers }),
+            fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${torneoId}/classifica`, { headers }),
+            fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${torneoId}/iscrizioni`, { headers })
         ]);
 
         const torneo = torneoRes.ok ? await torneoRes.json() : null;

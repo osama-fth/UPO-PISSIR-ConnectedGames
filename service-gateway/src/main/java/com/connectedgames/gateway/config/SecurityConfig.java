@@ -31,11 +31,7 @@ public class SecurityConfig {
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .authorizeExchange(exchange -> exchange
 
-                .matchers(ServerWebExchangeMatchers.pathMatchers("/actuator/health"))
-                .permitAll()
-                .matchers(ServerWebExchangeMatchers.pathMatchers("/actuator/health/readiness"))
-                .permitAll()
-                .matchers(ServerWebExchangeMatchers.pathMatchers("/actuator/health/liveness"))
+                .matchers(ServerWebExchangeMatchers.pathMatchers("/actuator/health", "/actuator/health/**"))
                 .permitAll()
 
                 // Swagger UI & OpenAPI spec
@@ -44,35 +40,25 @@ public class SecurityConfig {
                     "/swagger-resources/**", "/configuration/ui", "/configuration/security"
                 )).permitAll()
 
-                // NOTE (M4 Architectural Design):
-                // Superficie UI server-rendered (statistiche-service):
-                // Le route UI ("/", "/dashboard", "/auth/**", ecc.) usano un modello di autenticazione basato su sessione cookie OIDC.
-                // Il Gateway applica permitAll() a livello perimetrale e delega la sicurezza al servizio downstream (BFF pattern),
-                // mentre per le API REST (/api/v1/**) viene applicata la validazione Bearer JWT direttamente qui nel Gateway.
+                // Superficie UI server-rendered (statistiche-service - BFF Pattern):
+                // Le pagine UI del browser ("/", "/dashboard", "/utenti", "/partite", "/tornei") usano sessioni OIDC cookie-based.
+                // Il Gateway permette il caricamento della pagina HTML e delega l'autenticazione OIDC a statistiche-service,
+                // mentre TUTTE le API REST (/api/v1/**) richiedono obbligatoriamente il token JWT Bearer Keycloak.
                 .matchers(ServerWebExchangeMatchers.pathMatchers(
                     "/", "/dashboard", "/utenti", "/partite", "/tornei", "/auth/**", "/css/**", "/js/**", "/images/**"
                 )).permitAll()
 
-                // API statistiche requires admin role
+                // API statistiche — richiede ruolo admin_piattaforma
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/api/v1/statistiche/**"))
                 .hasRole("admin_piattaforma")
                 
-                // Tornei API — GET pubbliche
-                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/tornei", "/api/v1/tornei/**"))
-                .permitAll()
-                // POST crea torneo: solo admin
+                // POST crea torneo e DELETE torneo — richiede ruoli admin
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei"))
                 .hasAnyRole("admin_piattaforma", "admin_locale")
-                // DELETE torneo: solo admin
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tornei/*"))
                 .hasAnyRole("admin_piattaforma", "admin_locale")
-                // POST iscrizione e DELETE disiscrizione: utente autenticato
-                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei/*/iscrizioni"))
-                .authenticated()
-                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tornei/*/iscrizioni/*"))
-                .authenticated()
 
-                // Everything else requires a valid JWT Token
+                // Tutte le chiamate API REST (/api/v1/**) necessitano di token JWT Bearer Keycloak valido
                 .anyExchange()
                 .authenticated()
             )

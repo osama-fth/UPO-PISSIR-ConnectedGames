@@ -51,7 +51,7 @@ L'intero stack è containerizzato e facilmente avviabile con un solo comando.
 
 ## 👥 Credenziali di Test (Hardcoded Seed)
 
-Per facilitare lo sviluppo e testare la *Role-Based Dashboard*, il database (`init-db.sql`) e Keycloak (`realm-export.json`) sono pre-popolati con vari utenti fissi i cui UUID coincidono perfettamente tra le due piattaforme.
+Per facilitare lo sviluppo e testare la *Role-Based Dashboard*, il database (`postgres/init-db.sql`) e Keycloak (`realm-export.json`) sono pre-popolati con vari utenti fissi i cui UUID coincidono perfettamente tra le due piattaforme.
 
 **La password per tutti gli account interattivi di test è:** `password` (mentre per `edge_sync_service` è `syncpassword`)
 

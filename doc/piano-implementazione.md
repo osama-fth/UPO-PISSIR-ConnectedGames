@@ -347,7 +347,7 @@
 
 | File | Modifica |
 |:---|:---|
-| [init-db.sql](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/init-db.sql) | `email` nullable, tabella `iscrizione_torneo`, seed tornei/partite |
+| [init-db.sql](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/postgres/init-db.sql) | `email` nullable, tabella `iscrizione_torneo`, seed tornei/partite |
 | [PartitaSyncInput.java](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/partita-service/src/main/java/com/connectedgames/core/dto/PartitaSyncInput.java) | Aggiungere `giocatore1Username`, `giocatore2Username` |
 | [PartitaService.java](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/partita-service/src/main/java/com/connectedgames/core/service/PartitaService.java) | Auto-registrazione utente, nuove query |
 | [PartitaController.java](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/partita-service/src/main/java/com/connectedgames/core/controller/PartitaController.java) | Nuovi endpoint GET |

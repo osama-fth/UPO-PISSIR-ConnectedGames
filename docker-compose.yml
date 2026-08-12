@@ -39,8 +39,8 @@ services:
       KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-      - ./seed-demo.sql:/docker-entrypoint-initdb.d/z-seed-demo.sql:ro
+      - ./postgres/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - ./postgres/seed.sql:/docker-entrypoint-initdb.d/z-seed.sql:ro
     networks:
       - backend-tier
     healthcheck:

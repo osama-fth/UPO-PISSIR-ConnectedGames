@@ -10,76 +10,6 @@ function requireAuth(req, res, next) {
     return res.redirect('/auth/login');
 }
 
-// Richiede autenticazione Keycloak online (esclude utenti Guest)
-function requireOnlineAuth(req, res, next) {
-    if (req.session && req.session.user && !req.session.user.isGuest) {
-        return next();
-    }
-
-    if (req.session && req.session.user && req.session.user.isGuest) {
-        return res.status(403).render('error', {
-            title: 'Accesso Negato',
-            message: 'Questa funzionalità richiede l\'autenticazione online. Accedi con il tuo account Keycloak.'
-        });
-    }
-
-    return res.redirect('/auth/login');
-}
-
-// Verifica il possesso di uno dei ruoli specificati
-function requireRole(...roles) {
-    return (req, res, next) => {
-        if (!req.session || !req.session.user) {
-            return res.redirect('/auth/login');
-        }
-
-        const userRoles = req.session.user.roles || [];
-        if (roles.some(role => userRoles.includes(role))) {
-            return next();
-        }
-
-        return res.status(403).render('error', {
-            title: 'Accesso Negato',
-            message: `Questa sezione richiede uno dei seguenti ruoli: ${roles.join(', ')}`
-        });
-    };
-}
-
-// Controlla che l'utente abbia accesso al locale dell'Edge corrente o sia admin di piattaforma
-function requireLocaleAccess(req, res, next) {
-    if (!req.session || !req.session.user) {
-        return res.redirect('/auth/login');
-    }
-
-    const user = req.session.user;
-    const userRoles = user.roles || [];
-
-    if (userRoles.includes('admin_piattaforma')) {
-        return next();
-    }
-
-    if (userRoles.includes('admin_locale')) {
-        const userLocaleId = getUserLocaleId(user);
-        if (userLocaleId === LOCALE_ID) {
-            return next();
-        }
-
-        return res.status(403).render('error', {
-            title: 'Accesso Negato',
-            message: `Non hai i permessi per accedere al locale ${LOCALE_ID}. Il tuo locale è ${userLocaleId || 'non configurato'}.`
-        });
-    }
-
-    if (userRoles.includes('giocatore')) {
-        return next();
-    }
-
-    return res.status(403).render('error', {
-        title: 'Accesso Negato',
-        message: 'Non hai i permessi per accedere a questa sezione.'
-    });
-}
-
 // Riservato agli amministratori del locale specifico o di piattaforma
 function requireAdminAccess(req, res, next) {
     if (!req.session || !req.session.user) {
@@ -128,9 +58,6 @@ function canAdminCurrentLocale(user) {
 
 module.exports = {
     requireAuth,
-    requireOnlineAuth,
-    requireRole,
-    requireLocaleAccess,
     requireAdminAccess,
     getUserLocaleId,
     canAdminCurrentLocale

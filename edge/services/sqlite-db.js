@@ -145,40 +145,6 @@ function getStatsLocale() {
     };
 }
 
-function getStatsGiocatore(giocatoreId) {
-    const partite = db.prepare(`
-        SELECT * FROM partite_buffer 
-        WHERE giocatore_1_id = ? OR giocatore_2_id = ?
-        ORDER BY data_fine DESC
-    `).all(giocatoreId, giocatoreId);
-
-    let vittorie = 0;
-    let sconfitte = 0;
-
-    for (const p of partite) {
-        const isPlayer1 = p.giocatore_1_id === giocatoreId;
-        if (isPlayer1) {
-            if (p.punteggio_1 > p.punteggio_2) vittorie++;
-            else sconfitte++;
-        } else {
-            if (p.punteggio_2 > p.punteggio_1) vittorie++;
-            else sconfitte++;
-        }
-    }
-
-    return {
-        totalePartite: partite.length,
-        vittorie,
-        sconfitte,
-        percentualeVittorie: partite.length > 0 ? Math.round((vittorie / partite.length) * 100) : 0,
-        ultimePartite: partite.slice(0, 5)
-    };
-}
-
-function getDb() {
-    return db;
-}
-
 module.exports = {
     initDatabase,
     salvaPartita,
@@ -187,7 +153,5 @@ module.exports = {
     getPartiteAttiveSalvate,
     getPartiteNonSincronizzate,
     segnaComeSincronizzate,
-    getStatsLocale,
-    getStatsGiocatore,
-    getDb
+    getStatsLocale
 };

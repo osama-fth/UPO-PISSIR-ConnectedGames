@@ -145,13 +145,6 @@ function avviaCronSync() {
     cronTimer.unref();
 }
 
-function fermaCronSync() {
-    if (cronTimer) {
-        clearInterval(cronTimer);
-        cronTimer = null;
-    }
-}
-
 function getSyncStatus() {
     return {
         isSyncing,
@@ -166,6 +159,5 @@ function getSyncStatus() {
 module.exports = {
     sincronizzaAdesso,
     avviaCronSync,
-    fermaCronSync,
     getSyncStatus
 };

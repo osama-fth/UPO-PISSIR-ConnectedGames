@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+// Repository JPA per la ricerca e gestione dei tornei in torneo-service
 @Repository
 public interface TorneoRepository extends JpaRepository<Torneo, UUID> {
 
@@ -15,7 +16,4 @@ public interface TorneoRepository extends JpaRepository<Torneo, UUID> {
 
     @Query("SELECT t FROM Torneo t WHERE t.dataInizio <= ?1 AND t.dataFine >= ?1")
     List<Torneo> findAttiviAlTimestamp(OffsetDateTime now);
-
-    @Query("SELECT t FROM Torneo t WHERE t.dataFine < ?1")
-    List<Torneo> findConclusi(OffsetDateTime now);
 }

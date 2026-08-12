@@ -156,10 +156,6 @@ function getLogoutUrl(idTokenHint, customRedirectUri) {
     });
 }
 
-function isOidcAvailable() {
-    return oidcAvailable;
-}
-
 // Autentica direttamente un giocatore (Direct Access Grant) per il secondo giocatore o per servizi
 async function directPasswordAuth(username, password) {
     const tokenUrl = `${KEYCLOAK_INTERNAL_URL}/protocol/openid-connect/token`;
@@ -230,7 +226,6 @@ module.exports = {
     exchangeCode,
     getUserInfoFromToken,
     getLogoutUrl,
-    isOidcAvailable,
     directPasswordAuth,
     clientCredentialsAuth
 };

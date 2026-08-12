@@ -20,6 +20,7 @@ const { initOidcClient } = require('./services/oidc-client');
 const { connectMqtt, getMqttStatus } = require('./services/mqtt-client');
 const { initDatabase } = require('./services/sqlite-db');
 const { avviaCronSync } = require('./services/sync-service');
+const { caricaPartiteAttiveDaDb } = require('./services/game-engine');
 const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
 const gameRoutes = require('./routes/game');
@@ -104,6 +105,7 @@ async function start() {
     try {
         initDatabase();
         console.log(`[Edge ${LOCALE_ID}] Database SQLite inizializzato`);
+        caricaPartiteAttiveDaDb();
     } catch (err) {
         console.error(`[Edge ${LOCALE_ID}] Errore inizializzazione SQLite:`, err.message);
         process.exit(1); // Critico: senza DB non possiamo salvare partite

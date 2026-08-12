@@ -386,7 +386,6 @@ module.exports = {
 // ============================================================
 // Inizializzazione e sottoscrizione eventi MQTT reali
 // ============================================================
-caricaPartiteAttiveDaDb();
 avviaTimeoutPartiteAbbandonate();
 
 getMqttEvents().on('evento', ({ topic, payload }) => {

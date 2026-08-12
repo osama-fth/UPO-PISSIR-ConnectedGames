@@ -21,8 +21,14 @@ public class StatisticheBackendService {
         return new StatisticheGlobaliResponse(
                 statisticheRepository.countTotalePartite(),
                 statisticheRepository.countTotaleGiocatoriAttivi(),
+                statisticheRepository.countTorneiAttivi(),
+                statisticheRepository.countTorneiConclusi(),
+                statisticheRepository.getTotalePuntiSegnati(),
+                statisticheRepository.getDurataMediaMinuti(),
                 statisticheRepository.getLocaliPiuAttivi(5),
-                statisticheRepository.getGiochiPiuUtilizzati(5)
+                statisticheRepository.getGiochiPiuUtilizzati(5),
+                statisticheRepository.getTopGiocatoriVittorie(5),
+                statisticheRepository.getTorneiStat(5)
         );
     }
 

@@ -3,13 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connected Games - Dashboard Globale</title>
+    <title>Connected Games - Dashboard Super Admin</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" th:href="@{/css/admin-theme.css}">
+    <!-- Chart.js per Grafici Interattivi -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .main-content { margin-left: 250px; padding: 2rem; min-height: calc(100vh - 56px); }
+        .clickable-row { cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; }
+        .clickable-row:hover { background-color: var(--bg-card-hover) !important; transform: translateY(-1px); }
+        .bg-gradient-warning-custom {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.25)) !important;
+            border: 1px solid rgba(245, 158, 11, 0.4) !important;
+        }
+        .bg-gradient-info-custom {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(59, 130, 246, 0.25)) !important;
+            border: 1px solid rgba(6, 182, 212, 0.4) !important;
+        }
+        .bg-gradient-purple-custom {
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.25), rgba(124, 58, 237, 0.25)) !important;
+            border: 1px solid rgba(147, 51, 234, 0.4) !important;
+        }
+        .bg-gradient-secondary-custom {
+            background: linear-gradient(135deg, rgba(100, 116, 139, 0.25), rgba(71, 85, 105, 0.25)) !important;
+            border: 1px solid rgba(100, 116, 139, 0.4) !important;
+        }
+        .chart-container { position: relative; height: 240px; width: 100%; }
+        .hint-clickable { font-size: 0.75rem; color: var(--accent-secondary); opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -23,61 +45,172 @@
 
     <!-- Main Content -->
     <div class="main-content flex-grow-1">
+        <!-- Header -->
         <div class="row mb-4">
-            <div class="col">
-                <h2 class="fw-bold"><i class="bi bi-graph-up-arrow text-primary"></i> Dashboard Globale Statistiche</h2>
-                <p class="text-muted">Visione d'insieme sull'utilizzo della piattaforma.</p>
-            </div>
-        </div>
-
-        <!-- Contatori principali -->
-        <div class="row g-4 mb-5">
-            <div class="col-md-6 col-lg-3">
-                <div class="card card-stat border-0 shadow-sm text-white bg-gradient-primary h-100">
-                    <div class="card-body d-flex flex-column justify-content-center align-items-center p-4">
-                        <i class="bi bi-joystick fs-1 mb-2 text-info"></i>
-                        <h5 class="card-title fw-normal">Partite Giocate</h5>
-                        <h2 class="display-5 fw-bold mb-0" th:text="${stats.totalePartiteGiocate}">0</h2>
-                    </div>
+            <div class="col d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i> Dashboard Super Admin</h2>
+                    <p class="text-muted mb-0">Clicca su qualsiasi elemento, giocatore, locale o torneo per aprire i dettagli interattivi.</p>
                 </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="card card-stat border-0 shadow-sm text-white bg-gradient-success h-100">
-                    <div class="card-body d-flex flex-column justify-content-center align-items-center p-4">
-                        <i class="bi bi-people fs-1 mb-2 text-success"></i>
-                        <h5 class="card-title fw-normal">Giocatori Attivi</h5>
-                        <h2 class="display-5 fw-bold mb-0" th:text="${stats.totaleGiocatoriAttivi}">0</h2>
-                    </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary px-3 py-2 fs-6"><i class="bi bi-shield-check me-1"></i> Admin Piattaforma</span>
+                    <button class="btn btn-sm btn-outline-light" onclick="location.reload()"><i class="bi bi-arrow-clockwise me-1"></i> Aggiorna</button>
                 </div>
             </div>
         </div>
 
-        <!-- Tabelle Classifiche -->
-        <div class="row g-4">
-            <!-- Locali Piu Attivi -->
+        <!-- Row 1: 6 KPI Cards Cliccabili -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4 col-lg-2">
+                <div class="card card-stat border-0 shadow-sm text-white bg-gradient-primary h-100 clickable-row" onclick="scrollToElement('section-locali')">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
+                        <i class="bi bi-joystick fs-2 mb-1 text-info"></i>
+                        <span class="text-secondary small">Partite Giocate</span>
+                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totalePartiteGiocate}">0</h3>
+                        <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Clicca per i locali</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-lg-2">
+                <div class="card card-stat border-0 shadow-sm text-white bg-gradient-success h-100 clickable-row" onclick="scrollToElement('section-giocatori')">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
+                        <i class="bi bi-people fs-2 mb-1 text-success"></i>
+                        <span class="text-secondary small">Giocatori Attivi</span>
+                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totaleGiocatoriAttivi}">0</h3>
+                        <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Clicca per i giocatori</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-lg-2">
+                <div class="card card-stat border-0 shadow-sm text-white bg-gradient-warning-custom h-100 clickable-row" onclick="filterTornei('ATTIVO')">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
+                        <i class="bi bi-trophy fs-2 mb-1 text-warning"></i>
+                        <span class="text-secondary small">Tornei Attivi</span>
+                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totaleTorneiAttivi}">0</h3>
+                        <span class="hint-clickable mt-1"><i class="bi bi-filter-circle"></i> Filtra attivi</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-lg-2">
+                <div class="card card-stat border-0 shadow-sm text-white bg-gradient-info-custom h-100 clickable-row" onclick="scrollToElement('section-giochi')">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
+                        <i class="bi bi-bullseye fs-2 mb-1 text-cyan"></i>
+                        <span class="text-secondary small">Punti / Gol Totali</span>
+                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totalePuntiSegnati}">0</h3>
+                        <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Clicca per i giochi</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-lg-2">
+                <div class="card card-stat border-0 shadow-sm text-white bg-gradient-purple-custom h-100">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
+                        <i class="bi bi-clock-history fs-2 mb-1 text-purple"></i>
+                        <span class="text-secondary small">Durata Media</span>
+                        <h3 class="fw-bold mb-0 mt-1"><span th:text="${stats.durataMediaMinuti}">0</span> <small class="fs-6">min</small></h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-lg-2">
+                <div class="card card-stat border-0 shadow-sm text-white bg-gradient-secondary-custom h-100 clickable-row" onclick="filterTornei('CONCLUSO')">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
+                        <i class="bi bi-check-circle-fill fs-2 mb-1 text-slate"></i>
+                        <span class="text-secondary small">Tornei Conclusi</span>
+                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totaleTorneiConclusi}">0</h3>
+                        <span class="hint-clickable mt-1"><i class="bi bi-filter-circle"></i> Filtra conclusi</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Grafici Interattivi (Chart.js) -->
+        <div class="row g-4 mb-4">
             <div class="col-lg-6">
                 <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header pt-4 pb-2">
-                        <h5 class="card-title fw-bold"><i class="bi bi-shop text-warning"></i> Locali Più Attivi</h5>
+                    <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-pie-chart-fill text-info me-2"></i> Distribuzione Giochi</h5>
+                        <span class="badge bg-secondary">Grafico Interattivo</span>
+                    </div>
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <div class="chart-container">
+                            <canvas id="giochiChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-bar-chart-line-fill text-warning me-2"></i> Partite per Locale</h5>
+                        <span class="badge bg-secondary">Volume Attività</span>
+                    </div>
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <div class="chart-container">
+                            <canvas id="localiChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Top Players (Hall of Fame) & Locali Piu Attivi (Con Clic e Modali) -->
+        <div class="row g-4 mb-4">
+            <!-- Top Giocatori per Vittorie -->
+            <div class="col-lg-6" id="section-giocatori">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-award-fill text-warning me-2"></i> Hall of Fame — Top Giocatori</h5>
+                        <span class="badge bg-warning text-dark"><i class="bi bi-cursor-fill me-1"></i> Clicca una riga</span>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle">
+                            <table class="table table-hover align-middle mb-0">
                                 <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Nome Locale</th>
-                                    <th class="text-end">Partite Giocate</th>
+                                    <th>Giocatore</th>
+                                    <th class="text-center">Vittorie</th>
+                                    <th class="text-center">Partite</th>
+                                    <th class="text-end">Win Rate (%)</th>
+                                    <th class="text-center">Azione</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <tr th:each="locale, iterStat : ${stats.localiPiuAttivi}">
-                                    <td th:text="${iterStat.count}">1</td>
-                                    <td><strong th:text="${locale.nomeLocale}">Nome</strong> <br> <small class="text-muted" th:text="${locale.localeId}">ID</small></td>
-                                    <td class="text-end"><span class="badge bg-primary rounded-pill px-3 py-2" th:text="${locale.partiteGiocate}">0</span></td>
+                                <tr th:each="player, iterStat : ${stats.topGiocatoriVittorie}" 
+                                    class="clickable-row" 
+                                    th:data-id="${player.utenteId}"
+                                    th:data-username="${player.username}"
+                                    onclick="apriModalUtente(this.getAttribute('data-id'), this.getAttribute('data-username'))">
+                                    <td>
+                                        <span class="fw-bold" th:switch="${iterStat.count}">
+                                            <span th:case="1" class="text-warning fs-5">🥇</span>
+                                            <span th:case="2" class="text-light fs-5">🥈</span>
+                                            <span th:case="3" class="text-danger fs-5">🥉</span>
+                                            <span th:case="*" th:text="${iterStat.count}">4</span>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong th:text="${player.username}">Username</strong>
+                                        <br><small class="text-muted" th:text="${player.utenteId}">UUID</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success rounded-pill px-3 py-1" th:text="${player.partiteVinte}">0</span>
+                                    </td>
+                                    <td class="text-center" th:text="${player.partiteGiocate}">0</td>
+                                    <td class="text-end">
+                                        <span class="fw-bold text-info" th:text="${player.percentualeVittorie} + '%'">0%</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-xs btn-outline-light rounded-circle"><i class="bi bi-eye"></i></button>
+                                    </td>
                                 </tr>
-                                <tr th:if="${#lists.isEmpty(stats.localiPiuAttivi)}">
-                                    <td colspan="3" class="text-center text-muted py-3">Nessun dato disponibile</td>
+                                <tr th:if="${#lists.isEmpty(stats.topGiocatoriVittorie)}">
+                                    <td colspan="6" class="text-center text-muted py-3">Nessun dato su partite o giocatori disponibile.</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -86,15 +219,62 @@
                 </div>
             </div>
 
-            <!-- Giochi Piu Utilizzati -->
-            <div class="col-lg-6">
+            <!-- Locali Piu Attivi -->
+            <div class="col-lg-6" id="section-locali">
                 <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header pt-4 pb-2">
-                        <h5 class="card-title fw-bold"><i class="bi bi-controller text-danger"></i> Giochi Più Utilizzati</h5>
+                    <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-shop text-primary me-2"></i> Locali Più Attivi</h5>
+                        <span class="badge bg-primary"><i class="bi bi-cursor-fill me-1"></i> Clicca per dettaglio</span>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nome Locale</th>
+                                    <th>ID Locale</th>
+                                    <th class="text-end">Partite Giocate</th>
+                                    <th class="text-center">Dettagli</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="locale, iterStat : ${stats.localiPiuAttivi}"
+                                    class="clickable-row"
+                                    th:data-id="${locale.localeId}"
+                                    th:data-nome="${locale.nomeLocale}"
+                                    onclick="apriModalLocale(this.getAttribute('data-id'), this.getAttribute('data-nome'))">
+                                    <td th:text="${iterStat.count}">1</td>
+                                    <td><strong th:text="${locale.nomeLocale}">Nome Locale</strong></td>
+                                    <td><code><i class="bi bi-geo-alt me-1"></i><span th:text="${locale.localeId}">ID</span></code></td>
+                                    <td class="text-end"><span class="badge bg-primary rounded-pill px-3 py-2" th:text="${locale.partiteGiocate}">0</span></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-xs btn-outline-light rounded-circle"><i class="bi bi-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(stats.localiPiuAttivi)}">
+                                    <td colspan="5" class="text-center text-muted py-3">Nessun dato disponibile sui locali.</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 4: Giochi & Panoramica Tornei (Con Filtri e Clic) -->
+        <div class="row g-4" id="section-tornei">
+            <!-- Giochi Piu Utilizzati -->
+            <div class="col-lg-5" id="section-giochi">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-controller text-danger me-2"></i> Popolarità dei Giochi</h5>
+                        <span class="badge bg-danger">Classifica</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
                                 <thead>
                                 <tr>
                                     <th>#</th>
@@ -105,11 +285,69 @@
                                 <tbody>
                                 <tr th:each="gioco, iterStat : ${stats.giochiPiuUtilizzati}">
                                     <td th:text="${iterStat.count}">1</td>
-                                    <td class="fw-bold text-capitalize" th:text="${#strings.toLowerCase(gioco.giocoTipo)}">Gioco</td>
+                                    <td>
+                                        <i class="bi bi-controller text-danger me-2" th:if="${gioco.giocoTipo == 'Calciobalilla' or gioco.giocoTipo == 'calciobalilla'}"></i>
+                                        <i class="bi bi-bullseye text-warning me-2" th:if="${gioco.giocoTipo == 'Freccette' or gioco.giocoTipo == 'freccette'}"></i>
+                                        <strong class="text-capitalize" th:text="${gioco.giocoTipo}">Gioco</strong>
+                                    </td>
                                     <td class="text-end"><span class="badge bg-success rounded-pill px-3 py-2" th:text="${gioco.partiteGiocate}">0</span></td>
                                 </tr>
                                 <tr th:if="${#lists.isEmpty(stats.giochiPiuUtilizzati)}">
-                                    <td colspan="3" class="text-center text-muted py-3">Nessun dato disponibile</td>
+                                    <td colspan="3" class="text-center text-muted py-3">Nessun dato disponibile sui giochi.</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panoramica Tornei -->
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-trophy-fill text-info me-2"></i> Panoramica Tornei</h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-light active" id="filter-all" onclick="filterTornei('ALL')">Tutti</button>
+                            <button type="button" class="btn btn-outline-light" id="filter-attivo" onclick="filterTornei('ATTIVO')">Attivi</button>
+                            <button type="button" class="btn btn-outline-light" id="filter-concluso" onclick="filterTornei('CONCLUSO')">Conclusi</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="torneiTable">
+                                <thead>
+                                <tr>
+                                    <th>Torneo</th>
+                                    <th>Gioco</th>
+                                    <th>Stato</th>
+                                    <th class="text-center">Iscritti</th>
+                                    <th class="text-end">Partite</th>
+                                    <th class="text-center">Classifica</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="torneo : ${stats.torneiStat}"
+                                    class="clickable-row torneo-row"
+                                    th:data-stato="${torneo.stato}"
+                                    th:data-id="${torneo.torneoId}"
+                                    th:data-nome="${torneo.nome}"
+                                    onclick="apriModalTorneo(this.getAttribute('data-id'), this.getAttribute('data-nome'))">
+                                    <td><strong th:text="${torneo.nome}">Nome Torneo</strong></td>
+                                    <td class="text-capitalize" th:text="${torneo.giocoNome}">Gioco</td>
+                                    <td>
+                                        <span class="badge bg-success" th:if="${torneo.stato == 'ATTIVO'}">ATTIVO</span>
+                                        <span class="badge bg-secondary" th:if="${torneo.stato == 'CONCLUSO'}">CONCLUSO</span>
+                                        <span class="badge bg-warning" th:if="${torneo.stato != 'ATTIVO' and torneo.stato != 'CONCLUSO'}" th:text="${torneo.stato}">NON_ATTIVO</span>
+                                    </td>
+                                    <td class="text-center"><span class="badge bg-info text-dark rounded-pill" th:text="${torneo.iscrittiCount}">0</span></td>
+                                    <td class="text-end"><span class="badge bg-primary rounded-pill" th:text="${torneo.partiteGiocate}">0</span></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-xs btn-outline-info rounded-pill px-2 py-1"><i class="bi bi-bar-chart me-1"></i>Vedi</button>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(stats.torneiStat)}">
+                                    <td colspan="6" class="text-center text-muted py-3">Nessun torneo censito.</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -118,9 +356,373 @@
                 </div>
             </div>
         </div>
+
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODALE 1: DETTAGLIO UTENTE -->
+<!-- ============================================================ -->
+<div class="modal fade" id="modalUtente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalUtenteTitle"><i class="bi bi-person-badge text-primary me-2"></i> Dettaglio Giocatore</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalUtenteLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2">Caricamento statistiche utente in corso...</p>
+                </div>
+                <div id="modalUtenteContent" class="d-none">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="p-3 border rounded text-center bg-secondary-custom">
+                                <span class="text-muted small">Partite Totali</span>
+                                <h4 class="fw-bold mb-0 text-white" id="userStatGiocate">0</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 border rounded text-center bg-secondary-custom">
+                                <span class="text-muted small">Vittorie</span>
+                                <h4 class="fw-bold mb-0 text-success" id="userStatVinte">0</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 border rounded text-center bg-secondary-custom">
+                                <span class="text-muted small">Sconfitte</span>
+                                <h4 class="fw-bold mb-0 text-danger" id="userStatPerse">0</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 border rounded text-center bg-secondary-custom">
+                                <span class="text-muted small">Win Rate (%)</span>
+                                <h4 class="fw-bold mb-0 text-info" id="userStatWinRate">0%</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <span class="badge bg-warning text-dark"><i class="bi bi-trophy me-1"></i> Tornei Partecipati: <strong id="userStatTornei">0</strong></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODALE 2: DETTAGLIO LOCALE -->
+<!-- ============================================================ -->
+<div class="modal fade" id="modalLocale" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalLocaleTitle"><i class="bi bi-shop text-warning me-2"></i> Dettaglio Locale</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalLocaleLoading" class="text-center py-4">
+                    <div class="spinner-border text-warning" role="status"></div>
+                    <p class="text-muted mt-2">Caricamento dati del locale...</p>
+                </div>
+                <div id="modalLocaleContent" class="d-none">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded text-center">
+                                <span class="text-muted small">Partite nel Locale</span>
+                                <h4 class="fw-bold mb-0 text-primary" id="localeStatPartite">0</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded text-center">
+                                <span class="text-muted small">Giocatori Unici</span>
+                                <h4 class="fw-bold mb-0 text-success" id="localeStatGiocatori">0</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded text-center">
+                                <span class="text-muted small">Gioco Più Popolare</span>
+                                <h4 class="fw-bold mb-0 text-warning text-capitalize" id="localeStatPopular">N/A</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold mb-3"><i class="bi bi-controller me-2"></i> Ripartizione Installazioni & Giochi</h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="localeGamesTable">
+                            <thead>
+                            <tr>
+                                <th>Gioco</th>
+                                <th class="text-end">Partite Giocate</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODALE 3: CLASSIFICA TORNEO -->
+<!-- ============================================================ -->
+<div class="modal fade" id="modalTorneo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalTorneoTitle"><i class="bi bi-trophy text-info me-2"></i> Classifica Torneo in Tempo Reale</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalTorneoLoading" class="text-center py-4">
+                    <div class="spinner-border text-info" role="status"></div>
+                    <p class="text-muted mt-2">Calcolo classifica in tempo reale...</p>
+                </div>
+                <div id="modalTorneoContent" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="torneoLeaderboardTable">
+                            <thead>
+                            <tr>
+                                <th>Pos.</th>
+                                <th>Giocatore</th>
+                                <th class="text-center">Partite Giocate</th>
+                                <th class="text-end">Punteggio / Metrica</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+    const jwtToken = /*[[${jwtToken}]]*/ '';
+
+    function getAuthHeaders() {
+        return jwtToken ? { 'Authorization': 'Bearer ' + jwtToken } : {};
+    }
+
+    function scrollToElement(id) {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ============================================================
+    // GRAFICI INTERATTIVI (Chart.js)
+    // ============================================================
+    document.addEventListener("DOMContentLoaded", () => {
+        // Grafico 1: Giochi Donut Chart
+        const giochiData = /*[[${stats.giochiPiuUtilizzati}]]*/ [];
+        const giochiLabels = giochiData.map(g => g.giocoTipo);
+        const giochiValues = giochiData.map(g => g.partiteGiocate);
+
+        const ctxGiochi = document.getElementById('giochiChart');
+        if (ctxGiochi && giochiLabels.length > 0) {
+            new Chart(ctxGiochi, {
+                type: 'doughnut',
+                data: {
+                    labels: giochiLabels,
+                    datasets: [{
+                        data: giochiValues,
+                        backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Inter' } } }
+                    }
+                }
+            });
+        }
+
+        // Grafico 2: Locali Bar Chart
+        const localiData = /*[[${stats.localiPiuAttivi}]]*/ [];
+        const localiLabels = localiData.map(l => l.nomeLocale);
+        const localiValues = localiData.map(l => l.partiteGiocate);
+
+        const ctxLocali = document.getElementById('localiChart');
+        if (ctxLocali && localiLabels.length > 0) {
+            new Chart(ctxLocali, {
+                type: 'bar',
+                data: {
+                    labels: localiLabels,
+                    datasets: [{
+                        label: 'Partite Giocate',
+                        data: localiValues,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    });
+
+    // ============================================================
+    // FILTRA TABELLA TORNEI
+    // ============================================================
+    function filterTornei(stato) {
+        document.querySelectorAll('#filter-all, #filter-attivo, #filter-concluso').forEach(b => b.classList.remove('active'));
+        if (stato === 'ALL') document.getElementById('filter-all').classList.add('active');
+        if (stato === 'ATTIVO') document.getElementById('filter-attivo').classList.add('active');
+        if (stato === 'CONCLUSO') document.getElementById('filter-concluso').classList.add('active');
+
+        const rows = document.querySelectorAll('.torneo-row');
+        rows.forEach(row => {
+            const rowStato = row.getAttribute('data-stato');
+            if (stato === 'ALL' || rowStato === stato) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        scrollToElement('section-tornei');
+    }
+
+    // ============================================================
+    // MODALE UTENTE
+    // ============================================================
+    function apriModalUtente(id, username) {
+        const modal = new bootstrap.Modal(document.getElementById('modalUtente'));
+        document.getElementById('modalUtenteTitle').innerText = 'Dettaglio Giocatore — ' + username;
+        document.getElementById('modalUtenteLoading').classList.remove('d-none');
+        document.getElementById('modalUtenteContent').classList.add('d-none');
+        modal.show();
+
+        fetch('/api/v1/statistiche/utenti/' + id, { headers: getAuthHeaders() })
+            .then(res => {
+                if (!res.ok) throw new Error('Errore recupero statistiche utente');
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById('userStatGiocate').innerText = data.partiteGiocate || 0;
+                document.getElementById('userStatVinte').innerText = data.partiteVinte || 0;
+                document.getElementById('userStatPerse').innerText = data.partitePerse || 0;
+                document.getElementById('userStatWinRate').innerText = (data.percentualeVittorie || 0) + '%';
+                document.getElementById('userStatTornei').innerText = data.torneiPartecipati || 0;
+
+                document.getElementById('modalUtenteLoading').classList.add('d-none');
+                document.getElementById('modalUtenteContent').classList.remove('d-none');
+            })
+            .catch(err => {
+                document.getElementById('modalUtenteLoading').innerHTML = '<p class="text-danger">Impossibile caricare i dati dell\'utente (' + err.message + ')</p>';
+            });
+    }
+
+    // ============================================================
+    // MODALE LOCALE
+    // ============================================================
+    function apriModalLocale(id, nome) {
+        const modal = new bootstrap.Modal(document.getElementById('modalLocale'));
+        document.getElementById('modalLocaleTitle').innerText = 'Dettaglio Locale — ' + nome;
+        document.getElementById('modalLocaleLoading').classList.remove('d-none');
+        document.getElementById('modalLocaleContent').classList.add('d-none');
+        modal.show();
+
+        fetch('/api/v1/statistiche/locali/' + id, { headers: getAuthHeaders() })
+            .then(res => {
+                if (!res.ok) throw new Error('Errore recupero dati locale');
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById('localeStatPartite').innerText = data.totalePartiteGiocate || 0;
+                document.getElementById('localeStatGiocatori').innerText = data.totaleGiocatoriAttivi || 0;
+                document.getElementById('localeStatPopular').innerText = data.giocoPiuPopolare || 'N/A';
+
+                const tbody = document.querySelector('#localeGamesTable tbody');
+                tbody.innerHTML = '';
+                if (data.ripartizioneGiochi && data.ripartizioneGiochi.length > 0) {
+                    data.ripartizioneGiochi.forEach(g => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = '<td><strong class="text-capitalize">' + g.giocoTipo + '</strong></td><td class="text-end"><span class="badge bg-primary rounded-pill px-3 py-1">' + g.partiteGiocate + '</span></td>';
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Nessuna installazione gioco.</td></tr>';
+                }
+
+                document.getElementById('modalLocaleLoading').classList.add('d-none');
+                document.getElementById('modalLocaleContent').classList.remove('d-none');
+            })
+            .catch(err => {
+                document.getElementById('modalLocaleLoading').innerHTML = '<p class="text-danger">Impossibile caricare i dati del locale (' + err.message + ')</p>';
+            });
+    }
+
+    // ============================================================
+    // MODALE TORNEO
+    // ============================================================
+    function apriModalTorneo(id, nome) {
+        const modal = new bootstrap.Modal(document.getElementById('modalTorneo'));
+        document.getElementById('modalTorneoTitle').innerText = 'Classifica Torneo — ' + nome;
+        document.getElementById('modalTorneoLoading').classList.remove('d-none');
+        document.getElementById('modalTorneoContent').classList.add('d-none');
+        modal.show();
+
+        fetch('/api/v1/tornei/' + id + '/classifica', { headers: getAuthHeaders() })
+            .then(res => {
+                if (!res.ok) throw new Error('Errore recupero classifica torneo');
+                return res.json();
+            })
+            .then(data => {
+                const tbody = document.querySelector('#torneoLeaderboardTable tbody');
+                tbody.innerHTML = '';
+                const classifica = data.classifica || [];
+                if (classifica.length > 0) {
+                    classifica.forEach((row, idx) => {
+                        const tr = document.createElement('tr');
+                        let rankBadge = (idx + 1);
+                        if (idx === 0) rankBadge = '🥇';
+                        else if (idx === 1) rankBadge = '🥈';
+                        else if (idx === 2) rankBadge = '🥉';
+
+                        tr.innerHTML = '<td><span class="fw-bold fs-5">' + rankBadge + '</span></td>' +
+                            '<td><strong>' + (row.username || 'Anonimo') + '</strong></td>' +
+                            '<td class="text-center">' + (row.partiteGiocate || 0) + '</td>' +
+                            '<td class="text-end"><span class="badge bg-warning text-dark font-monospace fs-6">' + (row.metricaClassifica || 0) + '</span></td>';
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Nessuna partita giocata in questo torneo per ora.</td></tr>';
+                }
+
+                document.getElementById('modalTorneoLoading').classList.add('d-none');
+                document.getElementById('modalTorneoContent').classList.remove('d-none');
+            })
+            .catch(err => {
+                document.getElementById('modalTorneoLoading').innerHTML = '<p class="text-danger">Impossibile caricare la classifica del torneo (' + err.message + ')</p>';
+            });
+    }
+</script>
 </body>
 </html>

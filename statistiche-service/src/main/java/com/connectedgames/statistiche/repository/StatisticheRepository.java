@@ -1,9 +1,11 @@
 package com.connectedgames.statistiche.repository;
 
+import com.connectedgames.statistiche.dto.GiocatoreVittorieStat;
 import com.connectedgames.statistiche.dto.GiocoStat;
 import com.connectedgames.statistiche.dto.LocaleStat;
 import com.connectedgames.statistiche.dto.StatisticheLocaleResponse;
 import com.connectedgames.statistiche.dto.StatisticheUtenteResponse;
+import com.connectedgames.statistiche.dto.TorneoStat;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -37,6 +39,28 @@ public class StatisticheRepository {
         return count != null ? count : 0;
     }
 
+    public long countTorneiAttivi() {
+        Long count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM platform_db.torneo WHERE stato = 'ATTIVO'", Long.class);
+        return count != null ? count : 0;
+    }
+
+    public long countTorneiConclusi() {
+        Long count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM platform_db.torneo WHERE stato = 'CONCLUSO'", Long.class);
+        return count != null ? count : 0;
+    }
+
+    public long getTotalePuntiSegnati() {
+        Long sum = jdbcTemplate.queryForObject("SELECT SUM(punteggio_1 + punteggio_2) FROM platform_db.partita", Long.class);
+        return sum != null ? sum : 0;
+    }
+
+    public double getDurataMediaMinuti() {
+        Double avg = jdbcTemplate.queryForObject(
+                "SELECT AVG(EXTRACT(EPOCH FROM (data_fine - data_inizio))/60.0) FROM platform_db.partita WHERE data_fine > data_inizio",
+                Double.class);
+        return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
+    }
+
     public List<LocaleStat> getLocaliPiuAttivi(int limit) {
         String sql = """
             SELECT p.locale_id, l.nome, COUNT(p.id) as partite_giocate
@@ -66,6 +90,49 @@ public class StatisticheRepository {
         return jdbcTemplate.query(sql, (rs, rowNum) -> new GiocoStat(
                 rs.getString("gioco_tipo"),
                 rs.getLong("partite_giocate")
+        ), limit);
+    }
+
+    public List<GiocatoreVittorieStat> getTopGiocatoriVittorie(int limit) {
+        String sql = """
+            SELECT u.id as utente_id, u.username,
+                   COUNT(p.id) as giocate,
+                   SUM(CASE WHEN (p.giocatore_1_id = u.id AND p.punteggio_1 > p.punteggio_2)
+                              OR (p.giocatore_2_id = u.id AND p.punteggio_2 > p.punteggio_1) THEN 1 ELSE 0 END) as vinte
+            FROM platform_db.utente u
+            JOIN platform_db.partita p ON (p.giocatore_1_id = u.id OR p.giocatore_2_id = u.id)
+            GROUP BY u.id, u.username
+            HAVING COUNT(p.id) > 0
+            ORDER BY vinte DESC, giocate DESC
+            LIMIT ?
+        """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            UUID utenteId = UUID.fromString(rs.getString("utente_id"));
+            String username = rs.getString("username");
+            long giocate = rs.getLong("giocate");
+            long vinte = rs.getLong("vinte");
+            double winRate = giocate > 0 ? (double) vinte / giocate * 100.0 : 0.0;
+            return new GiocatoreVittorieStat(utenteId, username, giocate, vinte, Math.round(winRate * 10.0) / 10.0);
+        }, limit);
+    }
+
+    public List<TorneoStat> getTorneiStat(int limit) {
+        String sql = """
+            SELECT t.id as torneo_id, t.nome, g.nome as gioco_nome, t.stato,
+                   (SELECT COUNT(*) FROM platform_db.iscrizione_torneo it WHERE it.torneo_id = t.id) as iscritti_count,
+                   (SELECT COUNT(*) FROM platform_db.partita p WHERE p.torneo_id = t.id) as partite_count
+            FROM platform_db.torneo t
+            JOIN platform_db.gioco g ON t.gioco_id = g.id
+            ORDER BY t.data_inizio DESC
+            LIMIT ?
+        """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new TorneoStat(
+                UUID.fromString(rs.getString("torneo_id")),
+                rs.getString("nome"),
+                rs.getString("gioco_nome"),
+                rs.getString("stato"),
+                rs.getLong("iscritti_count"),
+                rs.getLong("partite_count")
         ), limit);
     }
 

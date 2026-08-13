@@ -72,8 +72,30 @@ Per facilitare lo sviluppo e testare la *Role-Based Dashboard*, il database (`po
 
 ---
 
-## 📋 Stato del Progetto (Checklist)
+## 🧪 Esecuzione degli Integration Test
 
-Per conoscere l'avanzamento dei lavori, verificare quali moduli architetturali sono stati completati e consultare la lista delle implementazioni ancora mancanti, fai riferimento al file **[project_checklist.md](project_checklist.md)** presente nella root del progetto.
+Gli **Integration & Reachability Test** verificano lo stato di salute, l'integrità dei database e la raggiungibilità di ciascun servizio principale. Possono essere eseguiti direttamente all'interno dei container Docker in esecuzione tramite `docker exec`:
 
+### 1. Nodi Edge Express.js (`npm test`)
+```bash
+
+docker exec edge-locale1 npm test
+
+docker exec edge-locale2 npm test
+```
+
+### 2. Microservizi e Gateway Spring Boot (`mvn test`)
+```bash
+# Service Gateway
+docker exec service-gateway mvn test
+
+# Partita Service
+docker exec partita-service mvn test
+
+# Torneo Service
+docker exec torneo-service mvn test
+
+# Statistiche Service
+docker exec statistiche-service mvn test
+```
 ---

@@ -22,7 +22,7 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/dashboard").hasRole("ADMIN_PIATTAFORMA")
-                .requestMatchers("/auth/**", "/css/**", "/js/**", "/webjars/**").permitAll()
+                .requestMatchers("/auth/**", "/css/**", "/js/**", "/webjars/**", "/actuator/health/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2

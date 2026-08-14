@@ -47,7 +47,7 @@ graph TB
 
     subgraph "RETE BACKEND CENTRALE: platform-backend-tier (Internal Bridge)"
         GW["Container: service-gateway<br>Image: connectedgames-service-gateway<br>Port: 8081:8081"]
-        KC["Container: keycloak<br>Image: keycloak:24.0.0<br>Port: 9080:8080<br>Volume: keycloak_data"]
+        KC["Container: keycloak<br>Image: keycloak:26.1.0<br>Port: 9080:8080<br>Volume: keycloak_data"]
         PG["Container: postgres-db<br>Image: postgres:15-alpine<br>Port: 5432:5432<br>Volume: postgres_data"]
         
         PART["Container: partita-service<br>Image: connectedgames-partita-service<br>Port: 8082 (Internal)"]

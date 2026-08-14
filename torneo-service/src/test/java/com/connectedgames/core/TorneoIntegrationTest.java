@@ -10,15 +10,14 @@ import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Test d'integrazione e raggiungibilità per Torneo Service
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class TorneoServiceReachabilityIntegrationTest {
+class TorneoIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
 
     @Test
-    @DisplayName("Test 1: Verifica dello stato di salute del Torneo Service (/actuator/health)")
+    @DisplayName("Verifica stato di salute del Torneo Service (/actuator/health)")
     void testStatoSaluteTorneoService() {
         ResponseEntity<String> risposta = restTemplate.getForEntity("/actuator/health", String.class);
         assertThat(risposta.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -26,7 +25,7 @@ class TorneoServiceReachabilityIntegrationTest {
     }
 
     @Test
-    @DisplayName("Test 2: Verifica protezione endpoint /api/v1/tornei senza token (401 Unauthorized)")
+    @DisplayName("Verifica protezione endpoint /api/v1/tornei senza token (401 Unauthorized)")
     void testProtezioneEndpointTornei() {
         ResponseEntity<String> risposta = restTemplate.getForEntity("/api/v1/tornei", String.class);
         assertThat(risposta.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);

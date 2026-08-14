@@ -10,15 +10,14 @@ import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Test d'integrazione e raggiungibilità per Partita Service
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class PartitaServiceReachabilityIntegrationTest {
+class PartitaIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
 
     @Test
-    @DisplayName("Test 1: Verifica dello stato di salute del Partita Service (/actuator/health)")
+    @DisplayName("Verifica stato di salute del Partita Service (/actuator/health)")
     void testStatoSalutePartitaService() {
         ResponseEntity<String> risposta = restTemplate.getForEntity("/actuator/health", String.class);
         assertThat(risposta.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -26,7 +25,7 @@ class PartitaServiceReachabilityIntegrationTest {
     }
 
     @Test
-    @DisplayName("Test 2: Verifica protezione endpoint /api/v1/partite senza token (401 Unauthorized)")
+    @DisplayName("Verifica protezione endpoint /api/v1/partite senza token (401 Unauthorized)")
     void testProtezioneEndpointPartite() {
         ResponseEntity<String> risposta = restTemplate.getForEntity("/api/v1/partite", String.class);
         assertThat(risposta.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);

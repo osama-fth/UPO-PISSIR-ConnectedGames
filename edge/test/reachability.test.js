@@ -1,4 +1,3 @@
-// Test di Integrazione e Raggiungibilità per il servizio Edge
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
@@ -18,27 +17,27 @@ function richiestaHttp(url) {
     });
 }
 
-test('Test 1: Verifica stato di salute locale Edge (/health)', async () => {
+test('Verifica stato di salute locale Edge (/health)', async () => {
     const res = await richiestaHttp(`http://127.0.0.1:${PORT}/health`);
-    assert.equal(res.status, 200, 'L\'endpoint /health deve rispondere 200 OK');
+    assert.equal(res.status, 200);
     const json = JSON.parse(res.body);
-    assert.equal(json.status, 'UP', 'Lo stato del servizio deve essere UP');
+    assert.equal(json.status, 'UP');
 });
 
-test('Test 2: Verifica funzionamento DB SQLite locale', () => {
+test('Verifica funzionamento DB SQLite locale', () => {
     const { initDatabase } = require('../services/sqlite-db');
     const db = initDatabase();
-    assert.ok(db, 'Il DB SQLite deve essere inizializzato');
+    assert.ok(db);
     const risultato = db.prepare('SELECT 1 AS ok').get();
-    assert.equal(risultato.ok, 1, 'La query sul DB locale deve restituire 1');
+    assert.equal(risultato.ok, 1);
 });
 
-test('Test 3: Verifica raggiungibilità del Gateway Centrale', async () => {
+test('Verifica raggiungibilità del Gateway Centrale', async () => {
     const res = await richiestaHttp(`${CENTRAL_SERVER_URL}/actuator/health`);
-    assert.ok(res.status === 200 || res.status === 401, 'Il Gateway Centrale deve essere raggiungibile');
+    assert.ok(res.status === 200 || res.status === 401);
 });
 
-test('Test 4: Verifica raggiungibilità del servizio Keycloak', async () => {
+test('Verifica raggiungibilità del servizio Keycloak', async () => {
     const res = await richiestaHttp(KEYCLOAK_INTERNAL_URL);
-    assert.equal(res.status, 200, 'Keycloak deve essere raggiungibile e rispondere 200 OK');
+    assert.equal(res.status, 200);
 });

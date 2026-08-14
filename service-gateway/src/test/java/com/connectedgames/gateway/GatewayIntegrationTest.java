@@ -7,16 +7,15 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-// Test d'integrazione e raggiungibilità per Service Gateway
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-class GatewayReachabilityIntegrationTest {
+class GatewayIntegrationTest {
 
     @Autowired
     private WebTestClient webTestClient;
 
     @Test
-    @DisplayName("Test 1: Verifica dello stato di salute del Gateway (/actuator/health)")
+    @DisplayName("Verifica stato di salute del Gateway (/actuator/health)")
     void testStatoSaluteGateway() {
         webTestClient.get()
                 .uri("/actuator/health")
@@ -27,7 +26,7 @@ class GatewayReachabilityIntegrationTest {
     }
 
     @Test
-    @DisplayName("Test 2: Verifica protezione API senza token (401 Unauthorized)")
+    @DisplayName("Verifica protezione API senza token (401 Unauthorized)")
     void testProtezioneApiSenzaToken() {
         webTestClient.get()
                 .uri("/api/v1/partite")

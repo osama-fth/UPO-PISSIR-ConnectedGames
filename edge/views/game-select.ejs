@@ -188,10 +188,13 @@
 
     <!-- Submit Button -->
     <div style="text-align: center;">
-        <button type="submit" class="btn btn-primary btn-lg" id="btn-start-game"
-            style="min-width: 280px; font-size: 1.1rem; padding: 16px 40px;">
+        <button type="submit" class="btn btn-primary btn-lg" id="btn-start-game" disabled
+            style="min-width: 280px; font-size: 1.1rem; padding: 16px 40px; opacity: 0.5; cursor: not-allowed;">
             <i class="bi bi-play-circle"></i> Inizia Partita
         </button>
+        <div id="btn-hint-text" style="font-size: 0.85rem; color: var(--warning); margin-top: 0.75rem; font-weight: 500;">
+            <i class="bi bi-info-circle"></i> Seleziona prima un gioco in alto per abilitare il pulsante
+        </div>
     </div>
 </form>
 
@@ -234,42 +237,68 @@
 </style>
 
 <script>
-    // Game card selection — aggiorna anche la select tornei
+    // Salva l'elenco originale di tutte le opzioni torneo
+    const allTorneoOptions = Array.from(document.querySelectorAll('#torneoId option')).map(opt => ({
+        value: opt.value,
+        text: opt.textContent,
+        gioco: (opt.getAttribute('data-gioco') || '').toLowerCase()
+    }));
+
+    function updateTorneiDropdown(selectedGame) {
+        const torneoWrapper = document.getElementById('torneo-select-wrapper');
+        const torneoSelect = document.getElementById('torneoId');
+        if (!torneoWrapper || !torneoSelect) return;
+
+        torneoSelect.innerHTML = '';
+        allTorneoOptions.forEach(item => {
+            if (item.value === '' || item.gioco === (selectedGame || '').toLowerCase()) {
+                const opt = document.createElement('option');
+                opt.value = item.value;
+                opt.textContent = item.text;
+                opt.setAttribute('data-gioco', item.gioco);
+                torneoSelect.appendChild(opt);
+            }
+        });
+
+        torneoSelect.value = ''; // Reset su "Amichevole"
+        torneoWrapper.style.display = 'block';
+    }
+
+    function updateStartButtonState() {
+        const selectedGame = document.querySelector('input[name="giocoId"]:checked');
+        const submitBtn = document.getElementById('btn-start-game');
+        const hintText = document.getElementById('btn-hint-text');
+
+        if (selectedGame) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            if (hintText) hintText.style.display = 'none';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+            if (hintText) hintText.style.display = 'block';
+        }
+    }
+
+    // Game card selection — aggiorna la select tornei filtrandoli rigorosamente e abilita il pulsante
     document.querySelectorAll('.game-card').forEach(card => {
         const radio = card.querySelector('input[type="radio"]');
         card.addEventListener('click', () => {
             document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
             radio.checked = true;
+
             // Nascondi errore validazione se visibile
-            document.getElementById('game-validation-error').style.display = 'none';
+            const errDiv = document.getElementById('game-validation-error');
+            if (errDiv) errDiv.style.display = 'none';
 
-            // Filtra e mostra la select tornei per questo gioco
-            const selectedGame = radio.value; // 'calciobalilla' o 'freccette'
-            const torneoWrapper = document.getElementById('torneo-select-wrapper');
-            const torneoSelect = document.getElementById('torneoId');
+            // Rigenera la select tornei mostrando SOLAMENTE i tornei del gioco cliccato
+            updateTorneiDropdown(radio.value);
 
-            if (torneoWrapper && torneoSelect) {
-                let hasTornei = false;
-                Array.from(torneoSelect.options).forEach(opt => {
-                    if (opt.value === '') {
-                        // Opzione "Amichevole" sempre visibile
-                        opt.style.display = '';
-                    } else {
-                        const optGame = opt.getAttribute('data-gioco');
-                        if (optGame === selectedGame) {
-                            opt.style.display = '';
-                            hasTornei = true;
-                        } else {
-                            opt.style.display = 'none';
-                            // Se era selezionato un torneo del gioco sbagliato, resetta
-                            if (opt.selected) torneoSelect.value = '';
-                        }
-                    }
-                });
-                // Mostra sempre la barra della modalità (Amichevole / Tornei per questo gioco)
-                torneoWrapper.style.display = 'block';
-            }
+            // Abilita il pulsante di avvio partita
+            updateStartButtonState();
         });
     });
 
@@ -321,10 +350,13 @@
             document.querySelectorAll('.auth-field').forEach(f => f.required = false);
             document.querySelectorAll('.guest-field').forEach(f => f.required = true);
         }
+
+        updateStartButtonState();
     }
 
-    // Inizializza lo stato dei campi required
+    // Inizializza lo stato dei campi required e del pulsante
     switchMode('auth');
+    updateStartButtonState();
 </script>
 
 <%- include('partials/footer') %>

@@ -81,16 +81,13 @@
     <!-- ============================================== -->
     <div class="card mb-3" style="border-top: 4px solid var(--warning); background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--warning);">
+            <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--warning); margin: 0;">
                 <% if (user.roles && user.roles.includes('admin_piattaforma')) { %>
                     <i class="bi bi-globe"></i> Console Admin Piattaforma
                 <% } else { %>
                     <i class="bi bi-gear"></i> Console Admin Locale
                 <% } %>
             </h2>
-            <% if (user.roles && user.roles.includes('admin_piattaforma')) { %>
-                <span class="badge badge-danger">SUPER ADMIN</span>
-            <% } %>
         </div>
 
         <!-- Quick Stats -->
@@ -228,9 +225,8 @@
         <!-- Grafici Interattivi Chart.js -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
             <div class="card" style="background: var(--bg-secondary);">
-                <div class="card-subtitle" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span><i class="bi bi-graph-up-arrow text-success"></i> Trend Punteggi &amp; Esiti</span>
-                    <span class="badge badge-info">Chart.js</span>
+                <div class="card-subtitle">
+                    <i class="bi bi-graph-up-arrow text-success"></i> Trend Punteggi &amp; Esiti
                 </div>
                 <div style="position: relative; height: 200px; width: 100%;">
                     <canvas id="userTrendChart"></canvas>
@@ -238,11 +234,14 @@
             </div>
 
             <div class="card" style="background: var(--bg-secondary);">
-                <div class="card-subtitle" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span><i class="bi bi-pie-chart-fill text-warning"></i> Vittorie per Gioco</span>
-                    <span class="badge badge-info">Ripartizione</span>
+                <div class="card-subtitle">
+                    <i class="bi bi-pie-chart-fill text-warning"></i> Vittorie per Gioco
                 </div>
                 <div style="position: relative; height: 200px; width: 100%; display: flex; justify-content: center; align-items: center;">
+                    <canvas id="userGamesChart"></canvas>
+                </div>
+            </div>
+        </div>
                     <canvas id="userGamesChart"></canvas>
                 </div>
             </div>

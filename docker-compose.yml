@@ -244,7 +244,7 @@ services:
     networks:
       - locale1-tier
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3001/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -285,7 +285,7 @@ services:
     networks:
       - locale2-tier
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3002/health || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3002/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5

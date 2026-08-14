@@ -72,30 +72,10 @@ Per facilitare lo sviluppo e testare la *Role-Based Dashboard*, il database (`po
 
 ---
 
-## 🧪 Esecuzione degli Integration Test
+## 🧪 Esecuzione dei Test
 
-Gli **Integration & Reachability Test** verificano lo stato di salute, l'integrità dei database e la raggiungibilità di ciascun servizio principale. Possono essere eseguiti direttamente all'interno dei container Docker in esecuzione tramite `docker exec`:
+I test del sistema vengono eseguiti **in automatico** durante la fase di build dell'infrastruttura (con il comando `docker compose up --build`).
 
-### 1. Nodi Edge Express.js (`npm test`)
-```bash
+Se uno qualsiasi dei test fallisce, **la build si ferma immediatamente e non continua**, impedendo la creazione e la distribuzione di container con codice difettoso.
 
-docker exec edge-locale1 npm test
-
-docker exec edge-locale2 npm test
-```
-
-### 2. Microservizi e Gateway Spring Boot (`mvn test`)
-```bash
-# Service Gateway
-docker exec service-gateway mvn test
-
-# Partita Service
-docker exec partita-service mvn test
-
-# Torneo Service
-docker exec torneo-service mvn test
-
-# Statistiche Service
-docker exec statistiche-service mvn test
-```
 ---

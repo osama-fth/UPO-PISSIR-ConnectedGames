@@ -1,0 +1,19 @@
+# ============================================================
+# .dockerignore — statistiche-service
+# ============================================================
+
+.git/
+.gitignore
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+target/
+*.class
+*.jar
+
+*.md
+.env
+.env.local

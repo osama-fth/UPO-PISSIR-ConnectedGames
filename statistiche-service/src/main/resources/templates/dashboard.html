@@ -45,16 +45,45 @@
 
     <!-- Main Content -->
     <div class="main-content flex-grow-1">
-        <!-- Header -->
+        <!-- Header & Control Bar -->
         <div class="row mb-4">
-            <div class="col d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="col d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                     <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i> Dashboard Super Admin</h2>
-                    <p class="text-muted mb-0">Clicca su qualsiasi elemento, giocatore, locale o torneo per aprire i dettagli interattivi.</p>
+                    <p class="text-muted mb-0">Monitoraggio prestazioni in tempo reale. Clicca su qualsiasi elemento per il dettaglio interattivo.</p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-primary px-3 py-2 fs-6"><i class="bi bi-shield-check me-1"></i> Admin Piattaforma</span>
-                    <button class="btn btn-sm btn-outline-light" onclick="location.reload()"><i class="bi bi-arrow-clockwise me-1"></i> Aggiorna</button>
+                    <button class="btn btn-sm btn-outline-light" onclick="caricaDatiFiltrati()"><i class="bi bi-arrow-clockwise me-1"></i> Aggiorna</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Filters Bar -->
+        <div class="card border-0 shadow-sm mb-4 bg-dark-subtle border-secondary">
+            <div class="card-body p-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <span class="fw-bold text-white"><i class="bi bi-funnel-fill text-warning me-1"></i> Filtri Dinamici:</span>
+                    <!-- Period Filter -->
+                    <div class="btn-group btn-group-sm" role="group" id="period-filter-group">
+                        <button type="button" class="btn btn-outline-primary active" data-giorni="" onclick="setPeriodoFilter(this, null)">Tutti i Tempi</button>
+                        <button type="button" class="btn btn-outline-primary" data-giorni="30" onclick="setPeriodoFilter(this, 30)">Ultimi 30 giorni</button>
+                        <button type="button" class="btn btn-outline-primary" data-giorni="7" onclick="setPeriodoFilter(this, 7)">Ultimi 7 giorni</button>
+                    </div>
+
+                    <!-- Game Filter -->
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="giocoFilterSelect" class="small text-muted mb-0">Gioco:</label>
+                        <select class="form-select form-select-sm bg-dark text-white border-secondary" id="giocoFilterSelect" style="width: auto;" onchange="caricaDatiFiltrati()">
+                            <option value="">Tutti i Giochi</option>
+                            <option value="calciobalilla">Calciobalilla</option>
+                            <option value="freccette">Freccette</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="filterStatusBadge">
+                    <span class="badge bg-success-subtle text-success border border-success px-3 py-2"><i class="bi bi-check-circle me-1"></i> Filtro attivo: Tutti i Tempi</span>
                 </div>
             </div>
         </div>
@@ -66,7 +95,7 @@
                     <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
                         <i class="bi bi-joystick fs-2 mb-1 text-info"></i>
                         <span class="text-secondary small">Partite Giocate</span>
-                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totalePartiteGiocate}">0</h3>
+                        <h3 class="fw-bold mb-0 mt-1" id="kpiTotalePartite" th:text="${stats.totalePartiteGiocate}">0</h3>
                         <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Clicca per i locali</span>
                     </div>
                 </div>
@@ -77,8 +106,8 @@
                     <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
                         <i class="bi bi-people fs-2 mb-1 text-success"></i>
                         <span class="text-secondary small">Giocatori Attivi</span>
-                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totaleGiocatoriAttivi}">0</h3>
-                        <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Clicca per i giocatori</span>
+                        <h3 class="fw-bold mb-0 mt-1" id="kpiGiocatoriAttivi" th:text="${stats.totaleGiocatoriAttivi}">0</h3>
+                        <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Solo ruoli Giocatore</span>
                     </div>
                 </div>
             </div>
@@ -88,7 +117,7 @@
                     <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
                         <i class="bi bi-trophy fs-2 mb-1 text-warning"></i>
                         <span class="text-secondary small">Tornei Attivi</span>
-                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totaleTorneiAttivi}">0</h3>
+                        <h3 class="fw-bold mb-0 mt-1" id="kpiTorneiAttivi" th:text="${stats.totaleTorneiAttivi}">0</h3>
                         <span class="hint-clickable mt-1"><i class="bi bi-filter-circle"></i> Filtra attivi</span>
                     </div>
                 </div>
@@ -99,7 +128,7 @@
                     <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
                         <i class="bi bi-bullseye fs-2 mb-1 text-cyan"></i>
                         <span class="text-secondary small">Punti / Gol Totali</span>
-                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totalePuntiSegnati}">0</h3>
+                        <h3 class="fw-bold mb-0 mt-1" id="kpiTotalePunti" th:text="${stats.totalePuntiSegnati}">0</h3>
                         <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Clicca per i giochi</span>
                     </div>
                 </div>
@@ -110,7 +139,7 @@
                     <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
                         <i class="bi bi-clock-history fs-2 mb-1 text-purple"></i>
                         <span class="text-secondary small">Durata Media</span>
-                        <h3 class="fw-bold mb-0 mt-1"><span th:text="${stats.durataMediaMinuti}">0</span> <small class="fs-6">min</small></h3>
+                        <h3 class="fw-bold mb-0 mt-1"><span id="kpiDurataMedia" th:text="${stats.durataMediaMinuti}">0</span> <small class="fs-6">min</small></h3>
                     </div>
                 </div>
             </div>
@@ -120,14 +149,31 @@
                     <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
                         <i class="bi bi-check-circle-fill fs-2 mb-1 text-slate"></i>
                         <span class="text-secondary small">Tornei Conclusi</span>
-                        <h3 class="fw-bold mb-0 mt-1" th:text="${stats.totaleTorneiConclusi}">0</h3>
+                        <h3 class="fw-bold mb-0 mt-1" id="kpiTorneiConclusi" th:text="${stats.totaleTorneiConclusi}">0</h3>
                         <span class="hint-clickable mt-1"><i class="bi bi-filter-circle"></i> Filtra conclusi</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Row 2: Grafici Interattivi (Chart.js) -->
+        <!-- Row 2: Grafico Temporale Partite (Chart.js Line) -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-graph-up-arrow text-success me-2"></i> Andamento Partite nel Tempo</h5>
+                        <span class="badge bg-success">Trend Dinamico</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 260px;">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Grafici Interattivi Distribuzione & Volume (Chart.js) -->
         <div class="row g-4 mb-4">
             <div class="col-lg-6">
                 <div class="card border-0 shadow-sm h-100">
@@ -524,68 +570,222 @@
         if (el) el.scrollIntoView({ behavior: 'smooth' });
     }
 
+    // Chart instances
+    let chartTrend = null;
+    let chartGiochi = null;
+    let chartLocali = null;
 
-    // GRAFICI INTERATTIVI (Chart.js)
+    let filtroGiorni = null;
+
+    function setPeriodoFilter(btnElement, giorni) {
+        document.querySelectorAll('#period-filter-group .btn').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+        filtroGiorni = giorni;
+        caricaDatiFiltrati();
+    }
+
+    function updateFilterStatusBadge(giorni, giocoId) {
+        const badgeEl = document.getElementById('filterStatusBadge');
+        let labelPeriodo = giorni ? ('Ultimi ' + giorni + ' giorni') : 'Tutti i Tempi';
+        let labelGioco = giocoId ? (' • ' + giocoId) : '';
+        badgeEl.innerHTML = '<span class="badge bg-success-subtle text-success border border-success px-3 py-2"><i class="bi bi-check-circle me-1"></i> Filtro attivo: ' + labelPeriodo + labelGioco + '</span>';
+    }
+
+    function caricaDatiFiltrati() {
+        const giocoSelect = document.getElementById('giocoFilterSelect');
+        const giocoId = giocoSelect ? giocoSelect.value : '';
+        
+        updateFilterStatusBadge(filtroGiorni, giocoId);
+
+        let url = '/api/v1/statistiche?';
+        if (filtroGiorni) url += 'giorni=' + filtroGiorni + '&';
+        if (giocoId) url += 'giocoId=' + encodeURIComponent(giocoId) + '&';
+
+        fetch(url, { headers: getAuthHeaders() })
+            .then(res => {
+                if (!res.ok) throw new Error('Errore nel recupero delle statistiche');
+                return res.json();
+            })
+            .then(data => {
+                // Aggiorna KPI
+                document.getElementById('kpiTotalePartite').innerText = data.totalePartiteGiocate || 0;
+                document.getElementById('kpiGiocatoriAttivi').innerText = data.totaleGiocatoriAttivi || 0;
+                document.getElementById('kpiTorneiAttivi').innerText = data.totaleTorneiAttivi || 0;
+                document.getElementById('kpiTorneiConclusi').innerText = data.totaleTorneiConclusi || 0;
+                document.getElementById('kpiTotalePunti').innerText = data.totalePuntiSegnati || 0;
+                document.getElementById('kpiDurataMedia').innerText = data.durataMediaMinuti || 0;
+
+                // Aggiorna Grafici
+                renderTrendChart(data.trendPartite || []);
+                renderGiochiChart(data.giochiPiuUtilizzati || []);
+                renderLocaliChart(data.localiPiuAttivi || []);
+
+                // Aggiorna Hall of Fame
+                renderTopPlayersTable(data.topGiocatoriVittorie || []);
+            })
+            .catch(err => {
+                console.error('Errore durante l\'aggiornamento dinamico:', err);
+            });
+    }
+
+    // GRAFICO 1: Trend Partite nel Tempo (Line Chart)
+    function renderTrendChart(trendData) {
+        const ctx = document.getElementById('trendChart');
+        if (!ctx) return;
+
+        const labels = trendData.map(t => t.data);
+        const values = trendData.map(t => t.partiteCount);
+
+        if (chartTrend) {
+            chartTrend.destroy();
+        }
+
+        chartTrend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.length > 0 ? labels : ['Nessun dato'],
+                datasets: [{
+                    label: 'Partite Giocate',
+                    data: values.length > 0 ? values : [0],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointBackgroundColor: '#10b981',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    y: { ticks: { color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // GRAFICO 2: Distribuzione Giochi (Donut Chart)
+    function renderGiochiChart(giochiData) {
+        const ctx = document.getElementById('giochiChart');
+        if (!ctx) return;
+
+        const labels = giochiData.map(g => g.giocoTipo);
+        const values = giochiData.map(g => g.partiteGiocate);
+
+        if (chartGiochi) {
+            chartGiochi.destroy();
+        }
+
+        chartGiochi = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels.length > 0 ? labels : ['Nessun dato'],
+                datasets: [{
+                    data: values.length > 0 ? values : [1],
+                    backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Inter' } } }
+                }
+            }
+        });
+    }
+
+    // GRAFICO 3: Locali (Bar Chart)
+    function renderLocaliChart(localiData) {
+        const ctx = document.getElementById('localiChart');
+        if (!ctx) return;
+
+        const labels = localiData.map(l => l.nomeLocale);
+        const values = localiData.map(l => l.partiteGiocate);
+
+        if (chartLocali) {
+            chartLocali.destroy();
+        }
+
+        chartLocali = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels.length > 0 ? labels : ['Nessun dato'],
+                datasets: [{
+                    label: 'Partite Giocate',
+                    data: values.length > 0 ? values : [0],
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+                    y: { ticks: { color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // TABELLA TOP PLAYERS DYNAMIC RENDER
+    function renderTopPlayersTable(players) {
+        const tbody = document.querySelector('#section-giocatori table tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        if (!players || players.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Nessun dato su partite o giocatori disponibile nel periodo selezionato.</td></tr>';
+            return;
+        }
+
+        players.forEach((player, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = 'clickable-row';
+            tr.setAttribute('data-id', player.utenteId);
+            tr.setAttribute('data-username', player.username);
+            tr.onclick = () => apriModalUtente(player.utenteId, player.username);
+
+            let rankBadge = (idx + 1);
+            if (idx === 0) rankBadge = '<span class="text-warning fs-5">🥇</span>';
+            else if (idx === 1) rankBadge = '<span class="text-light fs-5">🥈</span>';
+            else if (idx === 2) rankBadge = '<span class="text-danger fs-5">🥉</span>';
+
+            tr.innerHTML = `
+                <td><span class="fw-bold">${rankBadge}</span></td>
+                <td>
+                    <strong>${player.username}</strong>
+                    <br><small class="text-muted">${player.utenteId}</small>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-success rounded-pill px-3 py-1">${player.partiteVinte}</span>
+                </td>
+                <td class="text-center">${player.partiteGiocate}</td>
+                <td class="text-end">
+                    <span class="fw-bold text-info">${player.percentualeVittorie}%</span>
+                </td>
+                <td class="text-center">
+                    <button class="btn btn-xs btn-outline-light rounded-circle"><i class="bi bi-eye"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
-        // Grafico 1: Giochi Donut Chart
-        const giochiData = /*[[${stats.giochiPiuUtilizzati}]]*/ [];
-        const giochiLabels = giochiData.map(g => g.giocoTipo);
-        const giochiValues = giochiData.map(g => g.partiteGiocate);
-
-        const ctxGiochi = document.getElementById('giochiChart');
-        if (ctxGiochi && giochiLabels.length > 0) {
-            new Chart(ctxGiochi, {
-                type: 'doughnut',
-                data: {
-                    labels: giochiLabels,
-                    datasets: [{
-                        data: giochiValues,
-                        backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Inter' } } }
-                    }
-                }
-            });
-        }
-
-        // Grafico 2: Locali Bar Chart
-        const localiData = /*[[${stats.localiPiuAttivi}]]*/ [];
-        const localiLabels = localiData.map(l => l.nomeLocale);
-        const localiValues = localiData.map(l => l.partiteGiocate);
-
-        const ctxLocali = document.getElementById('localiChart');
-        if (ctxLocali && localiLabels.length > 0) {
-            new Chart(ctxLocali, {
-                type: 'bar',
-                data: {
-                    labels: localiLabels,
-                    datasets: [{
-                        label: 'Partite Giocate',
-                        data: localiValues,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            });
-        }
+        // Caricamento iniziale dei grafici con i dati passati dal controller o via AJAX
+        caricaDatiFiltrati();
     });
 
 

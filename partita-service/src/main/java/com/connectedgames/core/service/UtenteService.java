@@ -23,11 +23,15 @@ public class UtenteService {
     }
 
     /**
-     * Recupera tutti gli utenti registrati in platform_db.
+     * Recupera tutti gli utenti registrati in platform_db, eventualmente filtrati per ruolo.
      */
     @Transactional(readOnly = true)
-    public List<UtenteResponse> getAllUtenti() {
-        return utenteRepo.findAll().stream()
+    public List<UtenteResponse> getAllUtenti(String ruolo) {
+        List<Utente> lista = (ruolo != null && !ruolo.isBlank())
+            ? utenteRepo.findByRuolo(ruolo)
+            : utenteRepo.findAll();
+
+        return lista.stream()
             .map(UtenteResponse::from)
             .toList();
     }

@@ -146,6 +146,7 @@ public class PartitaService {
         nuovo.setId(keycloakSub);
         nuovo.setUsername(username != null ? username : "user_" + keycloakSub.toString().substring(0, 8));
         nuovo.setEmail(null);
+        nuovo.setRuolo("giocatore");
         nuovo.setDataRegistrazione(OffsetDateTime.now());
 
         Utente salvato = utenteRepo.saveAndFlush(nuovo);

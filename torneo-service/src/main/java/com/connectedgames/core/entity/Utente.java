@@ -21,6 +21,9 @@ public class Utente {
     @Column(name = "email", length = 150, unique = true)
     private String email;
 
+    @Column(name = "ruolo", length = 30, nullable = false)
+    private String ruolo = "giocatore";
+
     @Column(name = "data_registrazione", nullable = false)
     private OffsetDateTime dataRegistrazione;
 
@@ -34,6 +37,9 @@ public class Utente {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getRuolo() { return ruolo; }
+    public void setRuolo(String ruolo) { this.ruolo = ruolo; }
 
     public OffsetDateTime getDataRegistrazione() { return dataRegistrazione; }
     public void setDataRegistrazione(OffsetDateTime dataRegistrazione) { this.dataRegistrazione = dataRegistrazione; }

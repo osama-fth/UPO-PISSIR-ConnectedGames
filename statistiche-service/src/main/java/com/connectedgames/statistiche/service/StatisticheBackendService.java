@@ -19,17 +19,22 @@ public class StatisticheBackendService {
     }
 
     public StatisticheGlobaliResponse getStatisticheGlobali() {
+        return getStatisticheGlobali(null, null);
+    }
+
+    public StatisticheGlobaliResponse getStatisticheGlobali(Integer giorni, String giocoId) {
         return new StatisticheGlobaliResponse(
-                statisticheRepository.countTotalePartite(),
-                statisticheRepository.countTotaleGiocatoriAttivi(),
+                statisticheRepository.countTotalePartite(giorni, giocoId),
+                statisticheRepository.countTotaleGiocatoriAttivi(giorni, giocoId),
                 statisticheRepository.countTorneiAttivi(),
                 statisticheRepository.countTorneiConclusi(),
-                statisticheRepository.getTotalePuntiSegnati(),
-                statisticheRepository.getDurataMediaMinuti(),
-                statisticheRepository.getLocaliPiuAttivi(5),
-                statisticheRepository.getGiochiPiuUtilizzati(5),
-                statisticheRepository.getTopGiocatoriVittorie(5),
-                statisticheRepository.getTorneiStat(5)
+                statisticheRepository.getTotalePuntiSegnati(giorni, giocoId),
+                statisticheRepository.getDurataMediaMinuti(giorni, giocoId),
+                statisticheRepository.getLocaliPiuAttivi(5, giorni, giocoId),
+                statisticheRepository.getGiochiPiuUtilizzati(5, giorni),
+                statisticheRepository.getTopGiocatoriVittorie(5, giorni, giocoId),
+                statisticheRepository.getTorneiStat(5),
+                statisticheRepository.getTrendPartiteTempo(giorni, giocoId)
         );
     }
 

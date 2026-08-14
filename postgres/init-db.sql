@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS platform_db.utente (
     id UUID PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(150) UNIQUE,
+    ruolo VARCHAR(30) DEFAULT 'giocatore' NOT NULL,
     data_registrazione TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
@@ -151,18 +152,18 @@ INSERT INTO platform_db.locale (id, nome, tipo, indirizzo) VALUES
     ('BAR_BELVEDERE', 'Bar Belvedere', 'PUBBLICO', 'Via Roma 42, Alessandria'),
     ('SALA_GIOCHI_ROMA', 'Sala Giochi Roma', 'PUBBLICO', 'Via Nazionale 15, Roma');
 
--- Utenti (Mappati da Keycloak)
-INSERT INTO platform_db.utente (id, username, email) VALUES
-    ('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'SuperMario', 'mario.rossi@example.com'),
-    ('8c1c4e92-3d71-4b82-95f3-11a2f64d08b2', 'Gigio', 'luigi.bianchi@example.com'),
-    ('3e7d9b14-8a5f-4c2d-9610-4f51e8a93c71', 'admin_belvedere', 'admin.belvedere@example.com'),
-    ('6b9e2c4f-1d8a-4f53-b290-7c4819e6d035', 'admin_roma', 'admin.roma@example.com'),
-    ('d19f8e32-7c6a-4d10-8b45-2e6f91d84a0c', 'admin_piattaforma', 'admin.platform@example.com'),
-    ('e28a4c10-9b3f-4e61-a572-8d9e03f1b4c7', 'edge_sync_service', 'sync.service@example.com'),
-    ('5a3b7c89-2e1f-4d60-9842-6e71d09f3b5a', 'SantAnna', 'anna.verdi@example.com'),
-    ('9d2e4f10-6c8a-4b53-a719-3f0b2e8c5d61', 'Paul', 'paolo.neri@example.com'),
-    ('7b8c9d01-4e2f-4a63-b581-0d3c4e9f7a2b', 'LukeSkywalker', 'luca.gialli@example.com'),
-    ('1f4e5d60-3c2b-4a81-9b70-8e9f0a1c2d3e', 'Saretta', 'sara.viola@example.com');
+-- Utenti (Mappati da Keycloak con ruolo esplicito)
+INSERT INTO platform_db.utente (id, username, email, ruolo) VALUES
+    ('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'SuperMario', 'mario.rossi@example.com', 'giocatore'),
+    ('8c1c4e92-3d71-4b82-95f3-11a2f64d08b2', 'Gigio', 'luigi.bianchi@example.com', 'giocatore'),
+    ('3e7d9b14-8a5f-4c2d-9610-4f51e8a93c71', 'admin_belvedere', 'admin.belvedere@example.com', 'admin_locale'),
+    ('6b9e2c4f-1d8a-4f53-b290-7c4819e6d035', 'admin_roma', 'admin.roma@example.com', 'admin_locale'),
+    ('d19f8e32-7c6a-4d10-8b45-2e6f91d84a0c', 'admin_piattaforma', 'admin.platform@example.com', 'admin_piattaforma'),
+    ('e28a4c10-9b3f-4e61-a572-8d9e03f1b4c7', 'edge_sync_service', 'sync.service@example.com', 'servizio'),
+    ('5a3b7c89-2e1f-4d60-9842-6e71d09f3b5a', 'SantAnna', 'anna.verdi@example.com', 'giocatore'),
+    ('9d2e4f10-6c8a-4b53-a719-3f0b2e8c5d61', 'Paul', 'paolo.neri@example.com', 'giocatore'),
+    ('7b8c9d01-4e2f-4a63-b581-0d3c4e9f7a2b', 'LukeSkywalker', 'luca.gialli@example.com', 'giocatore'),
+    ('1f4e5d60-3c2b-4a81-9b70-8e9f0a1c2d3e', 'Saretta', 'sara.viola@example.com', 'giocatore');
 
 -- Giochi
 INSERT INTO platform_db.gioco (id, nome, descrizione) VALUES

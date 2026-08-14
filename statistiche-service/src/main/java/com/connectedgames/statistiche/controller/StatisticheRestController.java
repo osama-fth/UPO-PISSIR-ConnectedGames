@@ -5,10 +5,7 @@ import com.connectedgames.statistiche.dto.StatisticheLocaleResponse;
 import com.connectedgames.statistiche.dto.StatisticheUtenteResponse;
 import com.connectedgames.statistiche.service.StatisticheBackendService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -23,8 +20,10 @@ public class StatisticheRestController {
     }
 
     @GetMapping
-    public ResponseEntity<StatisticheGlobaliResponse> getStatistiche() {
-        return ResponseEntity.ok(statisticheService.getStatisticheGlobali());
+    public ResponseEntity<StatisticheGlobaliResponse> getStatistiche(
+            @RequestParam(required = false) Integer giorni,
+            @RequestParam(required = false) String giocoId) {
+        return ResponseEntity.ok(statisticheService.getStatisticheGlobali(giorni, giocoId));
     }
 
     @GetMapping("/locali/{localeId}")

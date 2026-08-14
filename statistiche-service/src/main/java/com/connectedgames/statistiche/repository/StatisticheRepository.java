@@ -3,12 +3,14 @@ package com.connectedgames.statistiche.repository;
 import com.connectedgames.statistiche.dto.GiocatoreVittorieStat;
 import com.connectedgames.statistiche.dto.GiocoStat;
 import com.connectedgames.statistiche.dto.LocaleStat;
+import com.connectedgames.statistiche.dto.PartiteTempoStat;
 import com.connectedgames.statistiche.dto.StatisticheLocaleResponse;
 import com.connectedgames.statistiche.dto.StatisticheUtenteResponse;
 import com.connectedgames.statistiche.dto.TorneoStat;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,21 +23,69 @@ public class StatisticheRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public long countTotalePartite() {
-        Long count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM platform_db.partita", Long.class);
+    public long countTotalePartite(Integer giorni, String giocoId) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT COUNT(p.id) FROM platform_db.partita p
+            JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
+            WHERE 1=1
+        """);
+        List<Object> params = new ArrayList<>();
+
+        if (giorni != null && giorni > 0) {
+            sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
+            params.add(giorni);
+        }
+        if (giocoId != null && !giocoId.isBlank()) {
+            sql.append(" AND ig.gioco_id = ?");
+            params.add(giocoId);
+        }
+
+        Long count = jdbcTemplate.queryForObject(sql.toString(), Long.class, params.toArray());
         return count != null ? count : 0;
     }
 
-    public long countTotaleGiocatoriAttivi() {
-        // Conta i giocatori distinti che hanno partecipato ad almeno una partita
-        String sql = """
+    public long countTotaleGiocatoriAttivi(Integer giorni, String giocoId) {
+        // Conta tassativamente SOLO i giocatori con ruolo 'giocatore'
+        StringBuilder sql = new StringBuilder("""
             SELECT COUNT(DISTINCT player_id) FROM (
-                SELECT giocatore_1_id as player_id FROM platform_db.partita WHERE giocatore_1_id IS NOT NULL
+                SELECT p.giocatore_1_id as player_id 
+                FROM platform_db.partita p 
+                JOIN platform_db.utente u ON p.giocatore_1_id = u.id 
+                JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
+                WHERE u.ruolo = 'giocatore'
+        """);
+        List<Object> params = new ArrayList<>();
+
+        if (giorni != null && giorni > 0) {
+            sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
+            params.add(giorni);
+        }
+        if (giocoId != null && !giocoId.isBlank()) {
+            sql.append(" AND ig.gioco_id = ?");
+            params.add(giocoId);
+        }
+
+        sql.append("""
                 UNION
-                SELECT giocatore_2_id as player_id FROM platform_db.partita WHERE giocatore_2_id IS NOT NULL
-            ) as players
-        """;
-        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+                SELECT p.giocatore_2_id as player_id 
+                FROM platform_db.partita p 
+                JOIN platform_db.utente u ON p.giocatore_2_id = u.id 
+                JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
+                WHERE u.ruolo = 'giocatore'
+        """);
+
+        if (giorni != null && giorni > 0) {
+            sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
+            params.add(giorni);
+        }
+        if (giocoId != null && !giocoId.isBlank()) {
+            sql.append(" AND ig.gioco_id = ?");
+            params.add(giocoId);
+        }
+
+        sql.append(") as players");
+
+        Long count = jdbcTemplate.queryForObject(sql.toString(), Long.class, params.toArray());
         return count != null ? count : 0;
     }
 
@@ -49,71 +99,150 @@ public class StatisticheRepository {
         return count != null ? count : 0;
     }
 
-    public long getTotalePuntiSegnati() {
-        Long sum = jdbcTemplate.queryForObject("SELECT SUM(punteggio_1 + punteggio_2) FROM platform_db.partita", Long.class);
+    public long getTotalePuntiSegnati(Integer giorni, String giocoId) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT SUM(p.punteggio_1 + p.punteggio_2) 
+            FROM platform_db.partita p
+            JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
+            WHERE 1=1
+        """);
+        List<Object> params = new ArrayList<>();
+
+        if (giorni != null && giorni > 0) {
+            sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
+            params.add(giorni);
+        }
+        if (giocoId != null && !giocoId.isBlank()) {
+            sql.append(" AND ig.gioco_id = ?");
+            params.add(giocoId);
+        }
+
+        Long sum = jdbcTemplate.queryForObject(sql.toString(), Long.class, params.toArray());
         return sum != null ? sum : 0;
     }
 
-    public double getDurataMediaMinuti() {
-        Double avg = jdbcTemplate.queryForObject(
-                "SELECT AVG(EXTRACT(EPOCH FROM (data_fine - data_inizio))/60.0) FROM platform_db.partita WHERE data_fine > data_inizio",
-                Double.class);
+    public double getDurataMediaMinuti(Integer giorni, String giocoId) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT AVG(EXTRACT(EPOCH FROM (p.data_fine - p.data_inizio))/60.0) 
+            FROM platform_db.partita p
+            JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
+            WHERE p.data_fine > p.data_inizio
+        """);
+        List<Object> params = new ArrayList<>();
+
+        if (giorni != null && giorni > 0) {
+            sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
+            params.add(giorni);
+        }
+        if (giocoId != null && !giocoId.isBlank()) {
+            sql.append(" AND ig.gioco_id = ?");
+            params.add(giocoId);
+        }
+
+        Double avg = jdbcTemplate.queryForObject(sql.toString(), Double.class, params.toArray());
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
 
-    public List<LocaleStat> getLocaliPiuAttivi(int limit) {
-        String sql = """
+    public List<LocaleStat> getLocaliPiuAttivi(int limit, Integer giorni, String giocoId) {
+        StringBuilder sql = new StringBuilder("""
             SELECT p.locale_id, l.nome, COUNT(p.id) as partite_giocate
             FROM platform_db.partita p
             JOIN platform_db.locale l ON p.locale_id = l.id
+            JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
+            WHERE 1=1
+        """);
+        List<Object> params = new ArrayList<>();
+
+        if (giorni != null && giorni > 0) {
+            sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
+            params.add(giorni);
+        }
+        if (giocoId != null && !giocoId.isBlank()) {
+            sql.append(" AND ig.gioco_id = ?");
+            params.add(giocoId);
+        }
+
+        sql.append("""
             GROUP BY p.locale_id, l.nome
             ORDER BY partite_giocate DESC
             LIMIT ?
-        """;
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new LocaleStat(
+        """);
+        params.add(limit);
+
+        return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> new LocaleStat(
                 rs.getString("locale_id"),
                 rs.getString("nome"),
                 rs.getLong("partite_giocate")
-        ), limit);
+        ), params.toArray());
     }
 
-    public List<GiocoStat> getGiochiPiuUtilizzati(int limit) {
-        String sql = """
+    public List<GiocoStat> getGiochiPiuUtilizzati(int limit, Integer giorni) {
+        StringBuilder sql = new StringBuilder("""
             SELECT g.nome as gioco_tipo, COUNT(p.id) as partite_giocate
             FROM platform_db.partita p
             JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
             JOIN platform_db.gioco g ON ig.gioco_id = g.id
+            WHERE 1=1
+        """);
+        List<Object> params = new ArrayList<>();
+
+        if (giorni != null && giorni > 0) {
+            sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
+            params.add(giorni);
+        }
+
+        sql.append("""
             GROUP BY g.nome
             ORDER BY partite_giocate DESC
             LIMIT ?
-        """;
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new GiocoStat(
+        """);
+        params.add(limit);
+
+        return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> new GiocoStat(
                 rs.getString("gioco_tipo"),
                 rs.getLong("partite_giocate")
-        ), limit);
+        ), params.toArray());
     }
 
-    public List<GiocatoreVittorieStat> getTopGiocatoriVittorie(int limit) {
-        String sql = """
+    public List<GiocatoreVittorieStat> getTopGiocatoriVittorie(int limit, Integer giorni, String giocoId) {
+        // Tassativamente solo per utenti con ruolo 'giocatore'
+        StringBuilder sql = new StringBuilder("""
             SELECT u.id as utente_id, u.username,
                    COUNT(p.id) as giocate,
                    SUM(CASE WHEN (p.giocatore_1_id = u.id AND p.punteggio_1 > p.punteggio_2)
                               OR (p.giocatore_2_id = u.id AND p.punteggio_2 > p.punteggio_1) THEN 1 ELSE 0 END) as vinte
             FROM platform_db.utente u
             JOIN platform_db.partita p ON (p.giocatore_1_id = u.id OR p.giocatore_2_id = u.id)
+            JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
+            WHERE u.ruolo = 'giocatore'
+        """);
+        List<Object> params = new ArrayList<>();
+
+        if (giorni != null && giorni > 0) {
+            sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
+            params.add(giorni);
+        }
+        if (giocoId != null && !giocoId.isBlank()) {
+            sql.append(" AND ig.gioco_id = ?");
+            params.add(giocoId);
+        }
+
+        sql.append("""
             GROUP BY u.id, u.username
             HAVING COUNT(p.id) > 0
             ORDER BY vinte DESC, giocate DESC
             LIMIT ?
-        """;
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+        """);
+        params.add(limit);
+
+        return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> {
             UUID utenteId = UUID.fromString(rs.getString("utente_id"));
             String username = rs.getString("username");
             long giocate = rs.getLong("giocate");
             long vinte = rs.getLong("vinte");
             double winRate = giocate > 0 ? (double) vinte / giocate * 100.0 : 0.0;
             return new GiocatoreVittorieStat(utenteId, username, giocate, vinte, Math.round(winRate * 10.0) / 10.0);
-        }, limit);
+        }, params.toArray());
     }
 
     public List<TorneoStat> getTorneiStat(int limit) {
@@ -136,6 +265,35 @@ public class StatisticheRepository {
         ), limit);
     }
 
+    public List<PartiteTempoStat> getTrendPartiteTempo(Integer giorni, String giocoId) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT TO_CHAR(p.data_fine, 'YYYY-MM-DD') as data_giorno, COUNT(p.id) as partite_count
+            FROM platform_db.partita p
+            JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
+            WHERE 1=1
+        """);
+        List<Object> params = new ArrayList<>();
+
+        if (giorni != null && giorni > 0) {
+            sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
+            params.add(giorni);
+        }
+        if (giocoId != null && !giocoId.isBlank()) {
+            sql.append(" AND ig.gioco_id = ?");
+            params.add(giocoId);
+        }
+
+        sql.append("""
+            GROUP BY TO_CHAR(p.data_fine, 'YYYY-MM-DD')
+            ORDER BY data_giorno ASC
+        """);
+
+        return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> new PartiteTempoStat(
+                rs.getString("data_giorno"),
+                rs.getLong("partite_count")
+        ), params.toArray());
+    }
+
     public StatisticheLocaleResponse getStatistichePerLocale(String localeId) {
         Long partiteGiocate = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM platform_db.partita WHERE locale_id = ?",
@@ -143,9 +301,15 @@ public class StatisticheRepository {
 
         String sqlGiocatori = """
             SELECT COUNT(DISTINCT player_id) FROM (
-                SELECT giocatore_1_id as player_id FROM platform_db.partita WHERE locale_id = ? AND giocatore_1_id IS NOT NULL
+                SELECT p.giocatore_1_id as player_id 
+                FROM platform_db.partita p
+                JOIN platform_db.utente u ON p.giocatore_1_id = u.id
+                WHERE p.locale_id = ? AND u.ruolo = 'giocatore'
                 UNION
-                SELECT giocatore_2_id as player_id FROM platform_db.partita WHERE locale_id = ? AND giocatore_2_id IS NOT NULL
+                SELECT p.giocatore_2_id as player_id 
+                FROM platform_db.partita p
+                JOIN platform_db.utente u ON p.giocatore_2_id = u.id
+                WHERE p.locale_id = ? AND u.ruolo = 'giocatore'
             ) as players
         """;
         Long giocatoriAttivi = jdbcTemplate.queryForObject(sqlGiocatori, Long.class, localeId, localeId);
@@ -176,6 +340,13 @@ public class StatisticheRepository {
     }
 
     public StatisticheUtenteResponse getStatistichePerUtente(UUID utenteId) {
+        String sqlCheckRuolo = "SELECT ruolo FROM platform_db.utente WHERE id = ?";
+        List<String> ruoli = jdbcTemplate.query(sqlCheckRuolo, (rs, rowNum) -> rs.getString("ruolo"), utenteId);
+        if (ruoli.isEmpty() || !"giocatore".equalsIgnoreCase(ruoli.get(0))) {
+            // Se l'utente non esiste o ha un ruolo diverso da 'giocatore', restituiamo dati azzerati
+            return new StatisticheUtenteResponse(utenteId, 0, 0, 0, 0.0, 0);
+        }
+
         String sqlPartite = """
             SELECT COUNT(*) FROM platform_db.partita 
             WHERE giocatore_1_id = ? OR giocatore_2_id = ?

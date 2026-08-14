@@ -34,12 +34,13 @@
                         <tr>
                             <th>ID Utente</th>
                             <th>Username</th>
+                            <th>Ruolo</th>
                             <th>Data Registrazione</th>
                             <th>Azioni</th>
                         </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="4" class="text-center py-4">Caricamento utenti in corso...</td></tr>
+                            <tr><td colspan="5" class="text-center py-4">Caricamento utenti in corso...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -93,7 +94,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const token = "[[${jwtToken}]]";
-        fetch('/api/v1/utenti', {
+        fetch('/api/v1/utenti?ruolo=giocatore', {
             headers: { 'Authorization': 'Bearer ' + token }
         })
             .then(res => res.json())
@@ -101,15 +102,17 @@
                 const tbody = document.querySelector("#utentiTable tbody");
                 tbody.innerHTML = "";
                 if(data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nessun utente trovato.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nessun giocatore trovato.</td></tr>';
                     return;
                 }
                 data.forEach(u => {
                     const tr = document.createElement("tr");
                     const date = u.dataRegistrazione ? new Date(u.dataRegistrazione).toLocaleString() : 'N/A';
+                    const ruoloBadge = u.ruolo === 'giocatore' ? '<span class="badge bg-success">Giocatore</span>' : `<span class="badge bg-warning text-dark">${u.ruolo}</span>`;
                     tr.innerHTML = `
                         <td><small class="text-muted">${u.id}</small></td>
                         <td class="fw-bold">${u.username}</td>
+                        <td>${ruoloBadge}</td>
                         <td>${date}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary" onclick="showStats('${u.id}', '${u.username}')">
@@ -121,7 +124,7 @@
                 });
             })
             .catch(err => {
-                document.querySelector("#utentiTable tbody").innerHTML = '<tr><td colspan="4" class="text-center text-danger">Errore nel caricamento degli utenti.</td></tr>';
+                document.querySelector("#utentiTable tbody").innerHTML = '<tr><td colspan="5" class="text-center text-danger">Errore nel caricamento degli utenti.</td></tr>';
             });
     });
 

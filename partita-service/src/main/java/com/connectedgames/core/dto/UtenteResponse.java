@@ -10,6 +10,7 @@ public record UtenteResponse(
     UUID id,
     String username,
     String email,
+    String ruolo,
     OffsetDateTime dataRegistrazione
 ) {
 
@@ -18,6 +19,7 @@ public record UtenteResponse(
             u.getId(),
             u.getUsername(),
             u.getEmail(),
+            u.getRuolo(),
             u.getDataRegistrazione()
         );
     }

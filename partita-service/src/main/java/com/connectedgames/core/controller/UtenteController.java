@@ -29,11 +29,12 @@ public class UtenteController {
 
     /**
      * GET /api/v1/utenti
-     * Lista di tutti gli utenti registrati in platform_db.
+     * Lista di tutti gli utenti registrati in platform_db, con filtro opzionale per ruolo.
      */
     @GetMapping
-    public ResponseEntity<List<UtenteResponse>> getAllUtenti() {
-        List<UtenteResponse> utenti = utenteService.getAllUtenti();
+    public ResponseEntity<List<UtenteResponse>> getAllUtenti(
+            @RequestParam(required = false) String ruolo) {
+        List<UtenteResponse> utenti = utenteService.getAllUtenti(ruolo);
         return ResponseEntity.ok(utenti);
     }
 

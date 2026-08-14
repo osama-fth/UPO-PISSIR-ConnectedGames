@@ -46,13 +46,13 @@ public class SecurityConfig {
 
                 // API statistiche limitate a admin_piattaforma
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/api/v1/statistiche/**"))
-                .hasRole("admin_piattaforma")
+                .hasRole("ADMIN_PIATTAFORMA")
 
                 // Operazioni amministrative sui tornei
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei"))
-                .hasAnyRole("admin_piattaforma", "admin_locale")
+                .hasAnyRole("ADMIN_PIATTAFORMA", "ADMIN_LOCALE")
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tornei/*"))
-                .hasAnyRole("admin_piattaforma", "admin_locale")
+                .hasAnyRole("ADMIN_PIATTAFORMA", "ADMIN_LOCALE")
 
                 // Tutte le REST API (/api/v1/**) richiedono JWT Bearer valido
                 .anyExchange()
@@ -80,7 +80,7 @@ public class SecurityConfig {
                 @SuppressWarnings("unchecked")
                 Collection<String> roles = (Collection<String>) realmAccess.get("roles");
                 return roles.stream()
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                         .collect(Collectors.toList());
             }
             return List.of();

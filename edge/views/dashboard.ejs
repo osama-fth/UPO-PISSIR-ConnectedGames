@@ -174,59 +174,112 @@
 
 <% if (!isAdmin && !user.isGuest && playerStats) { %>
     <!-- ============================================== -->
-    <!-- STATISTICHE GIOCATORE -->
+    <!-- STATISTICHE GIOCATORE INTERATTIVE -->
     <!-- ============================================== -->
     <div class="card mb-3" style="border-top: 4px solid var(--accent-secondary); background: linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, transparent 100%);">
-        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem;"><i class="bi bi-bar-chart-line"></i> Le tue Statistiche</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+            <h2 style="font-size: 1.4rem; font-weight: 700; margin: 0;"><i class="bi bi-bar-chart-line text-cyan"></i> Le tue Statistiche Personali</h2>
+            <span class="badge badge-info" id="user-filter-badge"><i class="bi bi-funnel"></i> Filtro: Tutti i Tempi</span>
+        </div>
 
+        <!-- Control Bar Filtri Giocatore -->
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <span class="text-muted text-sm" style="font-weight: 600; text-transform: uppercase;"><i class="bi bi-calendar3"></i> Periodo:</span>
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn btn-sm btn-primary user-period-btn" onclick="filterUserStats(null, this)" style="padding: 4px 12px;">Tutti i Tempi</button>
+                    <button type="button" class="btn btn-sm btn-secondary user-period-btn" onclick="filterUserStats(30, this)" style="padding: 4px 12px;">30 Giorni</button>
+                    <button type="button" class="btn btn-sm btn-secondary user-period-btn" onclick="filterUserStats(7, this)" style="padding: 4px 12px;">7 Giorni</button>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span class="text-muted text-sm" style="font-weight: 600; text-transform: uppercase;"><i class="bi bi-controller"></i> Gioco:</span>
+                <select id="user-gioco-select" onchange="filterUserStats(currentUserPeriod, null)" style="padding: 4px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem; outline: none;">
+                    <option value="">Tutti i Giochi</option>
+                    <option value="calciobalilla">Calciobalilla</option>
+                    <option value="freccette">Freccette</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 3 KPI Cards Dinamiche -->
         <div class="grid-3" style="gap: 1rem; margin-bottom: 1.25rem;">
             <div class="card" style="background: var(--bg-secondary); text-align: center;">
                 <div class="card-subtitle">PARTITE GIOCATE</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-primary);"><%= playerStats.totalePartite %></div>
+                <div id="u-stat-partite" style="font-size: 2.5rem; font-weight: 800; color: var(--accent-primary);"><%= playerStats.totalePartite %></div>
             </div>
             <div class="card" style="background: var(--bg-secondary); text-align: center;">
                 <div class="card-subtitle">VITTORIE / SCONFITTE</div>
                 <div style="font-size: 2rem; font-weight: 800;">
-                    <span style="color: var(--success);"><%= playerStats.vittorie %></span>
+                    <span id="u-stat-vittorie" style="color: var(--success);"><%= playerStats.vittorie %></span>
                     <span style="color: var(--text-muted);"> / </span>
-                    <span style="color: var(--danger);"><%= playerStats.sconfitte %></span>
+                    <span id="u-stat-sconfitte" style="color: var(--danger);"><%= playerStats.sconfitte %></span>
                 </div>
             </div>
             <div class="card" style="background: var(--bg-secondary); text-align: center;">
                 <div class="card-subtitle">% VITTORIE</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: <%= playerStats.percentualeVittorie >= 50 ? 'var(--success)' : 'var(--danger)' %>;">
+                <div id="u-stat-winrate" style="font-size: 2.5rem; font-weight: 800; color: <%= playerStats.percentualeVittorie >= 50 ? 'var(--success)' : 'var(--danger)' %>;">
                     <%= playerStats.percentualeVittorie %>%
                 </div>
             </div>
         </div>
 
-        <% if (playerStats.ultimePartite && playerStats.ultimePartite.length > 0) { %>
-            <h3 style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Ultime Partite</h3>
-            <% playerStats.ultimePartite.forEach(function(p) {
-                var isP1 = p.giocatore_1_id === user.id;
-                var won = isP1 ? (p.punteggio_1 > p.punteggio_2) : (p.punteggio_2 > p.punteggio_1);
-            %>
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
-                    <div>
-                        <span class="badge <%= won ? 'badge-success' : 'badge-danger' %>"><%= won ? 'VITTORIA' : 'SCONFITTA' %></span>
-                    </div>
-                    <div style="font-weight: 600;">
-                        <% if (p.gioco_id === 'calciobalilla') { %>
-                            <i class="bi bi-dribbble"></i>
-                        <% } else { %>
-                            <i class="bi bi-bullseye"></i>
-                        <% } %>
-                        <%= p.gioco_id %>
-                    </div>
-                    <div style="font-weight: 700;">
-                        <%= p.punteggio_1 %> — <%= p.punteggio_2 %>
-                    </div>
-                    <div class="text-muted text-sm">
-                        <%= new Date(p.data_fine).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) %>
-                    </div>
+        <!-- Grafici Interattivi Chart.js -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="card" style="background: var(--bg-secondary);">
+                <div class="card-subtitle" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="bi bi-graph-up-arrow text-success"></i> Trend Punteggi &amp; Esiti</span>
+                    <span class="badge badge-info">Chart.js</span>
                 </div>
-            <% }); %>
-        <% } %>
+                <div style="position: relative; height: 200px; width: 100%;">
+                    <canvas id="userTrendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card" style="background: var(--bg-secondary);">
+                <div class="card-subtitle" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="bi bi-pie-chart-fill text-warning"></i> Vittorie per Gioco</span>
+                    <span class="badge badge-info">Ripartizione</span>
+                </div>
+                <div style="position: relative; height: 200px; width: 100%; display: flex; justify-content: center; align-items: center;">
+                    <canvas id="userGamesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ultime Partite Filtrabili -->
+        <h3 style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 1px;"><i class="bi bi-clock-history"></i> Storico Partite</h3>
+        <div id="user-matches-list">
+            <% if (playerStats.ultimePartite && playerStats.ultimePartite.length > 0) { %>
+                <% playerStats.ultimePartite.forEach(function(p) {
+                    var isP1 = p.giocatore_1_id === user.id;
+                    var won = isP1 ? (p.punteggio_1 > p.punteggio_2) : (p.punteggio_2 > p.punteggio_1);
+                %>
+                    <div class="user-match-item" data-gioco="<%= p.gioco_id %>" data-date="<%= p.data_fine %>" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                        <div>
+                            <span class="badge <%= won ? 'badge-success' : 'badge-danger' %>"><%= won ? 'VITTORIA' : 'SCONFITTA' %></span>
+                        </div>
+                        <div style="font-weight: 600; text-transform: capitalize;">
+                            <% if (p.gioco_id === 'calciobalilla') { %>
+                                <i class="bi bi-dribbble"></i>
+                            <% } else { %>
+                                <i class="bi bi-bullseye"></i>
+                            <% } %>
+                            <%= p.gioco_id %>
+                        </div>
+                        <div style="font-weight: 700;">
+                            <%= p.punteggio_1 %> — <%= p.punteggio_2 %>
+                        </div>
+                        <div class="text-muted text-sm">
+                            <%= new Date(p.data_fine).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) %>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <p class="text-muted">Nessuna partita registrata.</p>
+            <% } %>
+        </div>
     </div>
 <% } %>
 
@@ -609,6 +662,185 @@
     // Chiudi modale cliccando fuori
     document.getElementById('modal-dettaglio').addEventListener('click', function(e) {
         if (e.target === this) chiudiModal();
+    });
+
+    // ---- GRAFICI E FILTRI STATISTICHE GIOCATORE ----
+    let currentUserPeriod = null;
+    let userTrendChartInstance = null;
+    let userGamesChartInstance = null;
+
+    const rawPlayerStats = <%- JSON.stringify(typeof playerStats !== 'undefined' ? playerStats : null) %>;
+    const currentUserId = <%- JSON.stringify(typeof user !== 'undefined' && user ? user.id : null) %>;
+
+    function filterUserStats(giorni, btnElement) {
+        currentUserPeriod = giorni;
+        if (btnElement) {
+            document.querySelectorAll('.user-period-btn').forEach(b => {
+                b.classList.remove('btn-primary', 'active');
+                b.classList.add('btn-secondary');
+            });
+            btnElement.classList.remove('btn-secondary');
+            btnElement.classList.add('btn-primary', 'active');
+        }
+
+        const selectElem = document.getElementById('user-gioco-select');
+        const giocoFilter = selectElem ? selectElem.value : '';
+
+        // Badge update
+        const badgeEl = document.getElementById('user-filter-badge');
+        let labelPeriodo = giorni ? ('Ultimi ' + giorni + ' Giorni') : 'Tutti i Tempi';
+        let labelGioco = giocoFilter ? (' • ' + giocoFilter) : '';
+        if (badgeEl) badgeEl.innerHTML = '<i class="bi bi-funnel"></i> Filtro: ' + labelPeriodo + labelGioco;
+
+        if (!rawPlayerStats || !rawPlayerStats.ultimePartite) return;
+
+        const now = new Date();
+        const filteredMatches = rawPlayerStats.ultimePartite.filter(p => {
+            // Filter by date
+            if (giorni) {
+                const matchDate = new Date(p.data_fine);
+                const diffTime = Math.abs(now - matchDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays > giorni) return false;
+            }
+            // Filter by game
+            if (giocoFilter && p.gioco_id) {
+                if (p.gioco_id.toLowerCase() !== giocoFilter.toLowerCase()) return false;
+            }
+            return true;
+        });
+
+        // Recalculate KPIs
+        let total = filteredMatches.length;
+        let wins = 0;
+        let losses = 0;
+        filteredMatches.forEach(p => {
+            const isP1 = p.giocatore_1_id === currentUserId;
+            const won = isP1 ? (p.punteggio_1 > p.punteggio_2) : (p.punteggio_2 > p.punteggio_1);
+            if (won) wins++; else losses++;
+        });
+
+        let winRate = total > 0 ? Math.round((wins / total) * 1000) / 10 : 0;
+
+        // Update KPI Elements
+        const pEl = document.getElementById('u-stat-partite');
+        const vEl = document.getElementById('u-stat-vittorie');
+        const sEl = document.getElementById('u-stat-sconfitte');
+        const wEl = document.getElementById('u-stat-winrate');
+
+        if (pEl) pEl.innerText = total;
+        if (vEl) vEl.innerText = wins;
+        if (sEl) sEl.innerText = losses;
+        if (wEl) {
+            wEl.innerText = winRate + '%';
+            wEl.style.color = winRate >= 50 ? 'var(--success)' : 'var(--danger)';
+        }
+
+        // Redraw Charts
+        renderUserCharts(filteredMatches);
+
+        // Update Ultime Partite List DOM
+        const listContainer = document.getElementById('user-matches-list');
+        if (listContainer) {
+            if (filteredMatches.length === 0) {
+                listContainer.innerHTML = '<p class="text-muted" style="padding: 1rem 0;">Nessuna partita trovata con i filtri selezionati.</p>';
+            } else {
+                let html = '';
+                filteredMatches.forEach(p => {
+                    const isP1 = p.giocatore_1_id === currentUserId;
+                    const won = isP1 ? (p.punteggio_1 > p.punteggio_2) : (p.punteggio_2 > p.punteggio_1);
+                    const icon = (p.gioco_id === 'calciobalilla') ? '<i class="bi bi-dribbble"></i>' : '<i class="bi bi-bullseye"></i>';
+                    const dateStr = new Date(p.data_fine).toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+
+                    html += `<div class="user-match-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                        <div><span class="badge ${won ? 'badge-success' : 'badge-danger'}">${won ? 'VITTORIA' : 'SCONFITTA'}</span></div>
+                        <div style="font-weight: 600; text-transform: capitalize;">${icon} ${p.gioco_id || 'partita'}</div>
+                        <div style="font-weight: 700;">${p.punteggio_1} — ${p.punteggio_2}</div>
+                        <div class="text-muted text-sm">${dateStr}</div>
+                    </div>`;
+                });
+                listContainer.innerHTML = html;
+            }
+        }
+    }
+
+    function renderUserCharts(matches) {
+        const sorted = [...matches].sort((a, b) => new Date(a.data_fine) - new Date(b.data_fine));
+        const labels = sorted.map(m => new Date(m.data_fine).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' }));
+        const userScores = sorted.map(m => m.giocatore_1_id === currentUserId ? m.punteggio_1 : m.punteggio_2);
+
+        const ctxTrend = document.getElementById('userTrendChart');
+        if (ctxTrend) {
+            if (userTrendChartInstance) userTrendChartInstance.destroy();
+            userTrendChartInstance = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Nessun dato'],
+                    datasets: [{
+                        label: 'Punti Realizzati',
+                        data: userScores.length > 0 ? userScores : [0],
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#06b6d4'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        const gameWins = {};
+        sorted.forEach(m => {
+            const isP1 = m.giocatore_1_id === currentUserId;
+            const won = isP1 ? (m.punteggio_1 > m.punteggio_2) : (m.punteggio_2 > m.punteggio_1);
+            if (won) {
+                const g = m.gioco_id || 'altro';
+                gameWins[g] = (gameWins[g] || 0) + 1;
+            }
+        });
+
+        const ctxGames = document.getElementById('userGamesChart');
+        if (ctxGames) {
+            if (userGamesChartInstance) userGamesChartInstance.destroy();
+            const gLabels = Object.keys(gameWins);
+            const gValues = Object.values(gameWins);
+
+            userGamesChartInstance = new Chart(ctxGames, {
+                type: 'doughnut',
+                data: {
+                    labels: gLabels.length > 0 ? gLabels : ['Nessuna vittoria'],
+                    datasets: [{
+                        data: gValues.length > 0 ? gValues : [1],
+                        backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 } } }
+                    }
+                }
+            });
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (rawPlayerStats) {
+            filterUserStats(null, null);
+        }
     });
 </script>
 

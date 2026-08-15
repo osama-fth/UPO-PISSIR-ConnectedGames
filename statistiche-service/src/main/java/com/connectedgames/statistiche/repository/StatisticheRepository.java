@@ -330,12 +330,44 @@ public class StatisticheRepository {
 
         String giocoPiuPopolare = ripartizione.isEmpty() ? "Nessuno" : ripartizione.get(0).giocoTipo();
 
+        String sqlTorneiPartecipati = """
+            SELECT COUNT(DISTINCT torneo_id) FROM (
+                SELECT torneo_id FROM platform_db.iscrizione_torneo WHERE locale_id = ?
+                UNION
+                SELECT torneo_id FROM platform_db.torneo_locale WHERE locale_id = ?
+            ) as t
+        """;
+        Long torneiPartecipati = jdbcTemplate.queryForObject(sqlTorneiPartecipati, Long.class, localeId, localeId);
+
+        String sqlTorneiVinti = """
+            SELECT COUNT(*) FROM (
+                SELECT sub.torneo_id, sub.locale_id
+                FROM (
+                    SELECT t.id as torneo_id, it.locale_id,
+                           SUM(CASE WHEN (p.giocatore_1_id = it.utente_id AND p.punteggio_1 > p.punteggio_2) OR (p.giocatore_2_id = it.utente_id AND p.punteggio_2 > p.punteggio_1) THEN 1 ELSE 0 END) as vinte,
+                           RANK() OVER (
+                               PARTITION BY t.id
+                               ORDER BY SUM(CASE WHEN (p.giocatore_1_id = it.utente_id AND p.punteggio_1 > p.punteggio_2) OR (p.giocatore_2_id = it.utente_id AND p.punteggio_2 > p.punteggio_1) THEN 1 ELSE 0 END) DESC
+                           ) as rnk
+                    FROM platform_db.torneo t
+                    JOIN platform_db.iscrizione_torneo it ON t.id = it.torneo_id
+                    JOIN platform_db.partita p ON p.torneo_id = t.id AND (p.giocatore_1_id = it.utente_id OR p.giocatore_2_id = it.utente_id)
+                    WHERE t.stato = 'CONCLUSO'
+                    GROUP BY t.id, it.locale_id
+                ) sub
+                WHERE sub.rnk = 1 AND sub.locale_id = ?
+            ) winners
+        """;
+        Long torneiVinti = jdbcTemplate.queryForObject(sqlTorneiVinti, Long.class, localeId);
+
         return new StatisticheLocaleResponse(
                 localeId,
                 partiteGiocate != null ? partiteGiocate : 0,
                 giocatoriAttivi != null ? giocatoriAttivi : 0,
                 giocoPiuPopolare,
-                ripartizione
+                ripartizione,
+                torneiPartecipati != null ? torneiPartecipati : 0,
+                torneiVinti != null ? torneiVinti : 0
         );
     }
 

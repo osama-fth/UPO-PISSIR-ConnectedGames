@@ -7,5 +7,7 @@ public record StatisticheLocaleResponse(
     long partiteGiocate,
     long giocatoriAttivi,
     String giocoPiuPopolare,
-    List<GiocoStat> ripartizioneGiochi
+    List<GiocoStat> ripartizioneGiochi,
+    long torneiPartecipati,
+    long torneiVinti
 ) {}

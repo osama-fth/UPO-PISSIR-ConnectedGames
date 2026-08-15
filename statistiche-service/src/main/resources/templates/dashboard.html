@@ -489,6 +489,18 @@
                                 <h4 class="fw-bold mb-0 text-warning text-capitalize" id="localeStatPopular">N/A</h4>
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded text-center bg-dark-subtle border-secondary">
+                                <span class="text-muted small">Tornei Partecipati</span>
+                                <h4 class="fw-bold mb-0 text-info" id="localeStatTorneiPartecipati">0</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded text-center bg-dark-subtle border-secondary">
+                                <span class="text-muted small">Tornei Vinti</span>
+                                <h4 class="fw-bold mb-0 text-warning" id="localeStatTorneiVinti">0</h4>
+                            </div>
+                        </div>
                     </div>
 
                     <h6 class="fw-bold mb-3"><i class="bi bi-controller me-2"></i> Ripartizione Installazioni & Giochi</h6>
@@ -528,18 +540,51 @@
                     <p class="text-muted mt-2">Calcolo classifica in tempo reale...</p>
                 </div>
                 <div id="modalTorneoContent" class="d-none">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0" id="torneoLeaderboardTable">
-                            <thead>
-                            <tr>
-                                <th>Pos.</th>
-                                <th>Giocatore</th>
-                                <th class="text-center">Partite Giocate</th>
-                                <th class="text-end">Punteggio / Metrica</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                    <ul class="nav nav-tabs mb-3" id="torneoModalTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active text-warning fw-bold" id="locali-tab" data-bs-toggle="tab" data-bs-target="#locali-tab-pane" type="button" role="tab">
+                                <i class="bi bi-shop me-1"></i> Classifica Locali (Vincitore Torneo)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link text-info fw-bold" id="giocatori-tab" data-bs-toggle="tab" data-bs-target="#giocatori-tab-pane" type="button" role="tab">
+                                <i class="bi bi-person-fill me-1"></i> Classifica Giocatori
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="torneoModalTabsContent">
+                        <div class="tab-pane fade show active" id="locali-tab-pane" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" id="torneoLocaliTable">
+                                    <thead>
+                                    <tr>
+                                        <th>Pos.</th>
+                                        <th>Locale</th>
+                                        <th class="text-center">Partite Giocate</th>
+                                        <th class="text-center">Vittorie</th>
+                                        <th class="text-end">Metrica</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="giocatori-tab-pane" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" id="torneoGiocatoriTable">
+                                    <thead>
+                                    <tr>
+                                        <th>Pos.</th>
+                                        <th>Giocatore</th>
+                                        <th>Locale Iscrizione</th>
+                                        <th class="text-center">Giocate</th>
+                                        <th class="text-end">Metrica</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -852,6 +897,8 @@
                 document.getElementById('localeStatPartite').innerText = data.totalePartiteGiocate || 0;
                 document.getElementById('localeStatGiocatori').innerText = data.totaleGiocatoriAttivi || 0;
                 document.getElementById('localeStatPopular').innerText = data.giocoPiuPopolare || 'N/A';
+                document.getElementById('localeStatTorneiPartecipati').innerText = data.torneiPartecipati || 0;
+                document.getElementById('localeStatTorneiVinti').innerText = data.torneiVinti || 0;
 
                 const tbody = document.querySelector('#localeGamesTable tbody');
                 tbody.innerHTML = '';
@@ -889,11 +936,16 @@
                 return res.json();
             })
             .then(data => {
-                const tbody = document.querySelector('#torneoLeaderboardTable tbody');
-                tbody.innerHTML = '';
-                const classifica = data.classifica || [];
-                if (classifica.length > 0) {
-                    classifica.forEach((row, idx) => {
+                const tbodyLocali = document.querySelector('#torneoLocaliTable tbody');
+                const tbodyGiocatori = document.querySelector('#torneoGiocatoriTable tbody');
+                tbodyLocali.innerHTML = '';
+                tbodyGiocatori.innerHTML = '';
+
+                const listLocali = data.classificaLocali || [];
+                const listGiocatori = data.classificaGiocatori || [];
+
+                if (listLocali.length > 0) {
+                    listLocali.forEach((row, idx) => {
                         const tr = document.createElement('tr');
                         let rankBadge = (idx + 1);
                         if (idx === 0) rankBadge = '🥇';
@@ -901,13 +953,33 @@
                         else if (idx === 2) rankBadge = '🥉';
 
                         tr.innerHTML = '<td><span class="fw-bold fs-5">' + rankBadge + '</span></td>' +
-                            '<td><strong>' + (row.username || 'Anonimo') + '</strong></td>' +
+                            '<td><strong><i class="bi bi-shop me-1 text-warning"></i> ' + (row.localeNome || row.localeId) + '</strong></td>' +
                             '<td class="text-center">' + (row.partiteGiocate || 0) + '</td>' +
-                            '<td class="text-end"><span class="badge bg-warning text-dark font-monospace fs-6">' + (row.metricaClassifica || 0) + '</span></td>';
-                        tbody.appendChild(tr);
+                            '<td class="text-center text-success fw-bold">' + (row.partiteVinte || 0) + '</td>' +
+                            '<td class="text-end"><span class="badge bg-warning text-dark font-monospace fs-6">' + (row.metricaClassifica || '0 vinte') + '</span></td>';
+                        tbodyLocali.appendChild(tr);
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Nessuna partita giocata in questo torneo per ora.</td></tr>';
+                    tbodyLocali.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Nessun dato per i locali in questo torneo.</td></tr>';
+                }
+
+                if (listGiocatori.length > 0) {
+                    listGiocatori.forEach((row, idx) => {
+                        const tr = document.createElement('tr');
+                        let rankBadge = (idx + 1);
+                        if (idx === 0) rankBadge = '🥇';
+                        else if (idx === 1) rankBadge = '🥈';
+                        else if (idx === 2) rankBadge = '🥉';
+
+                        tr.innerHTML = '<td><span class="fw-bold fs-5">' + rankBadge + '</span></td>' +
+                            '<td><strong><i class="bi bi-person-circle me-1 text-info"></i> ' + (row.username || 'Anonimo') + '</strong></td>' +
+                            '<td><span class="badge bg-secondary">' + (row.localeNome || row.localeId || 'N/A') + '</span></td>' +
+                            '<td class="text-center">' + (row.partiteGiocate || 0) + '</td>' +
+                            '<td class="text-end"><span class="badge bg-info text-dark font-monospace fs-6">' + (row.metricaClassifica || '0 vinte') + '</span></td>';
+                        tbodyGiocatori.appendChild(tr);
+                    });
+                } else {
+                    tbodyGiocatori.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Nessun giocatore iscritto o partite giocate.</td></tr>';
                 }
 
                 document.getElementById('modalTorneoLoading').classList.add('d-none');

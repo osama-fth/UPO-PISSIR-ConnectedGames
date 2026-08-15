@@ -1,7 +1,6 @@
 package com.connectedgames.core.service;
 
 import com.connectedgames.core.dto.ClassificaTorneoResponse;
-import com.connectedgames.core.dto.ClassificaTorneoResponse.VoceClassifica;
 import com.connectedgames.core.dto.TorneoResponse;
 import com.connectedgames.core.entity.Partita;
 import com.connectedgames.core.entity.Torneo;
@@ -128,9 +127,9 @@ public class TorneoService {
         return TorneoResponse.of(t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(), t.getStato(), t.getDataInizio(), t.getDataFine(), localiIds);
     }
 
-    // Iscrive un utente al torneo con auto-registrazione automatica in platform_db se non ancora presente
+    // Iscrive un utente al torneo a nome di un locale con auto-registrazione automatica in platform_db se non ancora presente
     @Transactional
-    public IscrizioneTorneoResponse iscriviGiocatore(UUID torneoId, UUID utenteId) {
+    public IscrizioneTorneoResponse iscriviGiocatore(UUID torneoId, UUID utenteId, String localeId) {
         Torneo torneo = torneoRepo.findById(torneoId)
             .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
 
@@ -155,6 +154,13 @@ public class TorneoService {
                 return utenteRepo.saveAndFlush(nuovo);
             });
 
+        Locale locale = localeRepo.findById(localeId)
+            .orElseThrow(() -> new ResourceNotFoundException("Locale", localeId));
+
+        if (torneo.getLocali() == null || torneo.getLocali().stream().noneMatch(l -> l.getId().equals(localeId))) {
+            throw new IllegalArgumentException("Il locale " + localeId + " non partecipa a questo torneo");
+        }
+
         if (iscrizioneRepo.existsByIdTorneoIdAndIdUtenteId(torneoId, utenteId)) {
             throw new IllegalArgumentException("Utente già iscritto a questo torneo");
         }
@@ -168,6 +174,7 @@ public class TorneoService {
         iscrizione.setId(new IscrizioneTorneoId(torneoId, utenteId));
         iscrizione.setTorneo(torneo);
         iscrizione.setUtente(utente);
+        iscrizione.setLocale(locale);
         iscrizione.setDataIscrizione(OffsetDateTime.now());
 
         iscrizione = iscrizioneRepo.save(iscrizione);
@@ -184,64 +191,138 @@ public class TorneoService {
             .toList();
     }
 
-    // Calcola live la classifica del torneo ordinando per percentuale vittorie, vittorie e partite giocate
+    // Calcola live la classifica del torneo per Locali e per Giocatori
     @Transactional(readOnly = true)
     public ClassificaTorneoResponse getClassifica(UUID torneoId) {
         Torneo torneo = torneoRepo.findById(torneoId)
             .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
 
-        List<Partita> partite = partitaRepo.findByTorneoId(torneoId);
+        List<IscrizioneTorneo> iscritti = iscrizioneRepo.findByTorneoId(torneoId);
+        Map<UUID, IscrizioneTorneo> iscrizioniMap = new HashMap<>();
+        for (IscrizioneTorneo i : iscritti) {
+            iscrizioniMap.put(i.getUtente().getId(), i);
+        }
 
         class Stat {
             int giocate = 0;
             int vinte = 0;
         }
 
-        Map<String, Stat> stats = new HashMap<>();
+        Map<String, Locale> localeObjMap = new HashMap<>();
+        if (torneo.getLocali() != null) {
+            for (Locale l : torneo.getLocali()) {
+                localeObjMap.put(l.getId(), l);
+            }
+        }
+        for (IscrizioneTorneo i : iscritti) {
+            if (i.getLocale() != null) {
+                localeObjMap.put(i.getLocale().getId(), i.getLocale());
+            }
+        }
 
+        Map<String, Stat> localeStats = new HashMap<>();
+        for (String locId : localeObjMap.keySet()) {
+            localeStats.put(locId, new Stat());
+        }
+
+        Map<UUID, Stat> playerStats = new HashMap<>();
+        for (IscrizioneTorneo i : iscritti) {
+            playerStats.put(i.getUtente().getId(), new Stat());
+        }
+
+        List<Partita> partite = partitaRepo.findByTorneoId(torneoId);
         for (Partita p : partite) {
+            boolean g1Win = p.getPunteggio1() > p.getPunteggio2();
+            boolean g2Win = p.getPunteggio2() > p.getPunteggio1();
+
             if (p.getGiocatore1() != null) {
-                String name = p.getGiocatore1().getUsername();
-                stats.putIfAbsent(name, new Stat());
-                stats.get(name).giocate++;
-                if (p.getPunteggio1() > p.getPunteggio2()) {
-                    stats.get(name).vinte++;
+                UUID g1Id = p.getGiocatore1().getId();
+                IscrizioneTorneo isc1 = iscrizioniMap.get(g1Id);
+                if (isc1 != null) {
+                    Stat ps = playerStats.get(g1Id);
+                    if (ps != null) {
+                        ps.giocate++;
+                        if (g1Win) ps.vinte++;
+                    }
+                    if (isc1.getLocale() != null) {
+                        String locId = isc1.getLocale().getId();
+                        Stat ls = localeStats.computeIfAbsent(locId, k -> new Stat());
+                        ls.giocate++;
+                        if (g1Win) ls.vinte++;
+                    }
                 }
             }
+
             if (p.getGiocatore2() != null) {
-                String name = p.getGiocatore2().getUsername();
-                stats.putIfAbsent(name, new Stat());
-                stats.get(name).giocate++;
-                if (p.getPunteggio2() > p.getPunteggio1()) {
-                    stats.get(name).vinte++;
+                UUID g2Id = p.getGiocatore2().getId();
+                IscrizioneTorneo isc2 = iscrizioniMap.get(g2Id);
+                if (isc2 != null) {
+                    Stat ps = playerStats.get(g2Id);
+                    if (ps != null) {
+                        ps.giocate++;
+                        if (g2Win) ps.vinte++;
+                    }
+                    if (isc2.getLocale() != null) {
+                        String locId = isc2.getLocale().getId();
+                        Stat ls = localeStats.computeIfAbsent(locId, k -> new Stat());
+                        ls.giocate++;
+                        if (g2Win) ls.vinte++;
+                    }
                 }
             }
         }
 
-        List<VoceClassifica> classifica = new ArrayList<>();
-        for (Map.Entry<String, Stat> entry : stats.entrySet()) {
+        // 1. Classifica Locali
+        List<ClassificaTorneoResponse.VoceClassificaLocale> listLocali = new ArrayList<>();
+        for (Map.Entry<String, Stat> entry : localeStats.entrySet()) {
+            String locId = entry.getKey();
             Stat s = entry.getValue();
+            Locale loc = localeObjMap.get(locId);
+            String nomeLocale = loc != null ? loc.getNome() : locId;
             double perc = s.giocate > 0 ? (double) s.vinte / s.giocate * 100 : 0.0;
             double roundedPerc = Math.round(perc * 100.0) / 100.0;
             String metrica = s.vinte + " vinte (" + Math.round(roundedPerc) + "%)";
-            String playerUsername = entry.getKey();
-            classifica.add(new VoceClassifica(0, playerUsername, s.giocate, s.vinte, roundedPerc, metrica));
+            listLocali.add(new ClassificaTorneoResponse.VoceClassificaLocale(0, locId, nomeLocale, s.giocate, s.vinte, roundedPerc, metrica));
         }
 
-        classifica.sort(Comparator.comparingDouble(VoceClassifica::percentualeVittorie).reversed()
-            .thenComparingInt(VoceClassifica::partiteVinte).reversed()
-            .thenComparingLong(VoceClassifica::partiteGiocate).reversed());
+        listLocali.sort(Comparator.comparingDouble(ClassificaTorneoResponse.VoceClassificaLocale::percentualeVittorie).reversed()
+            .thenComparingInt(ClassificaTorneoResponse.VoceClassificaLocale::partiteVinte).reversed()
+            .thenComparingLong(ClassificaTorneoResponse.VoceClassificaLocale::partiteGiocate).reversed());
 
-        List<VoceClassifica> classificaFinale = new ArrayList<>();
-        for (int i = 0; i < classifica.size(); i++) {
-            VoceClassifica v = classifica.get(i);
-            classificaFinale.add(new VoceClassifica(i + 1, v.username(), v.partiteGiocate(), v.partiteVinte(), v.percentualeVittorie(), v.metricaClassifica()));
+        List<ClassificaTorneoResponse.VoceClassificaLocale> classificaLocali = new ArrayList<>();
+        for (int i = 0; i < listLocali.size(); i++) {
+            ClassificaTorneoResponse.VoceClassificaLocale v = listLocali.get(i);
+            classificaLocali.add(new ClassificaTorneoResponse.VoceClassificaLocale(i + 1, v.localeId(), v.localeNome(), v.partiteGiocate(), v.partiteVinte(), v.percentualeVittorie(), v.metricaClassifica()));
+        }
+
+        // 2. Classifica Giocatori
+        List<ClassificaTorneoResponse.VoceClassificaGiocatore> listGiocatori = new ArrayList<>();
+        for (IscrizioneTorneo i : iscritti) {
+            UUID uId = i.getUtente().getId();
+            Stat s = playerStats.getOrDefault(uId, new Stat());
+            double perc = s.giocate > 0 ? (double) s.vinte / s.giocate * 100 : 0.0;
+            double roundedPerc = Math.round(perc * 100.0) / 100.0;
+            String metrica = s.vinte + " vinte (" + Math.round(roundedPerc) + "%)";
+            String locId = i.getLocale() != null ? i.getLocale().getId() : null;
+            String locNome = i.getLocale() != null ? i.getLocale().getNome() : null;
+            listGiocatori.add(new ClassificaTorneoResponse.VoceClassificaGiocatore(0, uId, i.getUtente().getUsername(), locId, locNome, s.giocate, s.vinte, roundedPerc, metrica));
+        }
+
+        listGiocatori.sort(Comparator.comparingDouble(ClassificaTorneoResponse.VoceClassificaGiocatore::percentualeVittorie).reversed()
+            .thenComparingInt(ClassificaTorneoResponse.VoceClassificaGiocatore::partiteVinte).reversed()
+            .thenComparingLong(ClassificaTorneoResponse.VoceClassificaGiocatore::partiteGiocate).reversed());
+
+        List<ClassificaTorneoResponse.VoceClassificaGiocatore> classificaGiocatori = new ArrayList<>();
+        for (int i = 0; i < listGiocatori.size(); i++) {
+            ClassificaTorneoResponse.VoceClassificaGiocatore v = listGiocatori.get(i);
+            classificaGiocatori.add(new ClassificaTorneoResponse.VoceClassificaGiocatore(i + 1, v.utenteId(), v.username(), v.localeId(), v.localeNome(), v.partiteGiocate(), v.partiteVinte(), v.percentualeVittorie(), v.metricaClassifica()));
         }
 
         return ClassificaTorneoResponse.of(
             torneoId.toString(),
             torneo.getNome(),
-            classificaFinale
+            classificaLocali,
+            classificaGiocatori
         );
     }
 

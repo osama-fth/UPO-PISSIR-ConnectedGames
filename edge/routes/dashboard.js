@@ -266,12 +266,13 @@ router.get(['/tornei/:torneoId/dettaglio', '/dashboard/tornei/:torneoId/dettagli
         ]);
 
         const torneo = torneoRes.ok ? await torneoRes.json() : null;
-        const classificaData = classificaRes.ok ? await classificaRes.json() : { classifica: [] };
+        const classificaData = classificaRes.ok ? await classificaRes.json() : { classificaLocali: [], classificaGiocatori: [] };
         const iscritti = iscrittiRes.ok ? await iscrittiRes.json() : [];
 
         res.json({
             torneo,
-            classifica: classificaData.classifica || [],
+            classificaLocali: classificaData.classificaLocali || [],
+            classificaGiocatori: classificaData.classificaGiocatori || [],
             iscritti
         });
     } catch (err) {
@@ -282,7 +283,8 @@ router.get(['/tornei/:torneoId/dettaglio', '/dashboard/tornei/:torneoId/dettagli
 // Gestione iscrizione dell'utente a un torneo tramite Gateway
 router.post(['/tornei/iscriviti', '/dashboard/tornei/iscriviti'], requireAuth, async (req, res) => {
     try {
-        const { torneoId } = req.body;
+        const { torneoId, localeId } = req.body;
+        const targetLocaleId = localeId || LOCALE_ID;
         const utenteId = req.session.user.id;
 
         const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei/${torneoId}/iscrizioni`, {
@@ -291,7 +293,7 @@ router.post(['/tornei/iscriviti', '/dashboard/tornei/iscriviti'], requireAuth, a
                 'Authorization': `Bearer ${req.session.tokenSet.accessToken}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ utenteId })
+            body: JSON.stringify({ utenteId, localeId: targetLocaleId })
         });
 
         if (response.ok) {

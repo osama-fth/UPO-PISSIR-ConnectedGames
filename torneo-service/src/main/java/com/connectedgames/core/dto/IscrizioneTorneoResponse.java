@@ -7,6 +7,8 @@ public record IscrizioneTorneoResponse(
     UUID torneoId,
     UUID utenteId,
     String utenteUsername,
+    String localeId,
+    String localeNome,
     OffsetDateTime dataIscrizione
 ) {
 
@@ -15,6 +17,8 @@ public record IscrizioneTorneoResponse(
             i.getTorneo().getId(),
             i.getUtente().getId(),
             i.getUtente().getUsername(),
+            i.getLocale() != null ? i.getLocale().getId() : null,
+            i.getLocale() != null ? i.getLocale().getNome() : null,
             i.getDataIscrizione()
         );
     }

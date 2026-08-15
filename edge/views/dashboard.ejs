@@ -498,11 +498,11 @@
             const res = await fetch('/dashboard/tornei/iscriviti', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ torneoId })
+                body: JSON.stringify({ torneoId, localeId: '<%= localeId %>' })
             });
             const data = await res.json();
             if (res.ok) {
-                showTorneoAlert('<i class="bi bi-check-circle"></i> Iscrizione completata!', 'success');
+                showTorneoAlert('<i class="bi bi-check-circle"></i> Iscrizione completata per il locale <%= localeId %>!', 'success');
             } else {
                 showTorneoAlert('<i class="bi bi-exclamation-triangle"></i> ' + (data.error || 'Errore'), 'warning');
             }
@@ -619,37 +619,58 @@
             const res = await fetch('/dashboard/tornei/' + torneoId + '/dettaglio');
             const data = await res.json();
 
-            // Classifica
-            if (data.classifica && data.classifica.length > 0) {
-                let html = '<table style="width:100%; border-collapse:collapse;">';
+            // Classifica Locali
+            let html = '<h4 style="font-size:0.95rem; font-weight:700; color:var(--warning); margin-bottom:0.5rem;"><i class="bi bi-shop"></i> Classifica Locali (Vincitori)</h4>';
+            if (data.classificaLocali && data.classificaLocali.length > 0) {
+                html += '<table style="width:100%; border-collapse:collapse; margin-bottom:1.5rem;">';
                 html += '<thead><tr style="border-bottom:2px solid var(--border-color); color:var(--text-secondary); font-size:0.8rem;">';
-                html += '<th style="padding:8px;">Pos.</th><th style="padding:8px;">Giocatore</th><th style="padding:8px;">Giocate</th><th style="padding:8px;">Vinte</th><th style="padding:8px;">% Vittorie</th></tr></thead><tbody>';
-                data.classifica.forEach(v => {
+                html += '<th style="padding:8px;">Pos.</th><th style="padding:8px;">Locale</th><th style="padding:8px; text-align:center;">Giocate</th><th style="padding:8px; text-align:center;">Vinte</th><th style="padding:8px; text-align:center;">% Vittorie</th></tr></thead><tbody>';
+                data.classificaLocali.forEach(v => {
                     html += '<tr style="border-bottom:1px solid var(--border-color);">';
                     html += '<td style="padding:8px; font-weight:800; color:var(--accent-primary);">#' + v.posizione + '</td>';
-                    html += '<td style="padding:8px; font-weight:600;">' + v.username + '</td>';
+                    html += '<td style="padding:8px; font-weight:600;"><i class="bi bi-shop text-warning"></i> ' + (v.localeNome || v.localeId) + '</td>';
                     html += '<td style="padding:8px; text-align:center;">' + v.partiteGiocate + '</td>';
-                    html += '<td style="padding:8px; text-align:center; color:var(--success);">' + v.partiteVinte + '</td>';
+                    html += '<td style="padding:8px; text-align:center; color:var(--success); font-weight:700;">' + v.partiteVinte + '</td>';
                     html += '<td style="padding:8px; text-align:center; font-weight:700;">' + v.percentualeVittorie + '%</td>';
                     html += '</tr>';
                 });
                 html += '</tbody></table>';
-                document.getElementById('classifica-body').innerHTML = html;
             } else {
-                document.getElementById('classifica-body').innerHTML = '<p class="text-muted">Nessuna partita giocata in questo torneo ancora.</p>';
+                html += '<p class="text-muted mb-3">Nessun dato locali in classifica.</p>';
             }
 
-            // Iscritti
-            if (data.iscritti && data.iscritti.length > 0) {
-                let html = '<ul style="list-style:none; padding:0; margin:0;">';
-                data.iscritti.forEach(i => {
-                    html += '<li style="padding:8px 0; border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:8px;">';
-                    html += '<i class="bi bi-person-circle" style="color:var(--accent-primary);"></i> <span style="font-weight:600;">' + i.utenteUsername + '</span>';
-                    html += '<span class="text-muted text-sm">iscritto il ' + new Date(i.dataIscrizione).toLocaleDateString("it-IT") + '</span>';
-                    html += '</li>';
+            // Classifica Giocatori
+            html += '<h4 style="font-size:0.95rem; font-weight:700; color:var(--accent-primary); margin-bottom:0.5rem;"><i class="bi bi-person-fill"></i> Classifica Giocatori</h4>';
+            if (data.classificaGiocatori && data.classificaGiocatori.length > 0) {
+                html += '<table style="width:100%; border-collapse:collapse;">';
+                html += '<thead><tr style="border-bottom:2px solid var(--border-color); color:var(--text-secondary); font-size:0.8rem;">';
+                html += '<th style="padding:8px;">Pos.</th><th style="padding:8px;">Giocatore</th><th style="padding:8px;">Locale Iscrizione</th><th style="padding:8px; text-align:center;">Giocate</th><th style="padding:8px; text-align:center;">% Vittorie</th></tr></thead><tbody>';
+                data.classificaGiocatori.forEach(v => {
+                    html += '<tr style="border-bottom:1px solid var(--border-color);">';
+                    html += '<td style="padding:8px; font-weight:800; color:var(--accent-primary);">#' + v.posizione + '</td>';
+                    html += '<td style="padding:8px; font-weight:600;">' + v.username + '</td>';
+                    html += '<td style="padding:8px;"><span class="badge badge-info">' + (v.localeNome || v.localeId || 'N/A') + '</span></td>';
+                    html += '<td style="padding:8px; text-align:center;">' + v.partiteGiocate + '</td>';
+                    html += '<td style="padding:8px; text-align:center; font-weight:700;">' + v.percentualeVittorie + '%</td>';
+                    html += '</tr>';
                 });
-                html += '</ul>';
-                document.getElementById('iscritti-body').innerHTML = html;
+                html += '</tbody></table>';
+            } else {
+                html += '<p class="text-muted">Nessun giocatore iscritto o in classifica.</p>';
+            }
+            document.getElementById('classifica-body').innerHTML = html;
+
+            // Iscritti List
+            if (data.iscritti && data.iscritti.length > 0) {
+                let htmlIscr = '<ul style="list-style:none; padding:0; margin:0;">';
+                data.iscritti.forEach(i => {
+                    htmlIscr += '<li style="padding:8px 0; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">';
+                    htmlIscr += '<div><i class="bi bi-person-circle" style="color:var(--accent-primary);"></i> <span style="font-weight:600;">' + i.utenteUsername + '</span></div>';
+                    htmlIscr += '<div><span class="badge badge-info me-2">' + (i.localeNome || i.localeId || 'N/A') + '</span><span class="text-muted text-sm">' + new Date(i.dataIscrizione).toLocaleDateString("it-IT") + '</span></div>';
+                    htmlIscr += '</li>';
+                });
+                htmlIscr += '</ul>';
+                document.getElementById('iscritti-body').innerHTML = htmlIscr;
             } else {
                 document.getElementById('iscritti-body').innerHTML = '<p class="text-muted">Nessun giocatore iscritto.</p>';
             }

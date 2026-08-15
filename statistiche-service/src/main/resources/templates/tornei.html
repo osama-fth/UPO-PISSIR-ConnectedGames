@@ -21,8 +21,8 @@
     <div class="main-content flex-grow-1">
         <div class="row mb-4 align-items-center">
             <div class="col">
-                <h2 class="fw-bold"><i class="bi bi-trophy text-warning"></i> Tornei</h2>
-                <p class="text-muted">Elenco dei tornei e classifiche in tempo reale.</p>
+                <h2 class="fw-bold"><i class="bi bi-trophy text-warning"></i> Tornei &amp; Classifiche Locali</h2>
+                <p class="text-muted">Elenco dei tornei, iscrizioni a nome di un locale e classifiche in tempo reale.</p>
             </div>
         </div>
 
@@ -55,24 +55,96 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header border-bottom">
-                <h5 class="modal-title"><i class="bi bi-list-ol text-warning"></i> Classifica: <span id="modalTorneoNome" class="text-white fw-bold"></span></h5>
+                <h5 class="modal-title"><i class="bi bi-list-ol text-warning"></i> Classifica Torneo: <span id="modalTorneoNome" class="text-white fw-bold"></span></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="modalError" class="alert alert-danger d-none"></div>
-                <div class="table-responsive">
-                    <table class="table table-striped" id="classificaTable">
-                        <thead>
-                            <tr>
-                                <th>Posizione</th>
-                                <th>Giocatore</th>
-                                <th>Partite Giocate</th>
-                                <th>Metrica/Punteggio</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active text-warning fw-bold" id="tab-locali" data-bs-toggle="tab" data-bs-target="#pane-locali" type="button" role="tab">
+                            <i class="bi bi-shop me-1"></i> Classifica Locali (Vincitori)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link text-info fw-bold" id="tab-giocatori" data-bs-toggle="tab" data-bs-target="#pane-giocatori" type="button" role="tab">
+                            <i class="bi bi-person-fill me-1"></i> Classifica Giocatori
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="pane-locali" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="classificaLocaliTable">
+                                <thead>
+                                    <tr>
+                                        <th>Pos.</th>
+                                        <th>Locale</th>
+                                        <th class="text-center">Partite Giocate</th>
+                                        <th class="text-center">Vittorie</th>
+                                        <th class="text-end">Metrica</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pane-giocatori" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="classificaGiocatoriTable">
+                                <thead>
+                                    <tr>
+                                        <th>Pos.</th>
+                                        <th>Giocatore</th>
+                                        <th>Locale Iscrizione</th>
+                                        <th class="text-center">Giocate</th>
+                                        <th class="text-end">Metrica</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Iscrizione -->
+<div class="modal fade" id="iscrizioneModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title"><i class="bi bi-person-plus text-success"></i> Iscrivi Giocatore a un Locale</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formIscrizione" onsubmit="submitIscrizione(event)">
+                    <input type="hidden" id="iscrizTorneoId">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Torneo</label>
+                        <input type="text" id="iscrizTorneoNome" class="form-control bg-dark text-white border-secondary" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="iscrizUtenteId" class="form-label text-white">UUID Utente / Giocatore</label>
+                        <input type="text" id="iscrizUtenteId" class="form-control bg-dark text-white border-secondary" required placeholder="es. f47ac10b-58cc-4372-a567-0e02b2c3d479">
+                    </div>
+                    <div class="mb-3">
+                        <label for="iscrizLocaleId" class="form-label text-white">Locale di Appartenenza</label>
+                        <select id="iscrizLocaleId" class="form-select bg-dark text-white border-secondary" required>
+                            <option value="BAR_BELVEDERE">Bar Belvedere</option>
+                            <option value="SALA_GIOCHI_ROMA">Sala Giochi Roma</option>
+                        </select>
+                    </div>
+                    <div id="iscrizioneResultAlert" class="alert d-none"></div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Conferma Iscrizione</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -80,8 +152,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    const token = "[[${jwtToken}]]";
+
     document.addEventListener("DOMContentLoaded", () => {
-        const token = "[[${jwtToken}]]";
+        caricaTornei();
+    });
+
+    function caricaTornei() {
         fetch('/api/v1/tornei', {
             headers: { 'Authorization': 'Bearer ' + token }
         })
@@ -99,6 +176,14 @@
                     const dataFine = t.dataFine ? new Date(t.dataFine).toLocaleDateString() : 'N/A';
                     
                     const badgeClass = t.stato === 'ATTIVO' ? 'bg-success' : 'bg-secondary';
+                    const localiList = t.localiIds && t.localiIds.length > 0 ? t.localiIds.join(', ') : 'Tutti';
+
+                    let btnIscrizione = '';
+                    if (t.stato === 'ATTIVO') {
+                        btnIscrizione = `<button class="btn btn-sm btn-outline-success ms-1 fw-bold" onclick="apriModalIscrizione('${t.id}', '${t.nome}', '${localiList}')">
+                            <i class="bi bi-person-plus-fill me-1"></i> Iscrivi
+                        </button>`;
+                    }
 
                     tr.innerHTML = `
                         <td class="fw-bold">${t.nome}</td>
@@ -110,6 +195,7 @@
                             <button class="btn btn-sm btn-warning text-dark fw-bold" onclick="showClassifica('${t.id}', '${t.nome}')">
                                 <i class="bi bi-trophy-fill me-1"></i> Classifica
                             </button>
+                            ${btnIscrizione}
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -118,43 +204,112 @@
             .catch(err => {
                 document.querySelector("#torneiTable tbody").innerHTML = '<tr><td colspan="6" class="text-center text-danger">Errore nel caricamento dei tornei.</td></tr>';
             });
-    });
+    }
 
     const classificaModal = new bootstrap.Modal(document.getElementById('classificaModal'));
     window.showClassifica = (id, nome) => {
         document.getElementById('modalTorneoNome').textContent = nome;
         document.getElementById('modalError').classList.add('d-none');
-        const tbody = document.querySelector("#classificaTable tbody");
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Caricamento classifica...</td></tr>';
+        const tbodyLocali = document.querySelector("#classificaLocaliTable tbody");
+        const tbodyGiocatori = document.querySelector("#classificaGiocatoriTable tbody");
+        tbodyLocali.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Caricamento classifica locali...</td></tr>';
+        tbodyGiocatori.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Caricamento classifica giocatori...</td></tr>';
         
         classificaModal.show();
 
-        const token = "[[${jwtToken}]]";
         fetch(`/api/v1/tornei/${id}/classifica`, {
             headers: { 'Authorization': 'Bearer ' + token }
         })
             .then(res => res.json())
             .then(data => {
-                tbody.innerHTML = "";
-                if(!data.classifica || data.classifica.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nessun dato in classifica.</td></tr>';
-                    return;
+                tbodyLocali.innerHTML = "";
+                tbodyGiocatori.innerHTML = "";
+
+                const listLocali = data.classificaLocali || [];
+                const listGiocatori = data.classificaGiocatori || [];
+
+                if (listLocali.length === 0) {
+                    tbodyLocali.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nessun dato locali in classifica.</td></tr>';
+                } else {
+                    listLocali.forEach(row => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td><strong class="text-warning">#${row.posizione}</strong></td>
+                            <td class="fw-bold"><i class="bi bi-shop text-warning me-1"></i> ${row.localeNome || row.localeId}</td>
+                            <td class="text-center">${row.partiteGiocate}</td>
+                            <td class="text-center text-success fw-bold">${row.partiteVinte}</td>
+                            <td class="text-end"><span class="badge bg-success fs-6">${row.metricaClassifica}</span></td>
+                        `;
+                        tbodyLocali.appendChild(tr);
+                    });
                 }
-                data.classifica.forEach(row => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td><strong class="text-warning">#${row.posizione}</strong></td>
-                        <td class="fw-bold"><i class="bi bi-person-circle text-info me-1"></i> ${row.username}</td>
-                        <td>${row.partiteGiocate}</td>
-                        <td><span class="badge bg-success fs-6">${row.metricaClassifica}</span></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+
+                if (listGiocatori.length === 0) {
+                    tbodyGiocatori.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nessun giocatore iscritto o in classifica.</td></tr>';
+                } else {
+                    listGiocatori.forEach(row => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td><strong class="text-warning">#${row.posizione}</strong></td>
+                            <td class="fw-bold"><i class="bi bi-person-circle text-info me-1"></i> ${row.username}</td>
+                            <td><span class="badge bg-secondary">${row.localeNome || row.localeId || 'N/A'}</span></td>
+                            <td class="text-center">${row.partiteGiocate}</td>
+                            <td class="text-end"><span class="badge bg-info text-dark fs-6">${row.metricaClassifica}</span></td>
+                        `;
+                        tbodyGiocatori.appendChild(tr);
+                    });
+                }
             })
             .catch(err => {
-                tbody.innerHTML = "";
+                tbodyLocali.innerHTML = "";
+                tbodyGiocatori.innerHTML = "";
                 document.getElementById('modalError').classList.remove('d-none');
                 document.getElementById('modalError').textContent = "Impossibile caricare la classifica.";
+            });
+    };
+
+    const iscrizioneModal = new bootstrap.Modal(document.getElementById('iscrizioneModal'));
+    window.apriModalIscrizione = (torneoId, nomeTorneo, localiList) => {
+        document.getElementById('iscrizTorneoId').value = torneoId;
+        document.getElementById('iscrizTorneoNome').value = nomeTorneo;
+        document.getElementById('iscrizUtenteId').value = "";
+        document.getElementById('iscrizioneResultAlert').classList.add('d-none');
+        iscrizioneModal.show();
+    };
+
+    window.submitIscrizione = (e) => {
+        e.preventDefault();
+        const torneoId = document.getElementById('iscrizTorneoId').value;
+        const utenteId = document.getElementById('iscrizUtenteId').value.trim();
+        const localeId = document.getElementById('iscrizLocaleId').value;
+
+        const alertBox = document.getElementById('iscrizioneResultAlert');
+        alertBox.className = 'alert alert-info mt-2';
+        alertBox.textContent = "Registrazione in corso...";
+        alertBox.classList.remove('d-none');
+
+        fetch(`/api/v1/tornei/${torneoId}/iscrizioni`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ utenteId, localeId })
+        })
+            .then(res => res.json().then(d => ({ status: res.status, body: d })))
+            .then(resObj => {
+                if (resObj.status === 200 || resObj.status === 201) {
+                    alertBox.className = 'alert alert-success mt-2';
+                    alertBox.textContent = "Giocatore iscritto con successo a nome di " + localeId + "!";
+                    setTimeout(() => iscrizioneModal.hide(), 1500);
+                } else {
+                    alertBox.className = 'alert alert-danger mt-2';
+                    alertBox.textContent = resObj.body.message || "Errore durante l'iscrizione.";
+                }
+            })
+            .catch(err => {
+                alertBox.className = 'alert alert-danger mt-2';
+                alertBox.textContent = "Errore di connessione: " + err.message;
             });
     };
 </script>

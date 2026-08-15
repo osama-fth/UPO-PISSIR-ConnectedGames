@@ -1,9 +1,13 @@
 package com.connectedgames.core;
 
 import com.connectedgames.core.dto.ClassificaTorneoResponse;
-import com.connectedgames.core.dto.ClassificaTorneoResponse.VoceClassifica;
+import com.connectedgames.core.dto.ClassificaTorneoResponse.VoceClassificaGiocatore;
+import com.connectedgames.core.dto.ClassificaTorneoResponse.VoceClassificaLocale;
 import com.connectedgames.core.dto.TorneoResponse;
 import com.connectedgames.core.entity.Gioco;
+import com.connectedgames.core.entity.IscrizioneTorneo;
+import com.connectedgames.core.entity.IscrizioneTorneoId;
+import com.connectedgames.core.entity.Locale;
 import com.connectedgames.core.entity.Partita;
 import com.connectedgames.core.entity.Torneo;
 import com.connectedgames.core.entity.Utente;
@@ -26,6 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,21 +58,29 @@ class TorneoServiceTest {
 
     private UUID torneoId;
     private UUID utenteId;
+    private String localeId;
     private Torneo mockTorneo;
+    private Locale mockLocale;
 
     @BeforeEach
     void setUp() {
         torneoId = UUID.randomUUID();
         utenteId = UUID.randomUUID();
+        localeId = "BAR_BELVEDERE";
 
         Gioco gioco = new Gioco();
         gioco.setId("calciobalilla");
         gioco.setNome("Calciobalilla");
 
+        mockLocale = new Locale();
+        mockLocale.setId(localeId);
+        mockLocale.setNome("Bar Belvedere");
+
         mockTorneo = new Torneo();
         mockTorneo.setId(torneoId);
         mockTorneo.setNome("Torneo Estivo Calciobalilla");
         mockTorneo.setGioco(gioco);
+        mockTorneo.setLocali(Set.of(mockLocale));
         mockTorneo.setDataInizio(OffsetDateTime.now().minusDays(1));
         mockTorneo.setDataFine(OffsetDateTime.now().plusDays(1));
         mockTorneo.setStato("ATTIVO");
@@ -98,9 +111,13 @@ class TorneoServiceTest {
     }
 
     @Test
-    @DisplayName("Calcolo classifica: ordinamento multi-criterio per % vittorie")
+    @DisplayName("Calcolo classifica: ordinamento multi-criterio per Locali e Giocatori")
     void testGetClassificaOrdinamento() {
         when(torneoRepo.findById(torneoId)).thenReturn(Optional.of(mockTorneo));
+
+        Locale loc2 = new Locale();
+        loc2.setId("SALA_GIOCHI_ROMA");
+        loc2.setNome("Sala Giochi Roma");
 
         Utente u1 = new Utente();
         u1.setId(UUID.randomUUID());
@@ -109,6 +126,20 @@ class TorneoServiceTest {
         Utente u2 = new Utente();
         u2.setId(UUID.randomUUID());
         u2.setUsername("Luigi");
+
+        IscrizioneTorneo isc1 = new IscrizioneTorneo();
+        isc1.setId(new IscrizioneTorneoId(torneoId, u1.getId()));
+        isc1.setTorneo(mockTorneo);
+        isc1.setUtente(u1);
+        isc1.setLocale(mockLocale);
+
+        IscrizioneTorneo isc2 = new IscrizioneTorneo();
+        isc2.setId(new IscrizioneTorneoId(torneoId, u2.getId()));
+        isc2.setTorneo(mockTorneo);
+        isc2.setUtente(u2);
+        isc2.setLocale(loc2);
+
+        when(iscrizioneRepo.findByTorneoId(torneoId)).thenReturn(List.of(isc1, isc2));
 
         Partita p1 = new Partita();
         p1.setGiocatore1(u1);
@@ -126,17 +157,25 @@ class TorneoServiceTest {
 
         ClassificaTorneoResponse classifica = torneoService.getClassifica(torneoId);
 
-        assertThat(classifica.classifica()).hasSize(2);
+        // Locali
+        assertThat(classifica.classificaLocali()).hasSize(2);
+        VoceClassificaLocale primoLocale = classifica.classificaLocali().get(0);
+        assertThat(primoLocale.posizione()).isEqualTo(1);
+        assertThat(primoLocale.localeId()).isEqualTo("BAR_BELVEDERE");
+        assertThat(primoLocale.percentualeVittorie()).isEqualTo(100.0);
 
-        VoceClassifica primo = classifica.classifica().get(0);
-        assertThat(primo.posizione()).isEqualTo(1);
-        assertThat(primo.username()).isEqualTo("Mario");
-        assertThat(primo.percentualeVittorie()).isEqualTo(100.0);
+        VoceClassificaLocale secondoLocale = classifica.classificaLocali().get(1);
+        assertThat(secondoLocale.posizione()).isEqualTo(2);
+        assertThat(secondoLocale.localeId()).isEqualTo("SALA_GIOCHI_ROMA");
+        assertThat(secondoLocale.percentualeVittorie()).isEqualTo(0.0);
 
-        VoceClassifica secondo = classifica.classifica().get(1);
-        assertThat(secondo.posizione()).isEqualTo(2);
-        assertThat(secondo.username()).isEqualTo("Luigi");
-        assertThat(secondo.percentualeVittorie()).isEqualTo(0.0);
+        // Giocatori
+        assertThat(classifica.classificaGiocatori()).hasSize(2);
+        VoceClassificaGiocatore primoGiocatore = classifica.classificaGiocatori().get(0);
+        assertThat(primoGiocatore.posizione()).isEqualTo(1);
+        assertThat(primoGiocatore.username()).isEqualTo("Mario");
+        assertThat(primoGiocatore.localeId()).isEqualTo("BAR_BELVEDERE");
+        assertThat(primoGiocatore.percentualeVittorie()).isEqualTo(100.0);
     }
 
     @Test
@@ -147,8 +186,9 @@ class TorneoServiceTest {
 
         when(torneoRepo.findById(torneoId)).thenReturn(Optional.of(mockTorneo));
         when(utenteRepo.findById(utenteId)).thenReturn(Optional.of(new Utente()));
+        when(localeRepo.findById(localeId)).thenReturn(Optional.of(mockLocale));
 
-        assertThatThrownBy(() -> torneoService.iscriviGiocatore(torneoId, utenteId))
+        assertThatThrownBy(() -> torneoService.iscriviGiocatore(torneoId, utenteId, localeId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("il torneo è già concluso");
     }
@@ -158,11 +198,28 @@ class TorneoServiceTest {
     void testIscrizioneGiaPresenteLanciaEccezione() {
         when(torneoRepo.findById(torneoId)).thenReturn(Optional.of(mockTorneo));
         when(utenteRepo.findById(utenteId)).thenReturn(Optional.of(new Utente()));
+        when(localeRepo.findById(localeId)).thenReturn(Optional.of(mockLocale));
         when(iscrizioneRepo.existsByIdTorneoIdAndIdUtenteId(torneoId, utenteId)).thenReturn(true);
 
-        assertThatThrownBy(() -> torneoService.iscriviGiocatore(torneoId, utenteId))
+        assertThatThrownBy(() -> torneoService.iscriviGiocatore(torneoId, utenteId, localeId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Utente già iscritto");
+    }
+
+    @Test
+    @DisplayName("Iscrizione fallisce se locale non partecipa al torneo")
+    void testIscrizioneLocaleNonPartecipanteLanciaEccezione() {
+        Locale altroLocale = new Locale();
+        altroLocale.setId("LOCALE_ESTORNO");
+        altroLocale.setNome("Locale Esterno");
+
+        when(torneoRepo.findById(torneoId)).thenReturn(Optional.of(mockTorneo));
+        when(utenteRepo.findById(utenteId)).thenReturn(Optional.of(new Utente()));
+        when(localeRepo.findById("LOCALE_ESTORNO")).thenReturn(Optional.of(altroLocale));
+
+        assertThatThrownBy(() -> torneoService.iscriviGiocatore(torneoId, utenteId, "LOCALE_ESTORNO"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("non partecipa a questo torneo");
     }
 
     @Test

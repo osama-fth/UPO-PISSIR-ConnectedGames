@@ -26,6 +26,10 @@ public class IscrizioneTorneo {
     @JoinColumn(name = "utente_id")
     private Utente utente;
 
+    @ManyToOne
+    @JoinColumn(name = "locale_id", nullable = false)
+    private Locale locale;
+
     @Column(name = "data_iscrizione", nullable = false)
     private OffsetDateTime dataIscrizione;
 
@@ -39,6 +43,9 @@ public class IscrizioneTorneo {
 
     public Utente getUtente() { return utente; }
     public void setUtente(Utente utente) { this.utente = utente; }
+
+    public Locale getLocale() { return locale; }
+    public void setLocale(Locale locale) { this.locale = locale; }
 
     public OffsetDateTime getDataIscrizione() { return dataIscrizione; }
     public void setDataIscrizione(OffsetDateTime dataIscrizione) { this.dataIscrizione = dataIscrizione; }

@@ -61,7 +61,7 @@ public class TorneoController {
     public ResponseEntity<IscrizioneTorneoResponse> iscriviGiocatore(
             @PathVariable UUID torneoId,
             @Valid @RequestBody IscrizioneInput input) {
-        IscrizioneTorneoResponse response = torneoService.iscriviGiocatore(torneoId, input.utenteId());
+        IscrizioneTorneoResponse response = torneoService.iscriviGiocatore(torneoId, input.utenteId(), input.localeId());
         return ResponseEntity.ok(response);
     }
 

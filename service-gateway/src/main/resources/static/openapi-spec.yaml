@@ -971,18 +971,22 @@ components:
       type: object
       required:
         - utenteId
+        - localeId
       properties:
         utenteId:
           type: string
           format: uuid
           example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
 
     IscrizioneTorneoResponse:
       type: object
       required:
         - torneoId
         - utenteId
-        - utenteNome
+        - utenteUsername
         - dataIscrizione
       properties:
         torneoId:
@@ -991,9 +995,15 @@ components:
         utenteId:
           type: string
           format: uuid
-        utenteNome:
+        utenteUsername:
           type: string
           example: "SuperMario"
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        localeNome:
+          type: string
+          example: "Bar Belvedere"
         dataIscrizione:
           type: string
           format: date-time
@@ -1002,29 +1012,67 @@ components:
       type: object
       required:
         - torneoId
-        - nomeTorneo
-        - tipoGioco
-        - classifica
+        - torneoNome
+        - classificaLocali
+        - classificaGiocatori
       properties:
         torneoId:
           type: string
           format: uuid
-        nomeTorneo:
+        torneoNome:
           type: string
-        tipoGioco:
-          type: string
-        classifica:
+        classificaLocali:
           type: array
           items:
-            $ref: '#/components/schemas/RigaClassifica'
+            $ref: '#/components/schemas/VoceClassificaLocale'
+        classificaGiocatori:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoceClassificaGiocatore'
 
-    RigaClassifica:
+    VoceClassificaLocale:
+      type: object
+      required:
+        - posizione
+        - localeId
+        - localeNome
+        - partiteGiocate
+        - partiteVinte
+        - percentualeVittorie
+        - metricaClassifica
+      properties:
+        posizione:
+          type: integer
+          example: 1
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        localeNome:
+          type: string
+          example: "Bar Belvedere"
+        partiteGiocate:
+          type: integer
+          example: 10
+        partiteVinte:
+          type: integer
+          example: 8
+        percentualeVittorie:
+          type: number
+          format: float
+          example: 80.0
+        metricaClassifica:
+          type: string
+          example: "8 vinte (80%)"
+
+    VoceClassificaGiocatore:
       type: object
       required:
         - posizione
         - utenteId
         - username
         - partiteGiocate
+        - partiteVinte
+        - percentualeVittorie
         - metricaClassifica
       properties:
         posizione:
@@ -1036,13 +1084,25 @@ components:
         username:
           type: string
           example: "SuperMario"
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        localeNome:
+          type: string
+          example: "Bar Belvedere"
         partiteGiocate:
           type: integer
           example: 5
-        metricaClassifica:
+        partiteVinte:
+          type: integer
+          example: 4
+        percentualeVittorie:
           type: number
           format: float
-          example: 0.83
+          example: 80.0
+        metricaClassifica:
+          type: string
+          example: "4 vinte (80%)"
 
     StatisticheGlobaliResponse:
       type: object
@@ -1180,3 +1240,38 @@ components:
         partiteGiocate:
           type: integer
           example: 6
+
+    StatisticheLocaleResponse:
+      type: object
+      required:
+        - localeId
+        - partiteGiocate
+        - giocatoriAttivi
+        - giocoPiuPopolare
+        - ripartizioneGiochi
+        - torneiPartecipati
+        - torneiVinti
+      properties:
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        partiteGiocate:
+          type: integer
+          example: 24
+        giocatoriAttivi:
+          type: integer
+          example: 8
+        giocoPiuPopolare:
+          type: string
+          example: "Calciobalilla"
+        ripartizioneGiochi:
+          type: array
+          items:
+            $ref: '#/components/schemas/GiocoStat'
+        torneiPartecipati:
+          type: integer
+          example: 3
+        torneiVinti:
+          type: integer
+          example: 2
+

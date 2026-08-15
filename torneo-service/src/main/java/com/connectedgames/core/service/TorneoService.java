@@ -112,10 +112,14 @@ public class TorneoService {
         t.setGioco(gioco);
 
         Set<Locale> locali = new HashSet<>();
-        for (String locId : input.localiId()) {
-            Locale loc = localeRepo.findById(locId)
-                .orElseThrow(() -> new IllegalArgumentException("Locale non trovato: " + locId));
-            locali.add(loc);
+        if (input.localiId() != null && !input.localiId().isEmpty()) {
+            for (String locId : input.localiId()) {
+                Locale loc = localeRepo.findById(locId)
+                    .orElseThrow(() -> new IllegalArgumentException("Locale non trovato: " + locId));
+                locali.add(loc);
+            }
+        } else {
+            locali.addAll(localeRepo.findAll());
         }
         t.setLocali(locali);
 
@@ -157,7 +161,7 @@ public class TorneoService {
         Locale locale = localeRepo.findById(localeId)
             .orElseThrow(() -> new ResourceNotFoundException("Locale", localeId));
 
-        if (torneo.getLocali() == null || torneo.getLocali().stream().noneMatch(l -> l.getId().equals(localeId))) {
+        if (torneo.getLocali() != null && !torneo.getLocali().isEmpty() && torneo.getLocali().stream().noneMatch(l -> l.getId().equals(localeId))) {
             throw new IllegalArgumentException("Il locale " + localeId + " non partecipa a questo torneo");
         }
 

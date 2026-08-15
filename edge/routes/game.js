@@ -29,10 +29,7 @@ async function getTorneiAttiviLocale(req) {
         const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei`, { headers });
         if (!response.ok) return [];
         const all = await response.json();
-        return all.filter(t =>
-            t.stato === 'ATTIVO' &&
-            (!t.localiIds || t.localiIds.length === 0 || t.localiIds.includes(LOCALE_ID))
-        );
+        return all.filter(t => t.stato === 'ATTIVO');
     } catch (err) {
         console.error(`[Game ${LOCALE_ID}] Errore fetch tornei:`, err.message);
         return [];

@@ -4,22 +4,10 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth, requireAdminAccess, canAdminCurrentLocale } = require('../middleware/auth');
 const { getStatsLocale } = require('../services/sqlite-db');
-const { getActiveMatches } = require('../services/game-engine');
+const { getActiveMatches, getInstallazioni } = require('../services/game-engine');
 const { directPasswordAuth, clientCredentialsAuth } = require('../services/oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
-
-const INSTALLAZIONI = {
-    'BAR_BELVEDERE': [
-        { id: 'calciobalilla-1', giocoId: 'calciobalilla', nome: 'Calciobalilla' },
-        { id: 'freccette-1', giocoId: 'freccette', nome: 'Freccette' }
-    ],
-    'SALA_GIOCHI_ROMA': [
-        { id: 'calciobalilla-2', giocoId: 'calciobalilla', nome: 'Calciobalilla' },
-        { id: 'freccette-2', giocoId: 'freccette', nome: 'Freccette' }
-    ]
-};
-
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
 
 // Formatta una stringa di data/ora in ISO 8601 mantenendo il fuso orario di Roma
@@ -64,17 +52,29 @@ async function fetchTorneiLocale(req) {
         const headers = await getGatewayAuthHeaders(req);
         const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei`, { headers });
         if (!response.ok) return [];
-        const all = await response.json();
-        return all.filter(t => !t.localiIds || t.localiIds.length === 0 || t.localiIds.includes(LOCALE_ID));
+        return await response.json();
     } catch (err) {
         console.error(`[Dashboard ${LOCALE_ID}] Errore fetch tornei:`, err.message);
         return [];
     }
 }
 
+async function fetchLocaliDisponibili(req) {
+    try {
+        const headers = await getGatewayAuthHeaders(req);
+        const res = await fetch(`${CENTRAL_SERVER_URL}/api/v1/locali`, { headers });
+        if (res.ok) {
+            return await res.json();
+        }
+    } catch (err) {
+        console.error(`[Dashboard ${LOCALE_ID}] Errore fetch locali:`, err.message);
+    }
+    return [{ id: LOCALE_ID, nome: LOCALE_ID }];
+}
+
 // Landing page pubblica dell'Edge Node per l'avvio delle partite
 router.get('/', async (req, res) => {
-    const installazioni = INSTALLAZIONI[LOCALE_ID] || [];
+    const installazioni = getInstallazioni();
     const activeGames = getActiveMatches();
     const torneiLocale = await fetchTorneiLocale(req);
     const torneiAttivi = torneiLocale.filter(t => t.stato === 'ATTIVO');
@@ -91,7 +91,7 @@ router.get('/', async (req, res) => {
 // Dashboard riservata: combina statistiche locali (SQLite) e sincronizzate nel Cloud
 router.get('/dashboard', requireAuth, async (req, res) => {
     const user = req.session.user;
-    const installazioni = INSTALLAZIONI[LOCALE_ID] || [];
+    const installazioni = getInstallazioni();
     const activeGames = getActiveMatches();
 
     let localStats = { totalePartite: 0, inAttesaDiSync: 0, sincronizzate: 0, perGioco: [], ultimePartite: [] };
@@ -242,6 +242,8 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         }));
     }
 
+    const localiDisponibili = await fetchLocaliDisponibili(req);
+
     res.render('dashboard', {
         title: `Dashboard — ${LOCALE_ID}`,
         localeId: LOCALE_ID,
@@ -250,7 +252,8 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         stats,
         playerStats,
         isAdmin,
-        tornei: torneiConStato
+        tornei: torneiConStato,
+        localiDisponibili
     });
 });
 
@@ -360,7 +363,7 @@ router.post(['/tornei/crea', '/dashboard/tornei/crea'], requireAuth, requireAdmi
             giocoId,
             dataInizio: formatRomeIso(dataInizio),
             dataFine: formatRomeIso(dataFine),
-            localiId: Array.isArray(localiIds) ? localiIds : (localiIds ? [localiIds] : [LOCALE_ID])
+            localiId: Array.isArray(localiIds) && localiIds.length > 0 ? localiIds : null
         };
 
         const response = await fetch(`${CENTRAL_SERVER_URL}/api/v1/tornei`, {

@@ -135,8 +135,7 @@
                     <div class="mb-3">
                         <label for="iscrizLocaleId" class="form-label text-white">Locale di Appartenenza</label>
                         <select id="iscrizLocaleId" class="form-select bg-dark text-white border-secondary" required>
-                            <option value="BAR_BELVEDERE">Bar Belvedere</option>
-                            <option value="SALA_GIOCHI_ROMA">Sala Giochi Roma</option>
+                            <option value="">Caricamento locali...</option>
                         </select>
                     </div>
                     <div id="iscrizioneResultAlert" class="alert d-none"></div>
@@ -156,7 +155,34 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         caricaTornei();
+        caricaLocali();
     });
+
+    function caricaLocali() {
+        fetch('/api/v1/locali', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+            .then(res => res.json())
+            .then(locali => {
+                const select = document.getElementById("iscrizLocaleId");
+                select.innerHTML = "";
+                if (!locali || locali.length === 0) {
+                    select.innerHTML = '<option value="">Nessun locale disponibile</option>';
+                    return;
+                }
+                locali.forEach(l => {
+                    const opt = document.createElement("option");
+                    opt.value = l.id;
+                    opt.textContent = l.nome || l.id;
+                    select.appendChild(opt);
+                });
+            })
+            .catch(err => {
+                console.error("Errore caricamento locali:", err);
+                const select = document.getElementById("iscrizLocaleId");
+                select.innerHTML = '<option value="">Errore caricamento locali</option>';
+            });
+    }
 
     function caricaTornei() {
         fetch('/api/v1/tornei', {
@@ -176,11 +202,9 @@
                     const dataFine = t.dataFine ? new Date(t.dataFine).toLocaleDateString() : 'N/A';
                     
                     const badgeClass = t.stato === 'ATTIVO' ? 'bg-success' : 'bg-secondary';
-                    const localiList = t.localiIds && t.localiIds.length > 0 ? t.localiIds.join(', ') : 'Tutti';
-
                     let btnIscrizione = '';
                     if (t.stato === 'ATTIVO') {
-                        btnIscrizione = `<button class="btn btn-sm btn-outline-success ms-1 fw-bold" onclick="apriModalIscrizione('${t.id}', '${t.nome}', '${localiList}')">
+                        btnIscrizione = `<button class="btn btn-sm btn-outline-success ms-1 fw-bold" onclick="apriModalIscrizione('${t.id}', '${t.nome}')">
                             <i class="bi bi-person-plus-fill me-1"></i> Iscrivi
                         </button>`;
                     }
@@ -269,7 +293,7 @@
     };
 
     const iscrizioneModal = new bootstrap.Modal(document.getElementById('iscrizioneModal'));
-    window.apriModalIscrizione = (torneoId, nomeTorneo, localiList) => {
+    window.apriModalIscrizione = (torneoId, nomeTorneo) => {
         document.getElementById('iscrizTorneoId').value = torneoId;
         document.getElementById('iscrizTorneoNome').value = nomeTorneo;
         document.getElementById('iscrizUtenteId').value = "";

@@ -11,5 +11,5 @@ public record TorneoCreateInput(
     @NotBlank String giocoId,
     @NotNull OffsetDateTime dataInizio,
     @NotNull OffsetDateTime dataFine,
-    @NotEmpty List<String> localiId
+    List<String> localiId
 ) {}

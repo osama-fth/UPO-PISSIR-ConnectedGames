@@ -47,6 +47,14 @@ function initDatabase() {
         ON partite_buffer(sincronizzata) WHERE sincronizzata = 0
     `);
 
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS installazioni_cache (
+            id TEXT PRIMARY KEY,
+            gioco_id TEXT NOT NULL,
+            nome TEXT NOT NULL
+        )
+    `);
+
     console.log(`[SQLite ${LOCALE_ID}] Database inizializzato: ${DB_PATH}`);
     return db;
 }
@@ -145,6 +153,28 @@ function getStatsLocale() {
     };
 }
 
+function salvaInstallazioniCache(list) {
+    if (!db || !list) return;
+    const deleteStmt = db.prepare(`DELETE FROM installazioni_cache`);
+    deleteStmt.run();
+    const insertStmt = db.prepare(`
+        INSERT INTO installazioni_cache (id, gioco_id, nome) VALUES (?, ?, ?)
+    `);
+    const transaction = db.transaction((items) => {
+        for (const item of items) {
+            insertStmt.run(item.id, item.giocoId || item.tipoGioco.toLowerCase(), item.nome || item.tipoGioco);
+        }
+    });
+    transaction(list);
+    console.log(`[SQLite ${LOCALE_ID}] Cache installazioni aggiornata (${list.length} giochi)`);
+}
+
+function getInstallazioniCache() {
+    if (!db) return [];
+    const stmt = db.prepare(`SELECT id, gioco_id as giocoId, nome FROM installazioni_cache`);
+    return stmt.all();
+}
+
 module.exports = {
     initDatabase,
     salvaPartita,
@@ -153,5 +183,7 @@ module.exports = {
     getPartiteAttiveSalvate,
     getPartiteNonSincronizzate,
     segnaComeSincronizzate,
-    getStatsLocale
+    getStatsLocale,
+    salvaInstallazioniCache,
+    getInstallazioniCache
 };

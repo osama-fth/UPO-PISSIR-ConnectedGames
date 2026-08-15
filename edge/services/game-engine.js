@@ -6,28 +6,68 @@ const {
     salvaPartita, 
     salvaPartitaAttiva, 
     rimuoviPartitaAttiva, 
-    getPartiteAttiveSalvate 
+    getPartiteAttiveSalvate,
+    salvaInstallazioniCache,
+    getInstallazioniCache
 } = require('./sqlite-db');
+const { clientCredentialsAuth } = require('./oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
+const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
 
 const activeMatches = new Map();
+const installazioniLocaleMap = new Map();
 
-const INSTALLAZIONI = {
-    'BAR_BELVEDERE': {
-        'calciobalilla': 'calciobalilla-1',
-        'freccette': 'freccette-1'
-    },
-    'SALA_GIOCHI_ROMA': {
-        'calciobalilla': 'calciobalilla-2',
-        'freccette': 'freccette-2'
+// Caricamento dinamico installazioni con fallback offline su SQLite
+async function initInstallazioni() {
+    try {
+        const authData = await clientCredentialsAuth();
+        const res = await fetch(`${CENTRAL_SERVER_URL}/api/v1/locali/${LOCALE_ID}/giochi`, {
+            headers: { 'Authorization': `Bearer ${authData.accessToken}` }
+        });
+        if (res.ok) {
+            const giochi = await res.json();
+            installazioniLocaleMap.clear();
+            giochi.forEach(g => {
+                const gId = (g.tipoGioco || '').toLowerCase();
+                installazioniLocaleMap.set(gId, g.id);
+            });
+            salvaInstallazioniCache(giochi);
+            console.log(`[GameEngine ${LOCALE_ID}] Installazioni caricate dal Server Centrale (${installazioniLocaleMap.size} attive)`);
+            return;
+        }
+    } catch (err) {
+        console.warn(`[GameEngine ${LOCALE_ID}] Server centrale non raggiungibile per fetch installazioni (${err.message}). Tentativo caricamento da cache SQLite...`);
     }
-};
+
+    // Fallback cache SQLite
+    const cached = getInstallazioniCache();
+    if (cached && cached.length > 0) {
+        installazioniLocaleMap.clear();
+        cached.forEach(g => {
+            installazioniLocaleMap.set((g.giocoId || '').toLowerCase(), g.id);
+        });
+        console.log(`[GameEngine ${LOCALE_ID}] Installazioni caricate da cache SQLite (${installazioniLocaleMap.size} attive)`);
+    } else {
+        // Default dinamico fallback se la cache è vuota
+        installazioniLocaleMap.set('calciobalilla', `calciobalilla-${LOCALE_ID}`);
+        installazioniLocaleMap.set('freccette', `freccette-${LOCALE_ID}`);
+        console.log(`[GameEngine ${LOCALE_ID}] Usato fallback dinamico default per installazioni`);
+    }
+}
+
+function getInstallazioni() {
+    const list = [];
+    installazioniLocaleMap.forEach((instId, giocoId) => {
+        list.push({ id: instId, giocoId, nome: giocoId.charAt(0).toUpperCase() + giocoId.slice(1) });
+    });
+    return list;
+}
 
 // Inizializza lo stato in memoria ed il salvataggio immediato della partita in corso su SQLite
 function creaPartita(giocoId, giocatore1, giocatore2, torneoId = null) {
     const matchId = uuidv4();
-    const installazioneId = INSTALLAZIONI[LOCALE_ID]?.[giocoId];
+    const installazioneId = installazioniLocaleMap.get(giocoId.toLowerCase()) || `${giocoId}-${LOCALE_ID}`;
 
     if (!installazioneId) {
         throw new Error(`Gioco "${giocoId}" non installato nel locale ${LOCALE_ID}`);
@@ -311,6 +351,8 @@ getMqttEvents().on('evento', ({ topic, payload }) => {
 });
 
 module.exports = {
+    initInstallazioni,
+    getInstallazioni,
     creaPartita,
     processaEvento,
     pubblicaEventoMqtt,

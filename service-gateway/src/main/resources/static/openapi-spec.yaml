@@ -24,6 +24,26 @@ tags:
 
 paths:
 
+  /locali:
+    get:
+      tags:
+        - "Sincronizzazione & Edge"
+      summary: Elenco dei locali censiti
+      description: Recupera l'elenco completo di tutti i locali fisici registrati sulla piattaforma.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista dei locali recuperata con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocaleResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
   /locali/{localeId}/partite/sincronizza:
     post:
       tags:
@@ -856,6 +876,27 @@ components:
         nomeTorneo:
           type: string
           nullable: true
+
+    LocaleResponse:
+      type: object
+      required:
+        - id
+        - nome
+        - tipo
+        - indirizzo
+      properties:
+        id:
+          type: string
+          example: "BAR_BELVEDERE"
+        nome:
+          type: string
+          example: "Bar Belvedere"
+        tipo:
+          type: string
+          example: "PUBBLICO"
+        indirizzo:
+          type: string
+          example: "Via Roma 42, Alessandria"
 
     UtenteResponse:
       type: object

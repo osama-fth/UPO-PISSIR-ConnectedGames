@@ -125,7 +125,7 @@
             <h2 style="font-size: 1.3rem; font-weight: 700;"><i class="bi bi-plus-circle text-success"></i> Crea Nuovo Torneo</h2>
         </div>
         <form id="form-crea-torneo" onsubmit="creaTorneo(event)">
-            <div class="grid-3" style="gap: 1rem; margin-bottom: 1rem;">
+            <div class="grid-2" style="gap: 1rem; margin-bottom: 1rem;">
                 <div>
                     <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Nome Torneo</label>
                     <input type="text" id="t-nome" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;" placeholder="es. Torneo Estivo 2026">
@@ -136,17 +136,6 @@
                         <option value="calciobalilla">Calciobalilla</option>
                         <option value="freccette">Freccette</option>
                     </select>
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Locali</label>
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 0.85rem; font-weight: 400; display: flex; align-items: center; gap: 6px;">
-                            <input type="checkbox" name="localiIds" value="BAR_BELVEDERE" <%- localeId === 'BAR_BELVEDERE' ? 'checked' : '' %>> Bar Belvedere
-                        </label>
-                        <label style="font-size: 0.85rem; font-weight: 400; display: flex; align-items: center; gap: 6px;">
-                            <input type="checkbox" name="localiIds" value="SALA_GIOCHI_ROMA" <%- localeId === 'SALA_GIOCHI_ROMA' ? 'checked' : '' %>> Sala Giochi Roma
-                        </label>
-                    </div>
                 </div>
             </div>
             <div class="grid-3" style="gap: 1rem; margin-bottom: 1rem;">
@@ -563,20 +552,12 @@
         const giocoId = document.getElementById('t-gioco').value;
         const dataInizio = document.getElementById('t-inizio').value;
         const dataFine = document.getElementById('t-fine').value;
-        const localiCheckboxes = document.querySelectorAll('input[name="localiIds"]:checked');
-        const localiIds = Array.from(localiCheckboxes).map(cb => cb.value);
-
-        if (localiIds.length === 0) {
-            alertBox.className = 'alert alert-warning mt-2';
-            alertBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Seleziona almeno un locale.';
-            return;
-        }
 
         try {
             const res = await fetch('/dashboard/tornei/crea', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome, giocoId, dataInizio, dataFine, localiIds })
+                body: JSON.stringify({ nome, giocoId, dataInizio, dataFine })
             });
             const data = await res.json();
             if (res.ok) {

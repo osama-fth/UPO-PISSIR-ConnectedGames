@@ -6,9 +6,6 @@
         <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;">
             <i class="bi bi-speedometer2"></i> Dashboard
         </h1>
-        <p class="text-muted" style="font-size: 0.9rem;">
-            Pannello di controllo — <%= localeId %>
-        </p>
     </div>
     <a href="/" class="btn btn-secondary"><i class="bi bi-house"></i> Home</a>
 </div>
@@ -25,18 +22,6 @@
                 <i class="bi bi-shield-check"></i>
             <% } %>
             <%= user.username %>
-        </div>
-        <div class="mt-1">
-            <% if (user.isGuest) { %>
-                <span class="badge badge-guest">Ospite</span>
-            <% } else { %>
-                <span class="badge badge-success">Autenticato</span>
-            <% } %>
-            <% if (user.roles && user.roles.length > 0) { %>
-                <% user.roles.forEach(function(role) { %>
-                    <span class="badge badge-info"><%= role %></span>
-                <% }); %>
-            <% } %>
         </div>
         <% if (user.email) { %>
             <p class="text-muted text-sm mt-1"><%= user.email %></p>
@@ -165,7 +150,6 @@
     <div class="card mb-3" style="border-top: 4px solid var(--accent-secondary); background: linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, transparent 100%);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
             <h2 style="font-size: 1.4rem; font-weight: 700; margin: 0;"><i class="bi bi-bar-chart-line text-cyan"></i> Le tue Statistiche Personali</h2>
-            <span class="badge badge-info" id="user-filter-badge"><i class="bi bi-funnel"></i> Filtro: Tutti i Tempi</span>
         </div>
 
         <!-- Control Bar Filtri Giocatore -->
@@ -686,12 +670,6 @@
 
         const selectElem = document.getElementById('user-gioco-select');
         const giocoFilter = selectElem ? selectElem.value : '';
-
-        // Badge update
-        const badgeEl = document.getElementById('user-filter-badge');
-        let labelPeriodo = giorni ? ('Ultimi ' + giorni + ' Giorni') : 'Tutti i Tempi';
-        let labelGioco = giocoFilter ? (' • ' + giocoFilter) : '';
-        if (badgeEl) badgeEl.innerHTML = '<i class="bi bi-funnel"></i> Filtro: ' + labelPeriodo + labelGioco;
 
         if (!rawPlayerStats || !rawPlayerStats.ultimePartite) return;
 

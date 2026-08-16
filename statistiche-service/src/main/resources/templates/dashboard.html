@@ -31,7 +31,6 @@
             border: 1px solid rgba(100, 116, 139, 0.4) !important;
         }
         .chart-container { position: relative; height: 240px; width: 100%; }
-        .hint-clickable { font-size: 0.75rem; color: var(--accent-secondary); opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -50,10 +49,8 @@
             <div class="col d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                     <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i> Dashboard Super Admin</h2>
-                    <p class="text-muted mb-0">Monitoraggio prestazioni in tempo reale. Clicca su qualsiasi elemento per il dettaglio interattivo.</p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary px-3 py-2 fs-6"><i class="bi bi-shield-check me-1"></i> Admin Piattaforma</span>
                     <button class="btn btn-sm btn-outline-light" onclick="caricaDatiFiltrati()"><i class="bi bi-arrow-clockwise me-1"></i> Aggiorna</button>
                 </div>
             </div>
@@ -81,10 +78,6 @@
                         </select>
                     </div>
                 </div>
-
-                <div id="filterStatusBadge">
-                    <span class="badge bg-success-subtle text-success border border-success px-3 py-2"><i class="bi bi-check-circle me-1"></i> Filtro attivo: Tutti i Tempi</span>
-                </div>
             </div>
         </div>
 
@@ -93,10 +86,9 @@
             <div class="col-md-4 col-lg-2">
                 <div class="card card-stat border-0 shadow-sm text-white bg-gradient-primary h-100 clickable-row" onclick="scrollToElement('section-locali')">
                     <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
-                        <i class="bi bi-joystick fs-2 mb-1 text-info"></i>
+                        <i class="bi bi-joystick fs-2 mb-1 text-primary"></i>
                         <span class="text-secondary small">Partite Giocate</span>
                         <h3 class="fw-bold mb-0 mt-1" id="kpiTotalePartite" th:text="${stats.totalePartiteGiocate}">0</h3>
-                        <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Clicca per i locali</span>
                     </div>
                 </div>
             </div>
@@ -107,7 +99,6 @@
                         <i class="bi bi-people fs-2 mb-1 text-success"></i>
                         <span class="text-secondary small">Giocatori Attivi</span>
                         <h3 class="fw-bold mb-0 mt-1" id="kpiGiocatoriAttivi" th:text="${stats.totaleGiocatoriAttivi}">0</h3>
-                        <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Solo ruoli Giocatore</span>
                     </div>
                 </div>
             </div>
@@ -118,7 +109,6 @@
                         <i class="bi bi-trophy fs-2 mb-1 text-warning"></i>
                         <span class="text-secondary small">Tornei Attivi</span>
                         <h3 class="fw-bold mb-0 mt-1" id="kpiTorneiAttivi" th:text="${stats.totaleTorneiAttivi}">0</h3>
-                        <span class="hint-clickable mt-1"><i class="bi bi-filter-circle"></i> Filtra attivi</span>
                     </div>
                 </div>
             </div>
@@ -129,7 +119,6 @@
                         <i class="bi bi-bullseye fs-2 mb-1 text-cyan"></i>
                         <span class="text-secondary small">Punti / Gol Totali</span>
                         <h3 class="fw-bold mb-0 mt-1" id="kpiTotalePunti" th:text="${stats.totalePuntiSegnati}">0</h3>
-                        <span class="hint-clickable mt-1"><i class="bi bi-hand-index-thumb"></i> Clicca per i giochi</span>
                     </div>
                 </div>
             </div>
@@ -150,7 +139,6 @@
                         <i class="bi bi-check-circle-fill fs-2 mb-1 text-slate"></i>
                         <span class="text-secondary small">Tornei Conclusi</span>
                         <h3 class="fw-bold mb-0 mt-1" id="kpiTorneiConclusi" th:text="${stats.totaleTorneiConclusi}">0</h3>
-                        <span class="hint-clickable mt-1"><i class="bi bi-filter-circle"></i> Filtra conclusi</span>
                     </div>
                 </div>
             </div>
@@ -238,7 +226,6 @@
                                     </td>
                                     <td>
                                         <strong th:text="${player.username}">Username</strong>
-                                        <br><small class="text-muted" th:text="${player.utenteId}">UUID</small>
                                     </td>
                                     <td class="text-center">
                                         <span class="badge bg-success rounded-pill px-3 py-1" th:text="${player.partiteVinte}">0</span>
@@ -407,7 +394,7 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="modalUtenteTitle"><i class="bi bi-person-badge text-primary me-2"></i> Dettaglio Giocatore</h5>
+                <h5 class="modal-title fw-bold" id="modalUtenteTitle"><i class="bi bi-person-badge text-info me-2"></i> Dettaglio Giocatore</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -623,18 +610,9 @@
         caricaDatiFiltrati();
     }
 
-    function updateFilterStatusBadge(giorni, giocoId) {
-        const badgeEl = document.getElementById('filterStatusBadge');
-        let labelPeriodo = giorni ? ('Ultimi ' + giorni + ' giorni') : 'Tutti i Tempi';
-        let labelGioco = giocoId ? (' • ' + giocoId) : '';
-        badgeEl.innerHTML = '<span class="badge bg-success-subtle text-success border border-success px-3 py-2"><i class="bi bi-check-circle me-1"></i> Filtro attivo: ' + labelPeriodo + labelGioco + '</span>';
-    }
-
     function caricaDatiFiltrati() {
         const giocoSelect = document.getElementById('giocoFilterSelect');
         const giocoId = giocoSelect ? giocoSelect.value : '';
-        
-        updateFilterStatusBadge(filtroGiorni, giocoId);
 
         let url = '/api/v1/statistiche?';
         if (filtroGiorni) url += 'giorni=' + filtroGiorni + '&';
@@ -659,7 +637,9 @@
                 renderGiochiChart(data.giochiPiuUtilizzati || []);
                 renderLocaliChart(data.localiPiuAttivi || []);
 
-                // Aggiorna Hall of Fame
+                // Aggiorna Tabelle Dinamiche
+                renderLocaliTable(data.localiPiuAttivi || []);
+                renderGiochiTable(data.giochiPiuUtilizzati || []);
                 renderTopPlayersTable(data.topGiocatoriVittorie || []);
             })
             .catch(err => {
@@ -778,6 +758,61 @@
         });
     }
 
+    // TABELLA LOCALl DYNAMIC RENDER
+    function renderLocaliTable(locali) {
+        const tbody = document.querySelector('#section-locali table tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        if (!locali || locali.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Nessun dato disponibile sui locali nel periodo selezionato.</td></tr>';
+            return;
+        }
+
+        locali.forEach((l, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = 'clickable-row';
+            tr.setAttribute('data-id', l.localeId);
+            tr.setAttribute('data-nome', l.nomeLocale);
+            tr.onclick = () => apriModalLocale(l.localeId, l.nomeLocale);
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td><strong>${l.nomeLocale}</strong></td>
+                <td><code><i class="bi bi-geo-alt me-1"></i><span>${l.localeId}</span></code></td>
+                <td class="text-end"><span class="badge bg-primary rounded-pill px-3 py-2">${l.partiteGiocate}</span></td>
+                <td class="text-center">
+                    <button class="btn btn-xs btn-outline-light rounded-circle"><i class="bi bi-eye"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // TABELLA GIOCHI DYNAMIC RENDER
+    function renderGiochiTable(giochi) {
+        const tbody = document.querySelector('#section-giochi table tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        if (!giochi || giochi.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Nessun dato disponibile sui giochi nel periodo selezionato.</td></tr>';
+            return;
+        }
+
+        giochi.forEach((g, idx) => {
+            const tr = document.createElement('tr');
+            const icon = (g.giocoTipo && g.giocoTipo.toLowerCase() === 'calciobalilla') 
+                ? '<i class="bi bi-controller text-danger me-2"></i>' 
+                : '<i class="bi bi-bullseye text-warning me-2"></i>';
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${icon}<strong class="text-capitalize">${g.giocoTipo}</strong></td>
+                <td class="text-end"><span class="badge bg-success rounded-pill px-3 py-2">${g.partiteGiocate}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
     // TABELLA TOP PLAYERS DYNAMIC RENDER
     function renderTopPlayersTable(players) {
         const tbody = document.querySelector('#section-giocatori table tbody');
@@ -805,7 +840,6 @@
                 <td><span class="fw-bold">${rankBadge}</span></td>
                 <td>
                     <strong>${player.username}</strong>
-                    <br><small class="text-muted">${player.utenteId}</small>
                 </td>
                 <td class="text-center">
                     <span class="badge bg-success rounded-pill px-3 py-1">${player.partiteVinte}</span>

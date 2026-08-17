@@ -122,7 +122,8 @@ router.get('/dashboard', requireAuth, async (req, res) => {
                 id: p.id,
                 installazione_id: p.installazioneId,
                 locale_id: p.localeId,
-                gioco_id: p.giocoId || (p.nomeGioco ? p.nomeGioco.toLowerCase() : 'calciobalilla'),
+                gioco_id: (p.giocoId || p.nomeGioco || p.installazioneId || '').toLowerCase().includes('biliardo') ? 'biliardo' :
+                          (p.giocoId || p.nomeGioco || p.installazioneId || '').toLowerCase().includes('freccette') ? 'freccette' : 'calciobalilla',
                 giocatore_1_id: p.giocatore1Id,
                 giocatore_1_username: p.giocatore1Username,
                 giocatore_2_id: p.giocatore2Id,
@@ -185,19 +186,24 @@ router.get('/dashboard', requireAuth, async (req, res) => {
                 const detailData = await detailRes.json();
                 let ultimePartiteFormatted = [];
                 try {
-                    const partiteRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/utenti/${user.id}/partite?page=0&size=5`, {
+                    const partiteRes = await fetch(`${CENTRAL_SERVER_URL}/api/v1/utenti/${user.id}/partite?page=0&size=100`, {
                         headers: { 'Authorization': `Bearer ${req.session.tokenSet.accessToken}` }
                     });
                     if (partiteRes.ok) {
                         const partitePage = await partiteRes.json();
-                        ultimePartiteFormatted = (partitePage.content || []).map(p => ({
-                            giocatore_1_id: p.giocatore1Id,
-                            giocatore_2_id: p.giocatore2Id,
-                            punteggio_1: p.punteggio1,
-                            punteggio_2: p.punteggio2,
-                            gioco_id: p.nomeGioco || p.installazioneId || 'partita',
-                            data_fine: p.dataFine
-                        }));
+                        ultimePartiteFormatted = (partitePage.content || []).map(p => {
+                            const rawId = (p.giocoId || p.nomeGioco || p.installazioneId || '').toLowerCase();
+                            const gId = rawId.includes('biliardo') ? 'biliardo' :
+                                        rawId.includes('freccette') ? 'freccette' : 'calciobalilla';
+                            return {
+                                giocatore_1_id: p.giocatore1Id,
+                                giocatore_2_id: p.giocatore2Id,
+                                punteggio_1: p.punteggio1,
+                                punteggio_2: p.punteggio2,
+                                gioco_id: gId,
+                                data_fine: p.dataFine
+                            };
+                        });
                     }
                 } catch (errPartite) {
                     console.error(`[Dashboard ${LOCALE_ID}] Errore fetch ultime partite:`, errPartite.message);

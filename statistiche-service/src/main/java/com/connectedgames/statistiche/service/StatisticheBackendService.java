@@ -31,10 +31,11 @@ public class StatisticheBackendService {
                 statisticheRepository.getTotalePuntiSegnati(giorni, giocoId),
                 statisticheRepository.getDurataMediaMinuti(giorni, giocoId),
                 statisticheRepository.getLocaliPiuAttivi(5, giorni, giocoId),
-                statisticheRepository.getGiochiPiuUtilizzati(5, giorni),
+                statisticheRepository.getGiochiPiuUtilizzati(5, giorni, giocoId),
                 statisticheRepository.getTopGiocatoriVittorie(5, giorni, giocoId),
                 statisticheRepository.getTorneiStat(5),
-                statisticheRepository.getTrendPartiteTempo(giorni, giocoId)
+                statisticheRepository.getTrendPartiteTempo(giorni, giocoId),
+                statisticheRepository.getTuttiIGiochi()
         );
     }
 

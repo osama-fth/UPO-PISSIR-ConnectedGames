@@ -118,8 +118,9 @@
                 <div>
                     <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase;">Gioco</label>
                     <select id="t-gioco" required style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;">
-                        <option value="calciobalilla">Calciobalilla</option>
-                        <option value="freccette">Freccette</option>
+                        <% installazioni.forEach(function(inst) { %>
+                            <option value="<%= inst.giocoId %>"><%= inst.nome %></option>
+                        <% }); %>
                     </select>
                 </div>
             </div>
@@ -167,8 +168,9 @@
                 <span class="text-muted text-sm" style="font-weight: 600; text-transform: uppercase;"><i class="bi bi-controller"></i> Gioco:</span>
                 <select id="user-gioco-select" onchange="filterUserStats(currentUserPeriod, null)" style="padding: 4px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem; outline: none;">
                     <option value="">Tutti i Giochi</option>
-                    <option value="calciobalilla">Calciobalilla</option>
-                    <option value="freccette">Freccette</option>
+                    <% installazioni.forEach(function(inst) { %>
+                        <option value="<%= inst.giocoId %>"><%= inst.nome %></option>
+                    <% }); %>
                 </select>
             </div>
         </div>
@@ -235,6 +237,8 @@
                         <div style="font-weight: 600; text-transform: capitalize;">
                             <% if (p.gioco_id === 'calciobalilla') { %>
                                 <i class="bi bi-dribbble"></i>
+                            <% } else if (p.gioco_id === 'biliardo') { %>
+                                <i class="bi bi-circle-fill"></i>
                             <% } else { %>
                                 <i class="bi bi-bullseye"></i>
                             <% } %>
@@ -326,6 +330,8 @@
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
                         <% if (g.gioco_id === 'calciobalilla') { %>
                             <i class="bi bi-dribbble" style="font-size: 1.5rem; color: var(--accent-primary);"></i>
+                        <% } else if (g.gioco_id === 'biliardo') { %>
+                            <i class="bi bi-circle-fill" style="font-size: 1.5rem; color: #10b981;"></i>
                         <% } else { %>
                             <i class="bi bi-bullseye" style="font-size: 1.5rem; color: var(--danger);"></i>
                         <% } %>
@@ -371,6 +377,8 @@
                             <td style="padding: 10px; font-weight: 600;">
                                 <% if (p.gioco_id === 'calciobalilla') { %>
                                     <i class="bi bi-dribbble"></i>
+                                <% } else if (p.gioco_id === 'biliardo') { %>
+                                    <i class="bi bi-circle-fill"></i>
                                 <% } else { %>
                                     <i class="bi bi-bullseye"></i>
                                 <% } %>
@@ -684,7 +692,9 @@
             }
             // Filter by game
             if (giocoFilter && p.gioco_id) {
-                if (p.gioco_id.toLowerCase() !== giocoFilter.toLowerCase()) return false;
+                const g = p.gioco_id.toLowerCase();
+                const f = giocoFilter.toLowerCase();
+                if (g !== f && !g.includes(f) && !f.includes(g)) return false;
             }
             return true;
         });
@@ -728,7 +738,7 @@
                 filteredMatches.forEach(p => {
                     const isP1 = p.giocatore_1_id === currentUserId;
                     const won = isP1 ? (p.punteggio_1 > p.punteggio_2) : (p.punteggio_2 > p.punteggio_1);
-                    const icon = (p.gioco_id === 'calciobalilla') ? '<i class="bi bi-dribbble"></i>' : '<i class="bi bi-bullseye"></i>';
+                    const icon = (p.gioco_id === 'calciobalilla') ? '<i class="bi bi-dribbble"></i>' : (p.gioco_id === 'biliardo' ? '<i class="bi bi-circle-fill"></i>' : '<i class="bi bi-bullseye"></i>');
                     const dateStr = new Date(p.data_fine).toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
 
                     html += `<div class="user-match-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">

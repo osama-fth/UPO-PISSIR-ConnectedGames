@@ -6,13 +6,21 @@
         <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;">
             <% if (match.giocoId === 'calciobalilla') { %>
                 <i class="bi bi-dribbble"></i>
+            <% } else if (match.giocoId === 'biliardo') { %>
+                <i class="bi bi-circle-fill" style="font-size: 1.4rem;"></i>
             <% } else { %>
                 <i class="bi bi-bullseye"></i>
             <% } %>
             Partita in Corso
         </h1>
         <p class="text-muted" style="font-size: 0.85rem;">
-            <%= match.giocoId === 'calciobalilla' ? 'Calciobalilla — Primo a 10 gol' : 'Freccette — 301' %>
+            <% if (match.giocoId === 'calciobalilla') { %>
+                Calciobalilla — Primo a 10 gol
+            <% } else if (match.giocoId === 'biliardo') { %>
+                Biliardo 8-Ball — Imbuca le tue 7 palle + la nera
+            <% } else { %>
+                Freccette — 301
+            <% } %>
             · <%= localeId %>
         </p>
     </div>
@@ -32,15 +40,20 @@
 <div class="card" style="margin-bottom: 2rem; padding: 2rem; text-align: center; border-top: 4px solid var(--accent-primary); background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);" id="scoreboard">
     <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap;">
         <!-- Player 1 -->
-        <div style="flex: 1; min-width: 140px;" id="player1-section">
-            <div class="user-avatar" style="width: 56px; height: 56px; font-size: 1.5rem; margin: 0 auto 0.75rem;">
+        <div style="flex: 1; min-width: 140px; transition: all 0.3s ease;" id="player1-section">
+            <div class="user-avatar" style="width: 56px; height: 56px; font-size: 1.5rem; margin: 0 auto 0.75rem; transition: all 0.3s ease;" id="avatar1">
                 <%= match.giocatore1.username.charAt(0).toUpperCase() %>
             </div>
-            <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;"><%= match.giocatore1.username %></div>
-            <div class="text-muted text-sm">Giocatore 1</div>
+            <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;" id="name1"><%= match.giocatore1.username %></div>
+            <div class="text-muted text-sm" id="label1">Giocatore 1</div>
             <div style="font-size: 4rem; font-weight: 900; color: var(--accent-primary); line-height: 1.1; margin-top: 0.5rem; font-variant-numeric: tabular-nums;" id="score1">
                 <%= match.punteggio1 %>
             </div>
+            <% if (match.giocoId === 'biliardo') { %>
+            <div id="turn-arrow1" style="margin-top: 0.4rem; transition: opacity 0.3s; opacity: <%= match.turnoCorrente === 1 ? '1' : '0' %>;">
+                <i class="bi bi-chevron-right" style="color: #3b82f6; font-size: 0.9rem; font-weight: 700;"></i>
+            </div>
+            <% } %>
         </div>
 
         <!-- VS Divider -->
@@ -49,15 +62,20 @@
         </div>
 
         <!-- Player 2 -->
-        <div style="flex: 1; min-width: 140px;" id="player2-section">
-            <div class="user-avatar" style="width: 56px; height: 56px; font-size: 1.5rem; margin: 0 auto 0.75rem; background: linear-gradient(135deg, #ef4444, #f59e0b);">
+        <div style="flex: 1; min-width: 140px; transition: all 0.3s ease;" id="player2-section">
+            <div class="user-avatar" style="width: 56px; height: 56px; font-size: 1.5rem; margin: 0 auto 0.75rem; background: linear-gradient(135deg, #ef4444, #f59e0b); transition: all 0.3s ease;" id="avatar2">
                 <%= match.giocatore2.username.charAt(0).toUpperCase() %>
             </div>
-            <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;"><%= match.giocatore2.username %></div>
-            <div class="text-muted text-sm">Giocatore 2</div>
+            <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;" id="name2"><%= match.giocatore2.username %></div>
+            <div class="text-muted text-sm" id="label2">Giocatore 2</div>
             <div style="font-size: 4rem; font-weight: 900; color: var(--danger); line-height: 1.1; margin-top: 0.5rem; font-variant-numeric: tabular-nums;" id="score2">
                 <%= match.punteggio2 %>
             </div>
+            <% if (match.giocoId === 'biliardo') { %>
+            <div id="turn-arrow2" style="margin-top: 0.4rem; transition: opacity 0.3s; opacity: <%= match.turnoCorrente === 2 ? '1' : '0' %>;">
+                <i class="bi bi-chevron-left" style="color: #f97316; font-size: 0.9rem; font-weight: 700;"></i>
+            </div>
+            <% } %>
         </div>
     </div>
 </div>
@@ -133,7 +151,106 @@
     </div>
 </div>
 
+<% } else if (match.giocoId === 'biliardo') { %>
+
+<div class="card" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+    <div class="card-subtitle" style="text-align: center; margin-bottom: 1rem;">TAVOLO — CLICCA UNA PALLA PER IMBUCARLA</div>
+
+    <div id="pool-table" style="
+        position: relative;
+        background: linear-gradient(145deg, #166534 0%, #15803d 40%, #166534 100%);
+        border: 14px solid #92400e;
+        border-radius: 18px;
+        padding: 28px 36px;
+        box-shadow: 0 0 0 3px #78350f, inset 0 2px 20px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.5);
+        max-width: 680px;
+        margin: 0 auto;
+        user-select: none;
+    ">
+        <div class="pool-pocket" style="top: -10px; left: -10px;"></div>
+        <div class="pool-pocket" style="top: -10px; left: 50%; transform: translateX(-50%);"></div>
+        <div class="pool-pocket" style="top: -10px; right: -10px;"></div>
+        <div class="pool-pocket" style="bottom: -10px; left: -10px;"></div>
+        <div class="pool-pocket" style="bottom: -10px; left: 50%; transform: translateX(-50%);"></div>
+        <div class="pool-pocket" style="bottom: -10px; right: -10px;"></div>
+
+        <div style="margin-bottom: 0.5rem;">
+            <div id="label-g1" style="
+                font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+                margin-bottom: 8px; text-align: center; font-weight: 700;
+                color: <%= match.turnoCorrente === 1 ? '#93c5fd' : 'rgba(255,255,255,0.4)' %>;
+                transition: color 0.3s;
+            ">
+                <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> <%= match.giocatore1.username %>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <% for (let p = 1; p <= 7; p++) { %>
+                    <% const rimasta1 = match.palleRimanenti1.includes(p); %>
+                    <button
+                        id="ball-<%= p %>"
+                        class="pool-ball ball-p1"
+                        onclick="sendImbucata(<%= p %>)"
+                        title="Palla <%= p %> (<%=  match.giocatore1.username %>)"
+                        style="<%= rimasta1 ? '' : 'opacity:0;pointer-events:none;transform:scale(0);' %>"
+                    >
+                        <span class="ball-number"><%= p %></span>
+                    </button>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Linea mediana + Palla 8 -->
+        <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0;">
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.15);"></div>
+            <button
+                id="ball-8"
+                class="pool-ball ball-8"
+                onclick="sendImbucata(8)"
+                title="Palla 8 — Nera"
+                style="<%= match.palla8InGioco ? '' : 'opacity:0;pointer-events:none;transform:scale(0);' %>"
+            >
+                <span class="ball-number">8</span>
+            </button>
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.15);"></div>
+        </div>
+
+        <div>
+            <div id="label-g2" style="
+                font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+                margin-bottom: 8px; text-align: center; font-weight: 700;
+                color: <%= match.turnoCorrente === 2 ? '#fdba74' : 'rgba(255,255,255,0.4)' %>;
+                transition: color 0.3s;
+            ">
+                <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> <%= match.giocatore2.username %>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <% for (let p = 9; p <= 15; p++) { %>
+                    <% const rimasta2 = match.palleRimanenti2.includes(p); %>
+                    <button
+                        id="ball-<%= p %>"
+                        class="pool-ball ball-p2"
+                        onclick="sendImbucata(<%= p %>)"
+                        title="Palla <%= p %> (<%= match.giocatore2.username %>)"
+                        style="<%= rimasta2 ? '' : 'opacity:0;pointer-events:none;transform:scale(0);' %>"
+                    >
+                        <span class="ball-number"><%= p %></span>
+                    </button>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pulsante FALLO -->
+    <div style="text-align: center; margin-top: 1.25rem;">
+        <button class="btn btn-danger" onclick="sendFallo()" id="btn-fallo"
+            style="min-width: 180px; font-size: 1rem; padding: 12px 28px; font-weight: 700;">
+            <i class="bi bi-exclamation-circle"></i> FALLO — Cambio Turno
+        </button>
+    </div>
+</div>
+
 <% } %>
+
 
 <!-- Event Log -->
 <details class="mt-2" style="color: var(--text-muted); font-size: 0.75rem;">
@@ -176,6 +293,69 @@
         50% { transform: scale(1.2); color: var(--warning); }
         100% { transform: scale(1); }
     }
+
+    /* ---- Biliardo ---- */
+    .pool-pocket {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        background: radial-gradient(circle, #0a0a0a 60%, #1c1c1c 100%);
+        border-radius: 50%;
+        border: 2px solid #78350f;
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+        z-index: 2;
+    }
+    .pool-ball {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+            inset -5px -5px 12px rgba(0,0,0,0.4),
+            inset 3px 3px 8px rgba(255,255,255,0.35),
+            0 4px 10px rgba(0,0,0,0.55);
+        transition: transform 0.15s ease, opacity 0.35s ease, box-shadow 0.15s ease;
+        position: relative;
+        flex-shrink: 0;
+    }
+    /* Giocatore 1 = BLU */
+    .ball-p1 {
+        background: radial-gradient(circle at 35% 30%, #60a5fa, #1d4ed8 70%, #1e3a8a);
+    }
+    /* Giocatore 2 = ARANCIONE */
+    .ball-p2 {
+        background: radial-gradient(circle at 35% 30%, #fb923c, #ea580c 70%, #9a3412);
+    }
+    /* Palla 8 = NERA */
+    .ball-8 {
+        background: radial-gradient(circle at 35% 30%, #6b7280, #111827 70%, #030712);
+    }
+    .pool-ball:hover {
+        transform: scale(1.13);
+        box-shadow:
+            inset -5px -5px 12px rgba(0,0,0,0.4),
+            inset 3px 3px 8px rgba(255,255,255,0.35),
+            0 8px 22px rgba(0,0,0,0.65);
+    }
+    .pool-ball:active { transform: scale(0.91); }
+    .pool-ball.sinking {
+        opacity: 0 !important;
+        transform: scale(0) !important;
+        pointer-events: none !important;
+        transition: opacity 0.35s ease, transform 0.35s ease !important;
+    }
+    .ball-number {
+        font-size: 0.78rem;
+        font-weight: 900;
+        color: white;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        line-height: 1;
+        pointer-events: none;
+    }
 </style>
 
 <script>
@@ -204,6 +384,21 @@
         });
     }
 
+    // Biliardo: invia evento IMBUCATA
+    function sendImbucata(palla) {
+        if (isProcessing) return;
+        // Animazione di scomparsa immediata (ottimistica)
+        const ballEl = document.getElementById('ball-' + palla);
+        if (ballEl) ballEl.classList.add('sinking');
+        sendEvent({ tipo: 'IMBUCATA', palla: palla });
+    }
+
+    // Biliardo: invia evento FALLO
+    function sendFallo() {
+        if (isProcessing) return;
+        sendEvent({ tipo: 'FALLO' });
+    }
+
     // Invia un evento di gioco al server
     async function sendEvent(evento) {
         isProcessing = true;
@@ -217,6 +412,11 @@
             const data = await res.json();
 
             if (!res.ok) {
+                // Rollback animazione se errore
+                if (evento.palla) {
+                    const ballEl = document.getElementById('ball-' + evento.palla);
+                    if (ballEl) ballEl.classList.remove('sinking');
+                }
                 logEvent('Errore: ' + (data.error || 'Sconosciuto'));
                 return;
             }
@@ -224,6 +424,10 @@
             logEvent(formatEvent(evento));
 
         } catch (err) {
+            if (evento.palla) {
+                const ballEl = document.getElementById('ball-' + evento.palla);
+                if (ballEl) ballEl.classList.remove('sinking');
+            }
             logEvent('Errore di rete: ' + err.message);
         } finally {
             isProcessing = false;
@@ -255,6 +459,52 @@
         }
     }
 
+    // Aggiorna turno, frecce, glow e palle biliardo — chiamata ogni secondo indipendentemente dal punteggio
+    function updateBiliardoTurno(data) {
+        if (!data.turnoCorrente) return;
+        const isG1Turn = data.turnoCorrente === 1;
+
+        // Frecce "TOCCA A LUI" nel scoreboard
+        const arrow1 = document.getElementById('turn-arrow1');
+        const arrow2 = document.getElementById('turn-arrow2');
+        if (arrow1) arrow1.style.opacity = isG1Turn ? '1' : '0';
+        if (arrow2) arrow2.style.opacity = isG1Turn ? '0' : '1';
+
+        // Glow bordo avatar
+        const av1 = document.getElementById('avatar1');
+        const av2 = document.getElementById('avatar2');
+        if (av1) av1.style.boxShadow = isG1Turn ? '0 0 0 3px #3b82f6, 0 0 18px rgba(59,130,246,0.6)' : 'none';
+        if (av2) av2.style.boxShadow = isG1Turn ? 'none' : '0 0 0 3px #f97316, 0 0 18px rgba(249,115,22,0.6)';
+
+        // Label sul tavolo: colore e conteggio palle rimaste
+        const lg1 = document.getElementById('label-g1');
+        const lg2 = document.getElementById('label-g2');
+        if (lg1) {
+            lg1.style.color = isG1Turn ? '#93c5fd' : 'rgba(255,255,255,0.4)';
+        }
+        if (lg2) {
+            lg2.style.color = isG1Turn ? 'rgba(255,255,255,0.4)' : '#fdba74';
+        }
+
+        // Sincronizza palle imbucate
+        if (data.palleRimanenti1 !== null) {
+            for (let p = 1; p <= 7; p++) {
+                const ballEl = document.getElementById('ball-' + p);
+                if (ballEl && !data.palleRimanenti1.includes(p)) ballEl.classList.add('sinking');
+            }
+        }
+        if (data.palleRimanenti2 !== null) {
+            for (let p = 9; p <= 15; p++) {
+                const ballEl = document.getElementById('ball-' + p);
+                if (ballEl && !data.palleRimanenti2.includes(p)) ballEl.classList.add('sinking');
+            }
+        }
+        if (data.palla8InGioco === false) {
+            const ball8 = document.getElementById('ball-8');
+            if (ball8) ball8.classList.add('sinking');
+        }
+    }
+
     // Formatta un evento per il log
     function formatEvent(evento) {
         const ts = new Date().toLocaleTimeString('it-IT');
@@ -263,6 +513,10 @@
         } else if (evento.tipo === 'TIRO') {
             const val = evento.settore === 'BULL' ? '25' : evento.settore === 'DBULL' ? '50' : (evento.settore + '×' + evento.moltiplicatore);
             return ts + ' — Tiro: ' + val + ' (in attesa di MQTT)';
+        } else if (evento.tipo === 'IMBUCATA') {
+            return ts + ' — Palla ' + evento.palla + ' imbucata';
+        } else if (evento.tipo === 'FALLO') {
+            return ts + ' — FALLO: cambio turno';
         }
         return ts + ' — Evento inviato: ' + JSON.stringify(evento);
     }
@@ -287,8 +541,8 @@
         const overlay = document.getElementById('match-ended-overlay');
         overlay.style.display = 'flex';
 
-        // Disabilita i pulsanti
-        document.querySelectorAll('.goal-btn, .dart-sector, .mult-btn').forEach(btn => {
+        // Disabilita i pulsanti di tutti i giochi
+        document.querySelectorAll('.goal-btn, .dart-sector, .mult-btn, .pool-ball, #btn-fallo').forEach(btn => {
             btn.disabled = true;
             btn.style.opacity = '0.5';
             btn.style.pointerEvents = 'none';
@@ -304,8 +558,14 @@
                 
                 const s1 = document.getElementById('score1');
                 const s2 = document.getElementById('score2');
+                // Scoreboard: aggiorna SOLO quando il punteggio cambia
                 if (s1.textContent.trim() !== String(data.punteggio1) || s2.textContent.trim() !== String(data.punteggio2)) {
                     updateScoreboard(data);
+                }
+
+                // Biliardo: turno, frecce, glow avatar e palle si aggiornano sempre ogni secondo
+                if (GIOCO === 'biliardo') {
+                    updateBiliardoTurno(data);
                 }
 
                 if (data.stato === 'TERMINATA') {

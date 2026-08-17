@@ -29,7 +29,7 @@ public class GiocoService {
         return installazioni.stream()
             .map(inst -> GiocoInstallatoResponse.of(
                 inst.getId(),
-                inst.getGioco().getNome().toUpperCase()
+                inst.getGioco().getId()
             ))
             .toList();
     }

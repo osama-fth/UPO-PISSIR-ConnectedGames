@@ -1,11 +1,11 @@
-// Motore di gioco in-memoria per Calciobalilla e Freccette con persistenza stato su SQLite e broker MQTT.
+// Motore di gioco in-memoria per Calciobalilla, Freccette e Biliardo 8-Ball con persistenza stato su SQLite e broker MQTT.
 
 const { v4: uuidv4 } = require('uuid');
 const { publishEvent, getMqttEvents } = require('./mqtt-client');
-const { 
-    salvaPartita, 
-    salvaPartitaAttiva, 
-    rimuoviPartitaAttiva, 
+const {
+    salvaPartita,
+    salvaPartitaAttiva,
+    rimuoviPartitaAttiva,
     getPartiteAttiveSalvate,
     salvaInstallazioniCache,
     getInstallazioniCache
@@ -18,6 +18,15 @@ const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gat
 const activeMatches = new Map();
 const installazioniLocaleMap = new Map();
 
+// Helper per estrarre la chiave normalizzata del gioco ('calciobalilla', 'freccette', 'biliardo')
+function normalizzaGiocoId(str) {
+    const s = (str || '').toLowerCase();
+    if (s.includes('biliardo')) return 'biliardo';
+    if (s.includes('calciobalilla')) return 'calciobalilla';
+    if (s.includes('freccette')) return 'freccette';
+    return s;
+}
+
 // Caricamento dinamico installazioni con fallback offline su SQLite
 async function initInstallazioni() {
     try {
@@ -29,7 +38,7 @@ async function initInstallazioni() {
             const giochi = await res.json();
             installazioniLocaleMap.clear();
             giochi.forEach(g => {
-                const gId = (g.tipoGioco || '').toLowerCase();
+                const gId = normalizzaGiocoId(g.tipoGioco || g.giocoId);
                 installazioniLocaleMap.set(gId, g.id);
             });
             salvaInstallazioniCache(giochi);
@@ -45,13 +54,16 @@ async function initInstallazioni() {
     if (cached && cached.length > 0) {
         installazioniLocaleMap.clear();
         cached.forEach(g => {
-            installazioniLocaleMap.set((g.giocoId || '').toLowerCase(), g.id);
+            const gId = normalizzaGiocoId(g.giocoId || g.tipoGioco);
+            installazioniLocaleMap.set(gId, g.id);
         });
         console.log(`[GameEngine ${LOCALE_ID}] Installazioni caricate da cache SQLite (${installazioniLocaleMap.size} attive)`);
     } else {
-        // Default dinamico fallback se la cache è vuota
-        installazioniLocaleMap.set('calciobalilla', `calciobalilla-${LOCALE_ID}`);
-        installazioniLocaleMap.set('freccette', `freccette-${LOCALE_ID}`);
+        // Default dinamico fallback se la cache è vuota (-1 per locale1, -2 per locale2)
+        const instSuffix = LOCALE_ID === 'SALA_GIOCHI_ROMA' ? '2' : '1';
+        installazioniLocaleMap.set('calciobalilla', `calciobalilla-${instSuffix}`);
+        installazioniLocaleMap.set('freccette', `freccette-${instSuffix}`);
+        installazioniLocaleMap.set('biliardo', `biliardo-${instSuffix}`);
         console.log(`[GameEngine ${LOCALE_ID}] Usato fallback dinamico default per installazioni`);
     }
 }
@@ -67,7 +79,9 @@ function getInstallazioni() {
 // Inizializza lo stato in memoria ed il salvataggio immediato della partita in corso su SQLite
 function creaPartita(giocoId, giocatore1, giocatore2, torneoId = null) {
     const matchId = uuidv4();
-    const installazioneId = installazioniLocaleMap.get(giocoId.toLowerCase()) || `${giocoId}-${LOCALE_ID}`;
+    const instSuffix = LOCALE_ID === 'SALA_GIOCHI_ROMA' ? '2' : '1';
+    const key = normalizzaGiocoId(giocoId);
+    const installazioneId = installazioniLocaleMap.get(key) || `${key}-${instSuffix}`;
 
     if (!installazioneId) {
         throw new Error(`Gioco "${giocoId}" non installato nel locale ${LOCALE_ID}`);
@@ -97,6 +111,15 @@ function creaPartita(giocoId, giocatore1, giocatore2, torneoId = null) {
         match.turnoCorrente = 1;
         match.tiriNelTurno = 0;
         match.maxTiriPerTurno = 3;
+    } else if (giocoId === 'biliardo') {
+        // Palle solide (1-7) per giocatore 1, rigate (9-15) per giocatore 2
+        match.palleRimanenti1 = [1, 2, 3, 4, 5, 6, 7];
+        match.palleRimanenti2 = [9, 10, 11, 12, 13, 14, 15];
+        match.palla8InGioco = true;
+        match.turnoCorrente = 1;
+        // punteggio = palle rimanenti da imbuca re (parte da 7, scende a 0)
+        match.punteggio1 = 7;
+        match.punteggio2 = 7;
     }
 
     activeMatches.set(matchId, match);
@@ -110,7 +133,7 @@ function creaPartita(giocoId, giocatore1, giocatore2, torneoId = null) {
     return match;
 }
 
-// Applica le regole di gioco in base al tipo (Calciobalilla a 10 gol o Freccette 301 con bust)
+// Applica le regole di gioco in base al tipo
 function processaEvento(matchId, evento) {
     const match = activeMatches.get(matchId);
     if (!match) {
@@ -130,6 +153,8 @@ function processaEvento(matchId, evento) {
         resMatch = processaEventoCalciobalilla(match, evento);
     } else if (match.giocoId === 'freccette') {
         resMatch = processaEventoFreccette(match, evento);
+    } else if (match.giocoId === 'biliardo') {
+        resMatch = processaEventoBiliardo(match, evento);
     }
 
     if (resMatch && resMatch.stato === 'IN_CORSO') {
@@ -203,6 +228,83 @@ function processaEventoFreccette(match, evento) {
     return match;
 }
 
+// --- BILIARDO 8-BALL ---
+
+// Identifica a quale giocatore appartiene una palla (1-7 = G1/solide, 9-15 = G2/rigate)
+function identificaProprietarioPalla(palla) {
+    if (palla >= 1 && palla <= 7) return 1;
+    if (palla >= 9 && palla <= 15) return 2;
+    return null; // palla 8 — gestione separata
+}
+
+function processaEventoBiliardo(match, evento) {
+    const isPlayer1Turn = match.turnoCorrente === 1;
+
+    if (evento.tipo === 'FALLO') {
+        // Fallo: cambio turno semplice
+        match.turnoCorrente = isPlayer1Turn ? 2 : 1;
+        console.log(`[GameEngine] Biliardo ${match.id}: FALLO — turno passa a Giocatore ${match.turnoCorrente}`);
+        return match;
+    }
+
+    if (evento.tipo !== 'IMBUCATA') return match;
+
+    const palla = parseInt(evento.palla, 10);
+    if (isNaN(palla) || palla < 1 || palla > 15) {
+        console.warn(`[GameEngine] Biliardo ${match.id}: palla non valida (${evento.palla})`);
+        return match;
+    }
+
+    // Gestione palla 8 (nera) — evento cruciale
+    if (palla === 8) {
+        if (!match.palla8InGioco) return match;
+        match.palla8InGioco = false;
+
+        const giocatoreCorrenteHaFinito = isPlayer1Turn
+            ? match.palleRimanenti1.length === 0
+            : match.palleRimanenti2.length === 0;
+
+        if (giocatoreCorrenteHaFinito) {
+            // Ha imbucato tutte le sue palle + la nera: VITTORIA
+            console.log(`[GameEngine] Biliardo ${match.id}: Giocatore ${match.turnoCorrente} imbuca la palla 8 → VITTORIA`);
+        } else {
+            // Ha imbucato la nera prima del tempo: SCONFITTA (cambio vincitore)
+            console.log(`[GameEngine] Biliardo ${match.id}: Giocatore ${match.turnoCorrente} imbuca la palla 8 in anticipo → SCONFITTA`);
+            // Invertire il turno perché terminaPartita() assegna la vittoria in base a chi ha meno palle rimanenti
+            match.turnoCorrente = isPlayer1Turn ? 2 : 1;
+        }
+        terminaPartita(match);
+        return match;
+    }
+
+    // Gestione palla normale (1-7 solide, 9-15 rigate)
+    const proprietario = identificaProprietarioPalla(palla);
+
+    if (proprietario === 1) {
+        const idx = match.palleRimanenti1.indexOf(palla);
+        if (idx !== -1) {
+            match.palleRimanenti1.splice(idx, 1);
+            match.punteggio1 = match.palleRimanenti1.length;
+        }
+    } else if (proprietario === 2) {
+        const idx = match.palleRimanenti2.indexOf(palla);
+        if (idx !== -1) {
+            match.palleRimanenti2.splice(idx, 1);
+            match.punteggio2 = match.palleRimanenti2.length;
+        }
+    }
+
+    console.log(`[GameEngine] Biliardo ${match.id}: Palla ${palla} imbucata (G1: ${match.punteggio1} rimanenti, G2: ${match.punteggio2} rimanenti)`);
+
+    // Il turno continua solo se si imbuca una palla propria; altrimenti si cambia
+    if (proprietario !== match.turnoCorrente) {
+        match.turnoCorrente = isPlayer1Turn ? 2 : 1;
+        console.log(`[GameEngine] Biliardo ${match.id}: Palla avversaria — turno passa a Giocatore ${match.turnoCorrente}`);
+    }
+
+    return match;
+}
+
 function calcolaValoreTiro(settore, moltiplicatore) {
     if (settore === 'BULL') return 25;
     if (settore === 'DBULL') return 50;
@@ -227,12 +329,30 @@ function terminaPartita(match) {
         match.vincitore = match.punteggio1 > match.punteggio2 ? match.giocatore1.username : match.giocatore2.username;
     } else if (match.giocoId === 'freccette') {
         match.vincitore = match.punteggio1 === 0 ? match.giocatore1.username : match.giocatore2.username;
+    } else if (match.giocoId === 'biliardo') {
+        // Il vincitore è il giocatore che ha meno palle rimanenti (ha finito le sue)
+        match.vincitore = match.palleRimanenti1.length <= match.palleRimanenti2.length
+            ? match.giocatore1.username
+            : match.giocatore2.username;
     }
 
     console.log(`[GameEngine ${LOCALE_ID}] Partita ${match.id} TERMINATA — Vincitore: ${match.vincitore}`);
 
-    const punteggio1Finale = match.giocoId === 'calciobalilla' ? match.punteggio1 : (301 - match.punteggio1);
-    const punteggio2Finale = match.giocoId === 'calciobalilla' ? match.punteggio2 : (301 - match.punteggio2);
+    let punteggio1Finale, punteggio2Finale;
+    if (match.giocoId === 'calciobalilla') {
+        punteggio1Finale = match.punteggio1;
+        punteggio2Finale = match.punteggio2;
+    } else if (match.giocoId === 'freccette') {
+        punteggio1Finale = 301 - match.punteggio1;
+        punteggio2Finale = 301 - match.punteggio2;
+    } else if (match.giocoId === 'biliardo') {
+        // Punteggio finale = palle imbucate (7 - rimanenti)
+        punteggio1Finale = 7 - match.palleRimanenti1.length;
+        punteggio2Finale = 7 - match.palleRimanenti2.length;
+    } else {
+        punteggio1Finale = match.punteggio1;
+        punteggio2Finale = match.punteggio2;
+    }
 
     const hasAuthPlayers = match.giocatore1.id && match.giocatore2.id;
     if (hasAuthPlayers) {
@@ -268,7 +388,7 @@ function terminaPartita(match) {
     return match;
 }
 
-// Invia l'evento sul broker MQTT per la simulazione sensori
+// Invia l'evento sul broker MQTT sul topic specifico del gioco (locale/{ID}/{giocoId}/{tipoEvento})
 function pubblicaEventoMqtt(matchId, evento) {
     const match = activeMatches.get(matchId);
     if (!match) return false;
@@ -281,7 +401,8 @@ function pubblicaEventoMqtt(matchId, evento) {
         timestamp: new Date().toISOString()
     };
 
-    return publishEvent(mqttPayload);
+    // Pubblica sul topic specifico: locale/{ID}/{giocoId}/{tipoEvento}
+    return publishEvent(mqttPayload, match.giocoId, evento.tipo);
 }
 
 function getMatch(matchId) {
@@ -296,7 +417,7 @@ function removeMatch(matchId) {
     activeMatches.delete(matchId);
     try {
         rimuoviPartitaAttiva(matchId);
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // Ripristina le partite in corso all'avvio dell'Edge dopo una ripartenza
@@ -339,10 +460,11 @@ function avviaTimeoutPartiteAbbandonate() {
 avviaTimeoutPartiteAbbandonate();
 
 // Gestione messaggi ricevuti dai sensori fisici via broker Mosquitto
-getMqttEvents().on('evento', ({ topic, payload }) => {
+// Il payload è arricchito con giocoId e tipoEvento estratti dal topic strutturato
+getMqttEvents().on('evento', ({ topic, payload, giocoId, tipoEvento }) => {
     try {
         if (payload && payload.matchId && payload.tipo) {
-            console.log(`[GameEngine ${LOCALE_ID}] Elaborazione evento MQTT reale per match ${payload.matchId}`);
+            console.log(`[GameEngine ${LOCALE_ID}] Elaborazione evento MQTT reale: topic=${topic} match=${payload.matchId}`);
             processaEvento(payload.matchId, payload);
         }
     } catch (err) {

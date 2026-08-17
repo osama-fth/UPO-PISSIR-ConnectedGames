@@ -41,10 +41,10 @@ router.post('/start', async (req, res) => {
     try {
         const { giocoId, player1Username, player1Password, player2Username, player2Password, torneoId } = req.body;
 
-        if (!giocoId || !['calciobalilla', 'freccette'].includes(giocoId)) {
+        if (!giocoId || !['calciobalilla', 'freccette', 'biliardo'].includes(giocoId)) {
             return res.status(400).render('error', {
                 title: 'Errore',
-                message: 'Gioco non valido. Scegli tra calciobalilla o freccette.'
+                message: 'Gioco non valido. Scegli tra calciobalilla, freccette o biliardo.'
             });
         }
 
@@ -138,10 +138,10 @@ router.post('/start-guest', (req, res) => {
     try {
         const { giocoId, guest1Name, guest2Name } = req.body;
 
-        if (!giocoId || !['calciobalilla', 'freccette'].includes(giocoId)) {
+        if (!giocoId || !['calciobalilla', 'freccette', 'biliardo'].includes(giocoId)) {
             return res.status(400).render('error', {
                 title: 'Errore',
-                message: 'Gioco non valido. Scegli tra calciobalilla o freccette.'
+                message: 'Gioco non valido. Scegli tra calciobalilla, freccette o biliardo.'
             });
         }
 
@@ -243,7 +243,11 @@ router.get('/:matchId/status', (req, res) => {
         tiriNelTurno: match.tiriNelTurno || 0,
         vincitore: match.vincitore || null,
         dataInizio: match.dataInizio,
-        dataFine: match.dataFine
+        dataFine: match.dataFine,
+        // Campi specifici biliardo
+        palleRimanenti1: match.palleRimanenti1 || null,
+        palleRimanenti2: match.palleRimanenti2 || null,
+        palla8InGioco: match.palla8InGioco ?? null
     });
 });
 

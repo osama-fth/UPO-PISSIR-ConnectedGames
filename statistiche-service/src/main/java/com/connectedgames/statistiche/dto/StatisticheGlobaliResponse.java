@@ -13,5 +13,6 @@ public record StatisticheGlobaliResponse(
         List<GiocoStat> giochiPiuUtilizzati,
         List<GiocatoreVittorieStat> topGiocatoriVittorie,
         List<TorneoStat> torneiStat,
-        List<PartiteTempoStat> trendPartite
+        List<PartiteTempoStat> trendPartite,
+        List<GiocoStat> tuttiIGiochi
 ) {}

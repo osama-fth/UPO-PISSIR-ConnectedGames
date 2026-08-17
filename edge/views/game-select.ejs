@@ -26,7 +26,7 @@
 <form id="game-start-form" action="/game/start" method="POST">
 
     <!-- SELEZIONE GIOCO (condivisa tra le due modalità) -->
-    <div class="grid-3" style="margin-bottom: 2rem; gap: 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
         <!-- Calciobalilla Card -->
         <label class="card game-card" style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;" id="card-calciobalilla">
             <input type="radio" name="giocoId" value="calciobalilla" style="display: none;">
@@ -56,7 +56,23 @@
             </div>
             <div class="game-check" style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;"><i class="bi bi-check-lg"></i></div>
         </label>
+
+        <!-- Biliardo Card -->
+        <label class="card game-card" style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;" id="card-biliardo">
+            <input type="radio" name="giocoId" value="biliardo" style="display: none;">
+            <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: #10b981;">🎱</div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Biliardo 8-Ball</h3>
+            <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">
+                Imbuca le tue <strong>7 palle</strong> e poi la nera per vincere.
+            </p>
+            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                <span class="badge badge-info">2 Giocatori</span>
+                <span class="badge badge-success">IoT Sensori</span>
+            </div>
+            <div class="game-check" style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;"><i class="bi bi-check-lg"></i></div>
+        </label>
     </div>
+
 
     <!-- Validazione selezione gioco -->
     <div id="game-validation-error" class="alert alert-danger" style="display: none; margin-bottom: 1.5rem;">

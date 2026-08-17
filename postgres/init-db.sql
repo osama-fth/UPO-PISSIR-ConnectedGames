@@ -171,20 +171,25 @@ INSERT INTO platform_db.utente (id, username, email, ruolo) VALUES
 -- Giochi
 INSERT INTO platform_db.gioco (id, nome, descrizione) VALUES
     ('calciobalilla', 'Calciobalilla', 'Classico calciobalilla a 4 stecche. Partita a 10 gol.'),
-    ('freccette', 'Freccette', 'Gioco di freccette con regola 301/501. Vince chi raggiunge esattamente 0.');
+    ('freccette', 'Freccette', 'Gioco di freccette con regola 301/501. Vince chi raggiunge esattamente 0.'),
+    ('biliardo', 'Biliardo 8-Ball', 'Partita a biliardo 8-Ball con 15 palle. Vince chi imbuca le sue 7 palle e la palla 8.');
 
 -- Sensori
 INSERT INTO platform_db.sensore_gioco (id, gioco_id, tipo_evento, descrizione) VALUES
     ('calciobalilla_porta_a', 'calciobalilla', 'GOAL', 'Sensore IR break-beam porta Team A'),
     ('calciobalilla_porta_b', 'calciobalilla', 'GOAL', 'Sensore IR break-beam porta Team B'),
-    ('freccette_tabellone', 'freccette', 'TIRO', 'Sensore SVG click sul tabellone interattivo');
+    ('freccette_tabellone', 'freccette', 'TIRO', 'Sensore SVG click sul tabellone interattivo'),
+    ('biliardo_buca', 'biliardo', 'IMBUCATA', 'Sensore ottico buche biliardo'),
+    ('biliardo_fallo', 'biliardo', 'FALLO', 'Sensore fallo stecca/sposta palla');
 
--- Installazioni gioco (2 per locale)
+-- Installazioni gioco (3 per locale)
 INSERT INTO platform_db.installazione_gioco (id, gioco_id, locale_id, stato_attivita) VALUES
     ('calciobalilla-1', 'calciobalilla', 'BAR_BELVEDERE', 'ATTIVO'),
     ('freccette-1', 'freccette', 'BAR_BELVEDERE', 'ATTIVO'),
+    ('biliardo-1', 'biliardo', 'BAR_BELVEDERE', 'ATTIVO'),
     ('calciobalilla-2', 'calciobalilla', 'SALA_GIOCHI_ROMA', 'ATTIVO'),
-    ('freccette-2', 'freccette', 'SALA_GIOCHI_ROMA', 'ATTIVO');
+    ('freccette-2', 'freccette', 'SALA_GIOCHI_ROMA', 'ATTIVO'),
+    ('biliardo-2', 'biliardo', 'SALA_GIOCHI_ROMA', 'ATTIVO');
 
 -- Tornei di esempio (Attivi e Conclusi)
 INSERT INTO platform_db.torneo (id, nome, gioco_id, stato, data_inizio, data_fine) VALUES
@@ -199,6 +204,8 @@ INSERT INTO platform_db.torneo (id, nome, gioco_id, stato, data_inizio, data_fin
     ('b0000000-0000-0000-0000-000000000005', 'Trofeo Bar Belvedere Calciobalilla 2026', 'calciobalilla', 'CONCLUSO',
      '2026-02-01T00:00:00Z', '2026-04-15T23:59:59Z'),
     ('b0000000-0000-0000-0000-000000000006', 'Torneo Estivo Freccette 2026', 'freccette', 'ATTIVO',
+     '2026-07-01T00:00:00Z', '2026-08-31T23:59:59Z'),
+    ('b0000000-0000-0000-0000-000000000007', 'Torneo Biliardo 8-Ball 2026', 'biliardo', 'ATTIVO',
      '2026-07-01T00:00:00Z', '2026-08-31T23:59:59Z');
 
 -- Associazioni torneo-locale
@@ -212,7 +219,9 @@ INSERT INTO platform_db.torneo_locale (torneo_id, locale_id) VALUES
     ('b0000000-0000-0000-0000-000000000004', 'BAR_BELVEDERE'),
     ('b0000000-0000-0000-0000-000000000005', 'BAR_BELVEDERE'),
     ('b0000000-0000-0000-0000-000000000006', 'BAR_BELVEDERE'),
-    ('b0000000-0000-0000-0000-000000000006', 'SALA_GIOCHI_ROMA');
+    ('b0000000-0000-0000-0000-000000000006', 'SALA_GIOCHI_ROMA'),
+    ('b0000000-0000-0000-0000-000000000007', 'BAR_BELVEDERE'),
+    ('b0000000-0000-0000-0000-000000000007', 'SALA_GIOCHI_ROMA');
 
 -- Iscrizioni torneo (giocatori iscritti ai tornei a nome di un locale)
 INSERT INTO platform_db.iscrizione_torneo (torneo_id, utente_id, locale_id) VALUES

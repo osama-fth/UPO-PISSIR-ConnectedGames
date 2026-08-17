@@ -176,9 +176,9 @@ public class StatisticheRepository {
         ), params.toArray());
     }
 
-    public List<GiocoStat> getGiochiPiuUtilizzati(int limit, Integer giorni) {
+    public List<GiocoStat> getGiochiPiuUtilizzati(int limit, Integer giorni, String giocoId) {
         StringBuilder sql = new StringBuilder("""
-            SELECT g.nome as gioco_tipo, COUNT(p.id) as partite_giocate
+            SELECT g.id as gioco_id, g.nome as gioco_tipo, COUNT(p.id) as partite_giocate
             FROM platform_db.partita p
             JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
             JOIN platform_db.gioco g ON ig.gioco_id = g.id
@@ -190,18 +190,32 @@ public class StatisticheRepository {
             sql.append(" AND p.data_fine >= CURRENT_TIMESTAMP - (INTERVAL '1 day' * ?)");
             params.add(giorni);
         }
+        if (giocoId != null && !giocoId.isBlank()) {
+            sql.append(" AND ig.gioco_id = ?");
+            params.add(giocoId);
+        }
 
         sql.append("""
-            GROUP BY g.nome
+            GROUP BY g.id, g.nome
             ORDER BY partite_giocate DESC
             LIMIT ?
         """);
         params.add(limit);
 
         return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> new GiocoStat(
+                rs.getString("gioco_id"),
                 rs.getString("gioco_tipo"),
                 rs.getLong("partite_giocate")
         ), params.toArray());
+    }
+
+    public List<GiocoStat> getTuttiIGiochi() {
+        String sql = "SELECT id as gioco_id, nome as gioco_tipo FROM platform_db.gioco ORDER BY nome ASC";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new GiocoStat(
+                rs.getString("gioco_id"),
+                rs.getString("gioco_tipo"),
+                0
+        ));
     }
 
     public List<GiocatoreVittorieStat> getTopGiocatoriVittorie(int limit, Integer giorni, String giocoId) {
@@ -315,15 +329,16 @@ public class StatisticheRepository {
         Long giocatoriAttivi = jdbcTemplate.queryForObject(sqlGiocatori, Long.class, localeId, localeId);
 
         String sqlRipartizione = """
-            SELECT g.nome as gioco_tipo, COUNT(p.id) as partite_giocate
+            SELECT g.id as gioco_id, g.nome as gioco_tipo, COUNT(p.id) as partite_giocate
             FROM platform_db.partita p
             JOIN platform_db.installazione_gioco ig ON p.installazione_id = ig.id
             JOIN platform_db.gioco g ON ig.gioco_id = g.id
             WHERE p.locale_id = ?
-            GROUP BY g.nome
+            GROUP BY g.id, g.nome
             ORDER BY partite_giocate DESC
         """;
         List<GiocoStat> ripartizione = jdbcTemplate.query(sqlRipartizione, (rs, rowNum) -> new GiocoStat(
+                rs.getString("gioco_id"),
                 rs.getString("gioco_tipo"),
                 rs.getLong("partite_giocate")
         ), localeId);

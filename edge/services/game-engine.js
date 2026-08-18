@@ -29,7 +29,8 @@ function normalizzaGiocoId(str) {
 
 // Caricamento dinamico installazioni con fallback offline su SQLite
 function getInstSuffix() {
-    return LOCALE_ID === 'SALA_GIOCHI_ROMA' ? '2' : '1';
+    const match = (LOCALE_ID || '').match(/\d+/);
+    return match ? match[0] : '1';
 }
 
 async function initInstallazioni() {

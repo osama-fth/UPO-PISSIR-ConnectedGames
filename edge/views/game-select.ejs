@@ -1,378 +1,429 @@
 <%- include('partials/header') %>
 
-<!-- Page Header -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <div>
-        <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;">
-            <i class="bi bi-controller"></i> Seleziona Gioco
-        </h1>
-        <p class="text-muted" style="font-size: 0.9rem;">
-            Scegli il gioco e la modalità di accesso per iniziare una partita su <strong><%= localeId %></strong>
-        </p>
-    </div>
-    <div>
-        <a href="/auth/login" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color);">
-            <i class="bi bi-shield-lock"></i> Accedi alla Dashboard
-        </a>
-    </div>
-</div>
-
-<% if (typeof error !== 'undefined' && error) { %>
-    <div class="alert alert-danger" style="margin-bottom: 1.5rem;">
-        <i class="bi bi-exclamation-triangle"></i> <%= error %>
-    </div>
-<% } %>
-
-<form id="game-start-form" action="/game/start" method="POST">
-
-    <!-- SELEZIONE GIOCO (condivisa tra le due modalità) -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-        <!-- Calciobalilla Card -->
-        <label class="card game-card" style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;" id="card-calciobalilla">
-            <input type="radio" name="giocoId" value="calciobalilla" style="display: none;">
-            <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: var(--accent-primary);"><i class="bi bi-dribbble"></i></div>
-            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Calciobalilla</h3>
-            <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">
-                Partita a <strong>10 gol</strong>. Vince chi segna per primo 10 reti.
+    <!-- Page Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;">
+                <i class="bi bi-controller"></i> Seleziona Gioco
+            </h1>
+            <p class="text-muted" style="font-size: 0.9rem;">
+                Scegli il gioco e la modalità di accesso per iniziare una partita su <strong>
+                    <%= localeId %>
+                </strong>
             </p>
-            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
-                <span class="badge badge-info">2 Giocatori</span>
-                <span class="badge badge-success">IoT Sensori</span>
-            </div>
-            <div class="game-check" style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;"><i class="bi bi-check-lg"></i></div>
-        </label>
-
-        <!-- Freccette Card -->
-        <label class="card game-card" style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;" id="card-freccette">
-            <input type="radio" name="giocoId" value="freccette" style="display: none;">
-            <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: var(--danger);"><i class="bi bi-bullseye"></i></div>
-            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Freccette</h3>
-            <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">
-                Regola <strong>301</strong>. Sottrai punti fino a raggiungere esattamente 0.
-            </p>
-            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
-                <span class="badge badge-info">2 Giocatori</span>
-                <span class="badge badge-warning">Simulatore SVG</span>
-            </div>
-            <div class="game-check" style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;"><i class="bi bi-check-lg"></i></div>
-        </label>
-
-        <!-- Biliardo Card -->
-        <label class="card game-card" style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;" id="card-biliardo">
-            <input type="radio" name="giocoId" value="biliardo" style="display: none;">
-            <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: #10b981;">🎱</div>
-            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Biliardo 8-Ball</h3>
-            <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">
-                Imbuca le tue <strong>7 palle</strong> e poi la nera per vincere.
-            </p>
-            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
-                <span class="badge badge-info">2 Giocatori</span>
-                <span class="badge badge-success">IoT Sensori</span>
-            </div>
-            <div class="game-check" style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;"><i class="bi bi-check-lg"></i></div>
-        </label>
-    </div>
-
-
-    <!-- Validazione selezione gioco -->
-    <div id="game-validation-error" class="alert alert-danger" style="display: none; margin-bottom: 1.5rem;">
-        <i class="bi bi-exclamation-triangle"></i> Seleziona un gioco prima di iniziare la partita.
-    </div>
-
-    <!-- TOGGLE MODALITÀ: Con Account / Come Ospite -->
-    <div style="display: flex; gap: 0; margin-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; overflow: hidden; border: 1px solid var(--border-color); border-bottom: none;">
-        <button type="button" class="mode-tab active-tab" id="tab-auth" onclick="switchMode('auth')"
-            style="flex: 1; padding: 14px 20px; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <i class="bi bi-shield-lock"></i> Con Account
-        </button>
-        <button type="button" class="mode-tab" id="tab-guest" onclick="switchMode('guest')"
-            style="flex: 1; padding: 14px 20px; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <i class="bi bi-person"></i> Gioca come Ospite
-        </button>
-    </div>
-
-    <!-- PANEL: Autenticazione Keycloak -->
-    <div id="panel-auth" class="card" style="border-top: 4px solid var(--accent-primary); margin-bottom: 2rem; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 style="font-size: 1.3rem; font-weight: 700; margin: 0;"><i class="bi bi-people"></i> Autenticazione Giocatori</h2>
         </div>
-
-        <%# Selezione Torneo — nascosta finché non si sceglie un gioco %>
-        <div id="torneo-select-wrapper" style="display: none; margin-bottom: 1.5rem; padding: 12px 16px; background: var(--bg-primary); border-radius: var(--radius-sm); border: 1px solid var(--accent-primary);">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <i class="bi bi-trophy text-warning"></i>
-                <label for="torneoId" style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); white-space: nowrap;">Modalità:</label>
-                <select name="torneoId" id="torneoId" style="flex: 1; background: transparent; border: none; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
-                    <option value="">Amichevole (non conta in classifica)</option>
-                    <% if (typeof torneiAttivi !== 'undefined') { torneiAttivi.forEach(function(t) { %>
-                        <option value="<%= t.id %>" data-gioco="<%= t.tipoGioco.toLowerCase() %>"><%= t.nome %> (<%= t.tipoGioco %>)</option>
-                    <% }); } %>
-                </select>
-            </div>
-        </div>
-
-        <div class="grid-3" style="gap: 1.5rem;">
-            <!-- Giocatore 1 -->
-            <div class="card" style="background: var(--bg-secondary); border-color: rgba(16, 185, 129, 0.3);">
-                <div class="card-subtitle" style="color: var(--success);">GIOCATORE 1</div>
-                <p class="text-muted text-sm" style="margin-bottom: 1rem;">
-                    Inserisci le tue credenziali
-                </p>
-                <div style="margin-bottom: 1rem;">
-                    <label for="player1Username" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Username</label>
-                    <input type="text" id="player1Username" name="player1Username" autocomplete="off"
-                        class="auth-field"
-                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='var(--success)'" onblur="this.style.borderColor='var(--border-color)'"
-                        placeholder="es. giocatore_1">
-                </div>
-                <div>
-                    <label for="player1Password" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Password</label>
-                    <input type="password" id="player1Password" name="player1Password" autocomplete="off"
-                        class="auth-field"
-                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='var(--success)'" onblur="this.style.borderColor='var(--border-color)'"
-                        placeholder="••••••••">
-                </div>
-            </div>
-
-            <!-- Giocatore 2 -->
-            <div class="card" style="background: var(--bg-secondary); border-color: rgba(59, 130, 246, 0.3);">
-                <div class="card-subtitle" style="color: var(--accent-primary);">GIOCATORE 2</div>
-                <p class="text-muted text-sm" style="margin-bottom: 1rem;">
-                    Inserisci le credenziali dell'avversario
-                </p>
-                <div style="margin-bottom: 1rem;">
-                    <label for="player2Username" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Username</label>
-                    <input type="text" id="player2Username" name="player2Username" autocomplete="off"
-                        class="auth-field"
-                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='var(--accent-primary)'" onblur="this.style.borderColor='var(--border-color)'"
-                        placeholder="es. giocatore_2">
-                </div>
-                <div>
-                    <label for="player2Password" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Password</label>
-                    <input type="password" id="player2Password" name="player2Password" autocomplete="off"
-                        class="auth-field"
-                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='var(--accent-primary)'" onblur="this.style.borderColor='var(--border-color)'"
-                        placeholder="••••••••">
-                </div>
-            </div>
+        <div>
+            <a href="/auth/login" class="btn"
+                style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color);">
+                <i class="bi bi-shield-lock"></i> Accedi alla Dashboard
+            </a>
         </div>
     </div>
 
-    <!-- PANEL: Modalità Ospite (nascosto di default) -->
-    <div id="panel-guest" class="card" style="display: none; border-top: 4px solid var(--warning); margin-bottom: 2rem; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);">
-        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
-            <h2 style="font-size: 1.3rem; font-weight: 700;"><i class="bi bi-person"></i> Nomi Giocatori</h2>
-            <span class="badge badge-guest">Modalità Ospite</span>
+    <% if (typeof error !=='undefined' && error) { %>
+        <div class="alert alert-danger" style="margin-bottom: 1.5rem;">
+            <i class="bi bi-exclamation-triangle"></i>
+            <%= error %>
         </div>
+        <% } %>
 
-        <div class="alert alert-warning" style="margin-bottom: 1.5rem; font-size: 0.8rem;">
-            <i class="bi bi-exclamation-triangle"></i> <strong>Attenzione</strong> — Stai giocando come ospite. La partita <strong>non verrà salvata</strong> nel database e non apparirà nelle statistiche.
-        </div>
+            <form id="game-start-form" action="/game/start" method="POST">
 
-        <div class="grid-3" style="gap: 1.5rem;">
-            <!-- Giocatore 1 -->
-            <div class="card" style="background: var(--bg-secondary); border-color: rgba(16, 185, 129, 0.3);">
-                <div class="card-subtitle" style="color: var(--success);">GIOCATORE 1</div>
-                <div style="margin-bottom: 0;">
-                    <label for="guest1Name" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Nome</label>
-                    <input type="text" id="guest1Name" name="guest1Name" autocomplete="off"
-                        class="guest-field"
-                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='var(--success)'" onblur="this.style.borderColor='var(--border-color)'"
-                        placeholder="es. Marco" maxlength="30">
+                <!-- SELEZIONE GIOCO (condivisa tra le due modalità) -->
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <!-- Calciobalilla Card -->
+                    <label class="card game-card"
+                        style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;"
+                        id="card-calciobalilla">
+                        <input type="radio" name="giocoId" value="calciobalilla" style="display: none;">
+                        <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: var(--accent-primary);"><i
+                                class="bi bi-dribbble"></i></div>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Calciobalilla</h3>
+                        <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">
+                            Partita a <strong>10 gol</strong>. Vince chi segna per primo 10 reti.
+                        </p>
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                        </div>
+                        <div class="game-check"
+                            style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                    </label>
+
+                    <!-- Freccette Card -->
+                    <label class="card game-card"
+                        style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;"
+                        id="card-freccette">
+                        <input type="radio" name="giocoId" value="freccette" style="display: none;">
+                        <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: var(--danger);"><i
+                                class="bi bi-bullseye"></i></div>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Freccette</h3>
+                        <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">
+                            Regola <strong>301</strong>. Sottrai punti fino a raggiungere esattamente 0.
+                        </p>
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                        </div>
+                        <div class="game-check"
+                            style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                    </label>
+
+                    <!-- Biliardo Card -->
+                    <label class="card game-card"
+                        style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;"
+                        id="card-biliardo">
+                        <input type="radio" name="giocoId" value="biliardo" style="display: none;">
+                        <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: #10b981;"><i
+                                class="bi bi-8-circle"></i></div>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Biliardo 8-Ball</h3>
+                        <p class="text-muted text-sm" style="margin-bottom: 0.75rem;">
+                            Imbuca le tue <strong>7 palle</strong> e poi la nera per vincere.
+                        </p>
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                        </div>
+                        <div class="game-check"
+                            style="display: none; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; color: white; font-size: 14px; line-height: 28px; text-align: center;">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                    </label>
                 </div>
-            </div>
 
-            <!-- Giocatore 2 -->
-            <div class="card" style="background: var(--bg-secondary); border-color: rgba(59, 130, 246, 0.3);">
-                <div class="card-subtitle" style="color: var(--accent-primary);">GIOCATORE 2</div>
-                <div style="margin-bottom: 0;">
-                    <label for="guest2Name" style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Nome</label>
-                    <input type="text" id="guest2Name" name="guest2Name" autocomplete="off"
-                        class="guest-field"
-                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='var(--accent-primary)'" onblur="this.style.borderColor='var(--border-color)'"
-                        placeholder="es. Luca" maxlength="30">
+
+                <!-- Validazione selezione gioco -->
+                <div id="game-validation-error" class="alert alert-danger"
+                    style="display: none; margin-bottom: 1.5rem;">
+                    <i class="bi bi-exclamation-triangle"></i> Seleziona un gioco prima di iniziare la partita.
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Submit Button -->
-    <div style="text-align: center;">
-        <button type="submit" class="btn btn-primary btn-lg" id="btn-start-game" disabled
-            style="min-width: 280px; font-size: 1.1rem; padding: 16px 40px; opacity: 0.5; cursor: not-allowed;">
-            <i class="bi bi-play-circle"></i> Inizia Partita
-        </button>
-        <div id="btn-hint-text" style="font-size: 0.85rem; color: var(--warning); margin-top: 0.75rem; font-weight: 500;">
-            <i class="bi bi-info-circle"></i> Seleziona prima un gioco in alto per abilitare il pulsante
-        </div>
-    </div>
-</form>
+                <!-- TOGGLE MODALITÀ: Con Account / Come Ospite -->
+                <div
+                    style="display: flex; gap: 0; margin-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; overflow: hidden; border: 1px solid var(--border-color); border-bottom: none;">
+                    <button type="button" class="mode-tab active-tab" id="tab-auth" onclick="switchMode('auth')"
+                        style="flex: 1; padding: 14px 20px; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="bi bi-shield-lock"></i> Con Account
+                    </button>
+                    <button type="button" class="mode-tab" id="tab-guest" onclick="switchMode('guest')"
+                        style="flex: 1; padding: 14px 20px; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="bi bi-person"></i> Gioca come Ospite
+                    </button>
+                </div>
 
-<style>
-    .game-card:hover {
-        transform: translateY(-4px);
-        border-color: var(--accent-primary) !important;
-        box-shadow: 0 8px 30px rgba(59, 130, 246, 0.15) !important;
-    }
-    .game-card.selected {
-        border-color: var(--accent-primary) !important;
-        box-shadow: 0 0 0 2px var(--accent-primary), 0 8px 30px rgba(59, 130, 246, 0.2) !important;
-        background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, var(--bg-card) 100%) !important;
-    }
-    .game-card.selected .game-check {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-    }
+                <!-- PANEL: Autenticazione Keycloak -->
+                <div id="panel-auth" class="card"
+                    style="border-top: 4px solid var(--accent-primary); margin-bottom: 2rem; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.3rem; font-weight: 700; margin: 0;"><i class="bi bi-people"></i>
+                            Autenticazione Giocatori</h2>
+                    </div>
 
-    /* Tab styles */
-    .mode-tab {
-        background: var(--bg-secondary);
-        color: var(--text-muted);
-    }
-    .mode-tab:hover {
-        background: var(--bg-card-hover);
-        color: var(--text-primary);
-    }
-    .mode-tab.active-tab {
-        background: var(--bg-card);
-        color: var(--text-primary);
-        box-shadow: inset 0 2px 0 var(--accent-primary);
-    }
-    .mode-tab.active-tab-guest {
-        background: var(--bg-card);
-        color: var(--text-primary);
-        box-shadow: inset 0 2px 0 var(--warning);
-    }
-</style>
+                    <%# Selezione Torneo — nascosta finché non si sceglie un gioco %>
+                        <div id="torneo-select-wrapper"
+                            style="display: none; margin-bottom: 1.5rem; padding: 12px 16px; background: var(--bg-primary); border-radius: var(--radius-sm); border: 1px solid var(--accent-primary);">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="bi bi-trophy text-warning"></i>
+                                <label for="torneoId"
+                                    style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); white-space: nowrap;">Modalità:</label>
+                                <select name="torneoId" id="torneoId"
+                                    style="flex: 1; background: transparent; border: none; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
+                                    <option value="">Amichevole (non conta in classifica)</option>
+                                    <% if (typeof torneiAttivi !=='undefined' ) { torneiAttivi.forEach(function(t) { %>
+                                        <option value="<%= t.id %>" data-gioco="<%= t.tipoGioco.toLowerCase() %>">
+                                            <%= t.nome %> (<%= t.tipoGioco %>)
+                                        </option>
+                                        <% }); } %>
+                                </select>
+                            </div>
+                        </div>
 
-<script>
-    // Salva l'elenco originale di tutte le opzioni torneo
-    const allTorneoOptions = Array.from(document.querySelectorAll('#torneoId option')).map(opt => ({
-        value: opt.value,
-        text: opt.textContent,
-        gioco: (opt.getAttribute('data-gioco') || '').toLowerCase()
-    }));
+                        <div class="grid-3" style="gap: 1.5rem;">
+                            <!-- Giocatore 1 -->
+                            <div class="card"
+                                style="background: var(--bg-secondary); border-color: rgba(16, 185, 129, 0.3);">
+                                <div class="card-subtitle" style="color: var(--success);">GIOCATORE 1</div>
+                                <p class="text-muted text-sm" style="margin-bottom: 1rem;">
+                                    Inserisci le tue credenziali
+                                </p>
+                                <div style="margin-bottom: 1rem;">
+                                    <label for="player1Username"
+                                        style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Username</label>
+                                    <input type="text" id="player1Username" name="player1Username" autocomplete="off"
+                                        class="auth-field"
+                                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                                        onfocus="this.style.borderColor='var(--success)'"
+                                        onblur="this.style.borderColor='var(--border-color)'"
+                                        placeholder="es. giocatore_1">
+                                </div>
+                                <div>
+                                    <label for="player1Password"
+                                        style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Password</label>
+                                    <input type="password" id="player1Password" name="player1Password"
+                                        autocomplete="off" class="auth-field"
+                                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                                        onfocus="this.style.borderColor='var(--success)'"
+                                        onblur="this.style.borderColor='var(--border-color)'" placeholder="••••••••">
+                                </div>
+                            </div>
 
-    function updateTorneiDropdown(selectedGame) {
-        const torneoWrapper = document.getElementById('torneo-select-wrapper');
-        const torneoSelect = document.getElementById('torneoId');
-        if (!torneoWrapper || !torneoSelect) return;
+                            <!-- Giocatore 2 -->
+                            <div class="card"
+                                style="background: var(--bg-secondary); border-color: rgba(59, 130, 246, 0.3);">
+                                <div class="card-subtitle" style="color: var(--accent-primary);">GIOCATORE 2</div>
+                                <p class="text-muted text-sm" style="margin-bottom: 1rem;">
+                                    Inserisci le credenziali dell'avversario
+                                </p>
+                                <div style="margin-bottom: 1rem;">
+                                    <label for="player2Username"
+                                        style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Username</label>
+                                    <input type="text" id="player2Username" name="player2Username" autocomplete="off"
+                                        class="auth-field"
+                                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                                        onfocus="this.style.borderColor='var(--accent-primary)'"
+                                        onblur="this.style.borderColor='var(--border-color)'"
+                                        placeholder="es. giocatore_2">
+                                </div>
+                                <div>
+                                    <label for="player2Password"
+                                        style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Password</label>
+                                    <input type="password" id="player2Password" name="player2Password"
+                                        autocomplete="off" class="auth-field"
+                                        style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                                        onfocus="this.style.borderColor='var(--accent-primary)'"
+                                        onblur="this.style.borderColor='var(--border-color)'" placeholder="••••••••">
+                                </div>
+                            </div>
+                        </div>
+                </div>
 
-        torneoSelect.innerHTML = '';
-        allTorneoOptions.forEach(item => {
-            if (item.value === '' || item.gioco === (selectedGame || '').toLowerCase()) {
-                const opt = document.createElement('option');
-                opt.value = item.value;
-                opt.textContent = item.text;
-                opt.setAttribute('data-gioco', item.gioco);
-                torneoSelect.appendChild(opt);
-            }
-        });
+                <!-- PANEL: Modalità Ospite (nascosto di default) -->
+                <div id="panel-guest" class="card"
+                    style="display: none; border-top: 4px solid var(--warning); margin-bottom: 2rem; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.3rem; font-weight: 700;"><i class="bi bi-person"></i> Nomi Giocatori
+                        </h2>
+                        <span class="badge badge-guest">Modalità Ospite</span>
+                    </div>
 
-        torneoSelect.value = ''; // Reset su "Amichevole"
-        torneoWrapper.style.display = 'block';
-    }
+                    <div class="alert alert-warning" style="margin-bottom: 1.5rem; font-size: 0.8rem;">
+                        <i class="bi bi-exclamation-triangle"></i> <strong>Attenzione</strong> — Stai giocando come
+                        ospite. La partita <strong>non verrà salvata</strong> nel database e non apparirà nelle
+                        statistiche.
+                    </div>
 
-    function updateStartButtonState() {
-        const selectedGame = document.querySelector('input[name="giocoId"]:checked');
-        const submitBtn = document.getElementById('btn-start-game');
-        const hintText = document.getElementById('btn-hint-text');
+                    <div class="grid-3" style="gap: 1.5rem;">
+                        <!-- Giocatore 1 -->
+                        <div class="card"
+                            style="background: var(--bg-secondary); border-color: rgba(16, 185, 129, 0.3);">
+                            <div class="card-subtitle" style="color: var(--success);">GIOCATORE 1</div>
+                            <div style="margin-bottom: 0;">
+                                <label for="guest1Name"
+                                    style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Nome</label>
+                                <input type="text" id="guest1Name" name="guest1Name" autocomplete="off"
+                                    class="guest-field"
+                                    style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                                    onfocus="this.style.borderColor='var(--success)'"
+                                    onblur="this.style.borderColor='var(--border-color)'" placeholder="es. Marco"
+                                    maxlength="30">
+                            </div>
+                        </div>
 
-        if (selectedGame) {
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = '1';
-            submitBtn.style.cursor = 'pointer';
-            if (hintText) hintText.style.display = 'none';
-        } else {
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.5';
-            submitBtn.style.cursor = 'not-allowed';
-            if (hintText) hintText.style.display = 'block';
-        }
-    }
+                        <!-- Giocatore 2 -->
+                        <div class="card"
+                            style="background: var(--bg-secondary); border-color: rgba(59, 130, 246, 0.3);">
+                            <div class="card-subtitle" style="color: var(--accent-primary);">GIOCATORE 2</div>
+                            <div style="margin-bottom: 0;">
+                                <label for="guest2Name"
+                                    style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em;">Nome</label>
+                                <input type="text" id="guest2Name" name="guest2Name" autocomplete="off"
+                                    class="guest-field"
+                                    style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+                                    onfocus="this.style.borderColor='var(--accent-primary)'"
+                                    onblur="this.style.borderColor='var(--border-color)'" placeholder="es. Luca"
+                                    maxlength="30">
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    // Game card selection — aggiorna la select tornei filtrandoli rigorosamente e abilita il pulsante
-    document.querySelectorAll('.game-card').forEach(card => {
-        const radio = card.querySelector('input[type="radio"]');
-        card.addEventListener('click', () => {
-            document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            radio.checked = true;
+                <!-- Submit Button -->
+                <div style="text-align: center;">
+                    <button type="submit" class="btn btn-primary btn-lg" id="btn-start-game" disabled
+                        style="min-width: 280px; font-size: 1.1rem; padding: 16px 40px; opacity: 0.5; cursor: not-allowed;">
+                        <i class="bi bi-play-circle"></i> Inizia Partita
+                    </button>
+                    <div id="btn-hint-text"
+                        style="font-size: 0.85rem; color: var(--warning); margin-top: 0.75rem; font-weight: 500;">
+                        <i class="bi bi-info-circle"></i> Seleziona prima un gioco in alto per abilitare il pulsante
+                    </div>
+                </div>
+            </form>
 
-            // Nascondi errore validazione se visibile
-            const errDiv = document.getElementById('game-validation-error');
-            if (errDiv) errDiv.style.display = 'none';
+            <style>
+                .game-card:hover {
+                    transform: translateY(-4px);
+                    border-color: var(--accent-primary) !important;
+                    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.15) !important;
+                }
 
-            // Rigenera la select tornei mostrando SOLAMENTE i tornei del gioco cliccato
-            updateTorneiDropdown(radio.value);
+                .game-card.selected {
+                    border-color: var(--accent-primary) !important;
+                    box-shadow: 0 0 0 2px var(--accent-primary), 0 8px 30px rgba(59, 130, 246, 0.2) !important;
+                    background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, var(--bg-card) 100%) !important;
+                }
 
-            // Abilita il pulsante di avvio partita
-            updateStartButtonState();
-        });
-    });
+                .game-card.selected .game-check {
+                    display: flex !important;
+                    align-items: center;
+                    justify-content: center;
+                }
 
-    // Form validation: blocca submit se nessun gioco selezionato
-    document.getElementById('game-start-form').addEventListener('submit', function(e) {
-        const selected = document.querySelector('input[name="giocoId"]:checked');
-        if (!selected) {
-            e.preventDefault();
-            document.getElementById('game-validation-error').style.display = 'flex';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    });
+                /* Tab styles */
+                .mode-tab {
+                    background: var(--bg-secondary);
+                    color: var(--text-muted);
+                }
 
-    // Mode toggle: Auth <-> Guest
-    let currentMode = 'auth';
+                .mode-tab:hover {
+                    background: var(--bg-card-hover);
+                    color: var(--text-primary);
+                }
 
-    function switchMode(mode) {
-        currentMode = mode;
-        const form = document.getElementById('game-start-form');
-        const panelAuth = document.getElementById('panel-auth');
-        const panelGuest = document.getElementById('panel-guest');
-        const tabAuth = document.getElementById('tab-auth');
-        const tabGuest = document.getElementById('tab-guest');
-        const submitBtn = document.getElementById('btn-start-game');
+                .mode-tab.active-tab {
+                    background: var(--bg-card);
+                    color: var(--text-primary);
+                    box-shadow: inset 0 2px 0 var(--accent-primary);
+                }
 
-        if (mode === 'auth') {
-            form.action = '/game/start';
-            panelAuth.style.display = '';
-            panelGuest.style.display = 'none';
-            submitBtn.innerHTML = '<i class="bi bi-play-circle"></i> Inizia Partita';
-            submitBtn.className = 'btn btn-primary btn-lg';
+                .mode-tab.active-tab-guest {
+                    background: var(--bg-card);
+                    color: var(--text-primary);
+                    box-shadow: inset 0 2px 0 var(--warning);
+                }
+            </style>
 
-            tabAuth.className = 'mode-tab active-tab';
-            tabGuest.className = 'mode-tab';
+            <script>
+                // Salva l'elenco originale di tutte le opzioni torneo
+                const allTorneoOptions = Array.from(document.querySelectorAll('#torneoId option')).map(opt => ({
+                    value: opt.value,
+                    text: opt.textContent,
+                    gioco: (opt.getAttribute('data-gioco') || '').toLowerCase()
+                }));
 
-            document.querySelectorAll('.auth-field').forEach(f => f.required = true);
-            document.querySelectorAll('.guest-field').forEach(f => f.required = false);
+                function updateTorneiDropdown(selectedGame) {
+                    const torneoWrapper = document.getElementById('torneo-select-wrapper');
+                    const torneoSelect = document.getElementById('torneoId');
+                    if (!torneoWrapper || !torneoSelect) return;
 
-        } else {
-            form.action = '/game/start-guest';
-            panelAuth.style.display = 'none';
-            panelGuest.style.display = '';
-            submitBtn.innerHTML = '<i class="bi bi-person"></i> Inizia Partita Ospite';
-            submitBtn.className = 'btn btn-warning btn-lg';
+                    torneoSelect.innerHTML = '';
+                    allTorneoOptions.forEach(item => {
+                        if (item.value === '' || item.gioco === (selectedGame || '').toLowerCase()) {
+                            const opt = document.createElement('option');
+                            opt.value = item.value;
+                            opt.textContent = item.text;
+                            opt.setAttribute('data-gioco', item.gioco);
+                            torneoSelect.appendChild(opt);
+                        }
+                    });
 
-            tabAuth.className = 'mode-tab';
-            tabGuest.className = 'mode-tab active-tab-guest';
+                    torneoSelect.value = ''; // Reset su "Amichevole"
+                    torneoWrapper.style.display = 'block';
+                }
 
-            document.querySelectorAll('.auth-field').forEach(f => f.required = false);
-            document.querySelectorAll('.guest-field').forEach(f => f.required = true);
-        }
+                function updateStartButtonState() {
+                    const selectedGame = document.querySelector('input[name="giocoId"]:checked');
+                    const submitBtn = document.getElementById('btn-start-game');
+                    const hintText = document.getElementById('btn-hint-text');
 
-        updateStartButtonState();
-    }
+                    if (selectedGame) {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                        submitBtn.style.cursor = 'pointer';
+                        if (hintText) hintText.style.display = 'none';
+                    } else {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.5';
+                        submitBtn.style.cursor = 'not-allowed';
+                        if (hintText) hintText.style.display = 'block';
+                    }
+                }
 
-    // Inizializza lo stato dei campi required e del pulsante
-    switchMode('auth');
-    updateStartButtonState();
-</script>
+                // Game card selection — aggiorna la select tornei filtrandoli rigorosamente e abilita il pulsante
+                document.querySelectorAll('.game-card').forEach(card => {
+                    const radio = card.querySelector('input[type="radio"]');
+                    card.addEventListener('click', () => {
+                        document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        radio.checked = true;
 
-<%- include('partials/footer') %>
+                        // Nascondi errore validazione se visibile
+                        const errDiv = document.getElementById('game-validation-error');
+                        if (errDiv) errDiv.style.display = 'none';
+
+                        // Rigenera la select tornei mostrando SOLAMENTE i tornei del gioco cliccato
+                        updateTorneiDropdown(radio.value);
+
+                        // Abilita il pulsante di avvio partita
+                        updateStartButtonState();
+                    });
+                });
+
+                // Form validation: blocca submit se nessun gioco selezionato
+                document.getElementById('game-start-form').addEventListener('submit', function (e) {
+                    const selected = document.querySelector('input[name="giocoId"]:checked');
+                    if (!selected) {
+                        e.preventDefault();
+                        document.getElementById('game-validation-error').style.display = 'flex';
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                });
+
+                // Mode toggle: Auth <-> Guest
+                let currentMode = 'auth';
+
+                function switchMode(mode) {
+                    currentMode = mode;
+                    const form = document.getElementById('game-start-form');
+                    const panelAuth = document.getElementById('panel-auth');
+                    const panelGuest = document.getElementById('panel-guest');
+                    const tabAuth = document.getElementById('tab-auth');
+                    const tabGuest = document.getElementById('tab-guest');
+                    const submitBtn = document.getElementById('btn-start-game');
+
+                    if (mode === 'auth') {
+                        form.action = '/game/start';
+                        panelAuth.style.display = '';
+                        panelGuest.style.display = 'none';
+                        submitBtn.innerHTML = '<i class="bi bi-play-circle"></i> Inizia Partita';
+                        submitBtn.className = 'btn btn-primary btn-lg';
+
+                        tabAuth.className = 'mode-tab active-tab';
+                        tabGuest.className = 'mode-tab';
+
+                        document.querySelectorAll('.auth-field').forEach(f => f.required = true);
+                        document.querySelectorAll('.guest-field').forEach(f => f.required = false);
+
+                    } else {
+                        form.action = '/game/start-guest';
+                        panelAuth.style.display = 'none';
+                        panelGuest.style.display = '';
+                        submitBtn.innerHTML = '<i class="bi bi-person"></i> Inizia Partita Ospite';
+                        submitBtn.className = 'btn btn-warning btn-lg';
+
+                        tabAuth.className = 'mode-tab';
+                        tabGuest.className = 'mode-tab active-tab-guest';
+
+                        document.querySelectorAll('.auth-field').forEach(f => f.required = false);
+                        document.querySelectorAll('.guest-field').forEach(f => f.required = true);
+                    }
+
+                    updateStartButtonState();
+                }
+
+                // Inizializza lo stato dei campi required e del pulsante
+                switchMode('auth');
+                updateStartButtonState();
+            </script>
+
+            <%- include('partials/footer') %>

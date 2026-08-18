@@ -28,6 +28,10 @@ function normalizzaGiocoId(str) {
 }
 
 // Caricamento dinamico installazioni con fallback offline su SQLite
+function getInstSuffix() {
+    return LOCALE_ID === 'SALA_GIOCHI_ROMA' ? '2' : '1';
+}
+
 async function initInstallazioni() {
     try {
         const authData = await clientCredentialsAuth();
@@ -46,10 +50,9 @@ async function initInstallazioni() {
             return;
         }
     } catch (err) {
-        console.warn(`[GameEngine ${LOCALE_ID}] Server centrale non raggiungibile per fetch installazioni (${err.message}). Tentativo caricamento da cache SQLite...`);
+        console.warn(`[GameEngine ${LOCALE_ID}] Server centrale non raggiungibile (${err.message}), caricamento da cache...`);
     }
 
-    // Fallback cache SQLite
     const cached = getInstallazioniCache();
     if (cached && cached.length > 0) {
         installazioniLocaleMap.clear();
@@ -59,8 +62,7 @@ async function initInstallazioni() {
         });
         console.log(`[GameEngine ${LOCALE_ID}] Installazioni caricate da cache SQLite (${installazioniLocaleMap.size} attive)`);
     } else {
-        // Default dinamico fallback se la cache è vuota (-1 per locale1, -2 per locale2)
-        const instSuffix = LOCALE_ID === 'SALA_GIOCHI_ROMA' ? '2' : '1';
+        const instSuffix = getInstSuffix();
         installazioniLocaleMap.set('calciobalilla', `calciobalilla-${instSuffix}`);
         installazioniLocaleMap.set('freccette', `freccette-${instSuffix}`);
         installazioniLocaleMap.set('biliardo', `biliardo-${instSuffix}`);
@@ -76,12 +78,10 @@ function getInstallazioni() {
     return list;
 }
 
-// Inizializza lo stato in memoria ed il salvataggio immediato della partita in corso su SQLite
 function creaPartita(giocoId, giocatore1, giocatore2, torneoId = null) {
     const matchId = uuidv4();
-    const instSuffix = LOCALE_ID === 'SALA_GIOCHI_ROMA' ? '2' : '1';
     const key = normalizzaGiocoId(giocoId);
-    const installazioneId = installazioniLocaleMap.get(key) || `${key}-${instSuffix}`;
+    const installazioneId = installazioniLocaleMap.get(key) || `${key}-${getInstSuffix()}`;
 
     if (!installazioneId) {
         throw new Error(`Gioco "${giocoId}" non installato nel locale ${LOCALE_ID}`);
@@ -265,13 +265,11 @@ function processaEventoBiliardo(match, evento) {
             : match.palleRimanenti2.length === 0;
 
         if (giocatoreCorrenteHaFinito) {
-            // Ha imbucato tutte le sue palle + la nera: VITTORIA
-            console.log(`[GameEngine] Biliardo ${match.id}: Giocatore ${match.turnoCorrente} imbuca la palla 8 → VITTORIA`);
+            match.vincitore = isPlayer1Turn ? match.giocatore1.username : match.giocatore2.username;
+            console.log(`[GameEngine] Biliardo ${match.id}: Giocatore ${match.turnoCorrente} (${match.vincitore}) imbuca la palla 8 → VITTORIA`);
         } else {
-            // Ha imbucato la nera prima del tempo: SCONFITTA (cambio vincitore)
-            console.log(`[GameEngine] Biliardo ${match.id}: Giocatore ${match.turnoCorrente} imbuca la palla 8 in anticipo → SCONFITTA`);
-            // Invertire il turno perché terminaPartita() assegna la vittoria in base a chi ha meno palle rimanenti
-            match.turnoCorrente = isPlayer1Turn ? 2 : 1;
+            match.vincitore = isPlayer1Turn ? match.giocatore2.username : match.giocatore1.username;
+            console.log(`[GameEngine] Biliardo ${match.id}: Giocatore ${match.turnoCorrente} imbuca la palla 8 in anticipo → SCONFITTA (Vince ${match.vincitore})`);
         }
         terminaPartita(match);
         return match;
@@ -330,10 +328,11 @@ function terminaPartita(match) {
     } else if (match.giocoId === 'freccette') {
         match.vincitore = match.punteggio1 === 0 ? match.giocatore1.username : match.giocatore2.username;
     } else if (match.giocoId === 'biliardo') {
-        // Il vincitore è il giocatore che ha meno palle rimanenti (ha finito le sue)
-        match.vincitore = match.palleRimanenti1.length <= match.palleRimanenti2.length
-            ? match.giocatore1.username
-            : match.giocatore2.username;
+        if (!match.vincitore) {
+            match.vincitore = match.palleRimanenti1.length <= match.palleRimanenti2.length
+                ? match.giocatore1.username
+                : match.giocatore2.username;
+        }
     }
 
     console.log(`[GameEngine ${LOCALE_ID}] Partita ${match.id} TERMINATA — Vincitore: ${match.vincitore}`);

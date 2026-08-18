@@ -89,3 +89,15 @@ test('Biliardo 8-Ball: creazione, tracciamento palle, falli e installazioneId co
     processaEvento(match.id, { tipo: 'FALLO' });
     assert.equal(match.turnoCorrente, 2);
 });
+
+test('Biliardo 8-Ball: imbucata prematura della palla 8 causa la sconfitta immediata', () => {
+    const g1 = { id: '00000000-0000-0000-0000-000000000001', username: 'PlayerA' };
+    const g2 = { id: '00000000-0000-0000-0000-000000000002', username: 'PlayerB' };
+
+    const match = creaPartita('biliardo', g1, g2);
+    // G1 imbuca la palla 8 prima di aver completato le sue 7 palle -> Vince G2
+    processaEvento(match.id, { tipo: 'IMBUCATA', palla: 8 });
+
+    assert.equal(match.stato, 'TERMINATA');
+    assert.equal(match.vincitore, 'PlayerB');
+});

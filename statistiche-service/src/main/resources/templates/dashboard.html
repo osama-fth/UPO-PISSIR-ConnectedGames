@@ -317,7 +317,7 @@
                                     <td>
                                         <i class="bi bi-controller text-danger me-2" th:if="${gioco.giocoTipo == 'Calciobalilla' or gioco.giocoTipo == 'calciobalilla'}"></i>
                                         <i class="bi bi-bullseye text-warning me-2" th:if="${gioco.giocoTipo == 'Freccette' or gioco.giocoTipo == 'freccette'}"></i>
-                                        <i class="bi bi-circle-fill text-primary me-2" th:if="${gioco.giocoTipo == 'Biliardo' or gioco.giocoTipo == 'biliardo' or gioco.giocoTipo == 'Biliardo 8-Ball'}"></i>
+                                        <i class="bi bi-8-circle text-primary me-2" th:if="${gioco.giocoTipo == 'Biliardo' or gioco.giocoTipo == 'biliardo' or gioco.giocoTipo == 'Biliardo 8-Ball'}"></i>
                                         <strong class="text-capitalize" th:text="${gioco.giocoTipo}">Gioco</strong>
                                     </td>
                                     <td class="text-end"><span class="badge bg-success rounded-pill px-3 py-2" th:text="${gioco.partiteGiocate}">0</span></td>
@@ -807,7 +807,7 @@
             const gType = (g.giocoTipo || '').toLowerCase();
             const icon = gType === 'calciobalilla' 
                 ? '<i class="bi bi-controller text-danger me-2"></i>' 
-                : (gType === 'biliardo' ? '<i class="bi bi-circle-fill text-primary me-2"></i>' : '<i class="bi bi-bullseye text-warning me-2"></i>');
+                : (gType === 'biliardo' ? '<i class="bi bi-8-circle text-primary me-2"></i>' : '<i class="bi bi-bullseye text-warning me-2"></i>');
             tr.innerHTML = `
                 <td>${idx + 1}</td>
                 <td>${icon}<strong class="text-capitalize">${g.giocoTipo}</strong></td>

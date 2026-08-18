@@ -238,7 +238,7 @@
                             <% if (p.gioco_id === 'calciobalilla') { %>
                                 <i class="bi bi-dribbble"></i>
                             <% } else if (p.gioco_id === 'biliardo') { %>
-                                <i class="bi bi-circle-fill"></i>
+                                <i class="bi bi-8-circle"></i>
                             <% } else { %>
                                 <i class="bi bi-bullseye"></i>
                             <% } %>
@@ -331,7 +331,7 @@
                         <% if (g.gioco_id === 'calciobalilla') { %>
                             <i class="bi bi-dribbble" style="font-size: 1.5rem; color: var(--accent-primary);"></i>
                         <% } else if (g.gioco_id === 'biliardo') { %>
-                            <i class="bi bi-circle-fill" style="font-size: 1.5rem; color: #10b981;"></i>
+                            <i class="bi bi-8-circle" style="font-size: 1.5rem; color: #10b981;"></i>
                         <% } else { %>
                             <i class="bi bi-bullseye" style="font-size: 1.5rem; color: var(--danger);"></i>
                         <% } %>
@@ -378,7 +378,7 @@
                                 <% if (p.gioco_id === 'calciobalilla') { %>
                                     <i class="bi bi-dribbble"></i>
                                 <% } else if (p.gioco_id === 'biliardo') { %>
-                                    <i class="bi bi-circle-fill"></i>
+                                    <i class="bi bi-8-circle"></i>
                                 <% } else { %>
                                     <i class="bi bi-bullseye"></i>
                                 <% } %>
@@ -738,7 +738,7 @@
                 filteredMatches.forEach(p => {
                     const isP1 = p.giocatore_1_id === currentUserId;
                     const won = isP1 ? (p.punteggio_1 > p.punteggio_2) : (p.punteggio_2 > p.punteggio_1);
-                    const icon = (p.gioco_id === 'calciobalilla') ? '<i class="bi bi-dribbble"></i>' : (p.gioco_id === 'biliardo' ? '<i class="bi bi-circle-fill"></i>' : '<i class="bi bi-bullseye"></i>');
+                    const icon = (p.gioco_id === 'calciobalilla') ? '<i class="bi bi-dribbble"></i>' : (p.gioco_id === 'biliardo' ? '<i class="bi bi-8-circle"></i>' : '<i class="bi bi-bullseye"></i>');
                     const dateStr = new Date(p.data_fine).toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
 
                     html += `<div class="user-match-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">

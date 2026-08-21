@@ -92,24 +92,27 @@ Il sistema gestisce tavoli da gioco fisici (Calciobalilla, Freccette) distribuib
 ## 2.2 Diagramma UML dei Casi d'Uso
 
 ```mermaid
-graph TD
-    Giocatore(("Giocatore"))
-    AdminLocale(("Admin Locale"))
-    AdminPiattaforma(("Admin Piattaforma"))
-    SensoreIoT(("Sensore IoT / Simulatore"))
-    EdgeNode(("Edge Node Service"))
-
-    subgraph "Connected Games Platform"
-        UC01("UC-01: Autenticazione OIDC (SSO)")
-        UC02("UC-02: Avvio Nuova Partita")
-        UC03("UC-03: Rilevamento Evento di Gioco")
-        UC04("UC-04: Sincronizzazione Bulk Offline")
-        UC05("UC-05: Creazione Torneo Globale")
-        UC06("UC-06: Iscrizione a Torneo (Auto-Reg)")
-        UC07("UC-07: Consulta Classifica e Statistiche")
-        UC08("UC-08: Monitoraggio Locale ed Edge")
+graph LR
+    subgraph Attori["👥 ATTORI DEL SISTEMA"]
+        Giocatore["👤 Giocatore"]
+        AdminLocale["🏢 Admin Locale"]
+        AdminPiattaforma["👑 Admin Piattaforma"]
+        SensoreIoT["📟 Sensore IoT / Simulatore"]
+        EdgeNode["⚙️ Edge Node Service"]
     end
 
+    subgraph Platform["🎮 CONNECTED GAMES PLATFORM"]
+        UC01(["UC-01: Autenticazione OIDC (SSO)"])
+        UC02(["UC-02: Avvio Nuova Partita"])
+        UC03(["UC-03: Rilevamento Evento di Gioco"])
+        UC04(["UC-04: Sincronizzazione Bulk Offline"])
+        UC05(["UC-05: Creazione Torneo Globale"])
+        UC06(["UC-06: Iscrizione a Torneo"])
+        UC07(["UC-07: Consulta Classifica e Statistiche"])
+        UC08(["UC-08: Monitoraggio Locale ed Edge"])
+    end
+
+    %% Collegamenti Attori -> Casi d'Uso
     Giocatore --> UC01
     Giocatore --> UC02
     Giocatore --> UC06
@@ -126,10 +129,17 @@ graph TD
     AdminPiattaforma --> UC07
     AdminPiattaforma --> UC08
 
-    UC02 ..->|"include"| UC01
-    UC06 ..->|"include"| UC01
-    UC03 ..->|"include"| UC02
-    UC04 ..->|"include"| UC01
+    %% Relazioni <<include>> (Inclusione Obbligatoria)
+    UC02 -. "<<include>>" .-> UC01
+    UC03 -. "<<include>>" .-> UC02
+    UC04 -. "<<include>>" .-> UC01
+    UC05 -. "<<include>>" .-> UC01
+    UC06 -. "<<include>>" .-> UC01
+    UC08 -. "<<include>>" .-> UC01
+
+    %% Relazioni <<extend>> (Estensione Opzionale / Condizionale)
+    UC06 -. "<<extend>>" .-> UC07
+    UC03 -. "<<extend>>" .-> UC07
 ```
 
 ---
@@ -212,65 +222,108 @@ graph TD
 
 ## 2.4 Diagramma UML delle Classi del Dominio
 
-```mermaid
-classDiagram
-    class Locale {
-        +String id
-        +String nome
-        +String indirizzo
-        +String citta
-    }
+```plantuml
+@startuml Diagramma_Classi_Dominio_Connected_Games
 
-    class Gioco {
-        +String id
-        +String nome
-        +String descrizione
-    }
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
 
-    class InstallazioneGioco {
-        +String id
-        +String note
-    }
+class Locale {
+  + String id
+  + String nome
+  + String tipo [PUBBLICO / PRIVATO]
+  + String indirizzo
+}
 
-    class Utente {
-        +UUID id
-        +String username
-        +String email
-        +OffsetDateTime dataRegistrazione
-    }
+class ComponenteEdge {
+  + String id
+  + String ipLocale
+  + String statoConnessione [ONLINE / OFFLINE]
+}
 
-    class Partita {
-        +UUID id
-        +Integer punteggio1
-        +Integer punteggio2
-        +OffsetDateTime dataInizio
-        +OffsetDateTime dataFine
-        +OffsetDateTime dataSincronizzazione
-    }
+class TavoloGioco {
+  + String id
+  + String codiceUnivoco
+  + String stato [DISPONIBILE / IN_USO]
+}
 
-    class Torneo {
-        +UUID id
-        +String nome
-        +String stato
-        +OffsetDateTime dataInizio
-        +OffsetDateTime dataFine
-    }
+class TipoGioco {
+  + String id
+  + String nome
+  + String descrizione
+}
 
-    class IscrizioneTorneo {
-        +OffsetDateTime dataIscrizione
-    }
+class Partita {
+  + String id
+  + Integer punteggioSquadra1
+  + Integer punteggioSquadra2
+  + DateTime dataInizio
+  + DateTime dataFine
+  + Boolean sincronizzataCloud
+}
 
-    Locale "1" -- "*" InstallazioneGioco : ospita
-    Gioco "1" -- "*" InstallazioneGioco : definisce
-    InstallazioneGioco "1" -- "*" Partita : esegue
-    Locale "1" -- "*" Partita : localizzata in
-    Utente "1" -- "*" Partita : Giocatore 1
-    Utente "1" -- "*" Partita : Giocatore 2
-    Torneo "0..1" -- "*" Partita : classifica
-    Torneo "*" -- "*" Locale : associato a
-    Torneo "1" -- "*" IscrizioneTorneo : possiede
-    Utente "1" -- "*" IscrizioneTorneo : effettua
+class Utente {
+  + String id
+  + String username
+  + String email
+  + String ruolo [GIOCATORE / ADMIN_LOCALE / ADMIN_PIATTAFORMA]
+}
+
+class Torneo {
+  + String id
+  + String nome
+  + DateTime dataInizio
+  + DateTime dataFine
+  + String stato [APERTO / IN_CORSO / CONCLUSO]
+}
+
+class IscrizioneTorneo {
+  + DateTime dataIscrizione
+  + Integer puntiTorneo
+  + Integer posizioneClassifica
+}
+
+' === RELAZIONI PRINCIPALI ===
+Locale "1" *-- "1" ComponenteEdge : gestito da >
+Locale "1" *-- "1..*" TavoloGioco : contiene >
+Locale "0..*" -- "0..*" Torneo : partecipa a >
+
+TipoGioco "1" -- "0..*" TavoloGioco : definisce >
+TavoloGioco "1" -- "0..*" Partita : ospita >
+
+ComponenteEdge "1" -- "0..*" Partita : coordina e bufferizza >
+
+Utente "1" -- "0..*" Partita : partecipa a >
+Utente "1" -- "0..*" Torneo : crea >
+
+TipoGioco "1" -- "0..*" Torneo : associato a >
+Torneo "1" *-- "0..*" IscrizioneTorneo : include >
+Utente "1" -- "0..*" IscrizioneTorneo : effettua >
+
+@enduml
 ```
+
+---
+
+## 2.5 Modello Concettuale e Molteplicità delle Relazioni
+
+La seguente tabella descrive in modo sintetico e strutturato tutte le **associazioni, composizioni e molteplicità** che intercorrono tra le classi principali del dominio applicativo.
+
+| Entità Origine (A) | Molteplicità | Entità Destinazione (B) | Tipo di Relazione | Descrizione / Regola di Dominio |
+| :--- | :---: | :--- | :--- | :--- |
+| **Locale** | `1` $\rightarrow$ `1` | **ComponenteEdge** | Composizione | Ogni locale fisico possiede ed esegue esattamente **un solo nodo Edge locale** dedicato alla gestione offline ed al buffering dei dati. |
+| **Locale** | `1` $\rightarrow$ `1..*` | **TavoloGioco** | Aggregazione | All'interno di ciascun locale sono installati **uno o più tavoli da gioco** fisici (es. Calciobalilla, Freccette). |
+| **Locale** | `0..*` $\rightarrow$ `0..*` | **Torneo** | Associazione M:N | Un locale può ospitare partite di più tornei e un torneo su scala regionale/nazionale coinvolge **più locali fisici**. |
+| **TipoGioco** | `1` $\rightarrow$ `0..*` | **TavoloGioco** | Definizione | Un tipo di gioco definisce la categoria hardware ed il regolamento applicato a **più installazioni/tavoli**. |
+| **TavoloGioco** | `1` $\rightarrow$ `0..*` | **Partita** | Sessione / Ospitalità | Un tavolo da gioco ospita nel tempo una sequenza di **molteplici partite** giocate dagli utenti. |
+| **ComponenteEdge** | `1` $\rightarrow$ `0..*` | **Partita** | Coordinamento / Sync | Il nodo Edge elabora in tempo reale e memorizza temporaneamente su SQLite **tutte le partite disputate nel locale**. |
+| **Utente** | `1` $\rightarrow$ `0..*` | **Partita** | Partecipazione | Un utente (Giocatore) può partecipare a **molteplici partite** ricoprendo il ruolo di sfidante o avversario. |
+| **Utente** | `1` $\rightarrow$ `0..*` | **Torneo** | Gestione / Admin | Un utente con ruolo `admin_piattaforma` può creare e configurare **più tornei globali**. |
+| **TipoGioco** | `1` $\rightarrow$ `0..*` | **Torneo** | Categoria | Ciascun torneo è riservato ed organizzato per **uno specifico tipo di gioco** (es. Torneo di Calciobalilla). |
+| **Torneo** | `1` $\rightarrow$ `0..*` | **IscrizioneTorneo** | Composizione | Un torneo raccoglie e mantiene l'elenco delle **iscrizioni ufficiali** di tutti i giocatori partecipanti. |
+| **Utente** | `1` $\rightarrow$ `0..*` | **IscrizioneTorneo** | Partecipazione | Un giocatore può iscriversi a **diversi tornei** registrando la propria presenza e punteggio in classifica. |
 
 ---
 

@@ -1,0 +1,1318 @@
+openapi: 3.0.3
+info:
+  title: Connected Games Platform - Central Server API
+  description: |
+    Specifica ufficiale delle API REST del Server Centrale per il progetto Connected Games Platform (PISSIR A.A. 2025/2026).
+    Il Server Centrale (dietro al Gateway) riceve le richieste dai Gateway Edge, dalla Dashboard Super Admin e dai client.
+    Le rotte API REST (/api/v1/**) sono protette tramite token JWT emessi da Keycloak.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081/api/v1
+    description: Server Gateway API (Sviluppo Locale)
+
+tags:
+  - name: "Sincronizzazione & Edge"
+    description: "API per la sincronizzazione massiva offline dei dati dagli Edge Node locali e censimento delle installazioni."
+  - name: "Gestione Partite"
+    description: "API per la ricerca, consultazione paginata e dettaglio delle partite giocate."
+  - name: "Gestione Utenti"
+    description: "API per la consultazione anagrafica degli utenti e dello storico partite personale."
+  - name: "Gestione Tornei"
+    description: "API per la creazione dei tornei, gestione iscrizioni/disiscrizioni e calcolo classifica in tempo reale."
+  - name: "Statistiche & Analytics"
+    description: "API per la Dashboard Super Admin e l'analisi dettagliata per singoli locali e utenti."
+
+paths:
+
+  /locali:
+    get:
+      tags:
+        - "Sincronizzazione & Edge"
+      summary: Elenco dei locali censiti
+      description: Recupera l'elenco completo di tutti i locali fisici registrati sulla piattaforma.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista dei locali recuperata con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocaleResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /locali/{localeId}/partite/sincronizza:
+    post:
+      tags:
+        - "Sincronizzazione & Edge"
+      summary: Sincronizzazione massiva offline (Bulk Sync)
+      description: |
+        Riceve un array di partite salvate offline nel buffer SQLite di uno specifico Edge Node.
+        Il Server Centrale processa le partite singolarmente. Implementa una logica di tolleranza all'errore
+        restituendo un successo parziale (Bulk Partial Success) per evitare loop infiniti di sincronizzazione.
+        L'idempotenza è garantita dall'UUID di ciascuna partita generato a monte dall'Edge.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: localeId
+          in: path
+          required: true
+          description: ID del locale fisico che sta inviando i dati (es. BAR_BELVEDERE)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PartitaSyncInput'
+      responses:
+        '200':
+          description: Sincronizzazione elaborata (può contenere successi e fallimenti parziali)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResultResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /locali/{localeId}/giochi:
+    get:
+      tags:
+        - "Sincronizzazione & Edge"
+      summary: Lista dei giochi installati nel locale
+      description: Recupera tutti i giochi fisici censiti e attivi all'interno di uno specifico locale per la sincronizzazione o la visualizzazione di stato.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: localeId
+          in: path
+          required: true
+          description: ID univoco del locale fisico
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista dei giochi recuperata con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GiocoInstallatoResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /partite:
+    get:
+      tags:
+        - "Gestione Partite"
+      summary: Ottieni elenco partite
+      description: Restituisce la lista paginata di tutte le partite registrate sulla piattaforma, con filtri opzionali per locale, gioco e giocatore.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: localeId
+          in: query
+          required: false
+          description: Filtra per ID del locale
+          schema:
+            type: string
+        - name: giocoId
+          in: query
+          required: false
+          description: Filtra per tipo gioco (es. calciobalilla, freccette, biliardo)
+          schema:
+            type: string
+        - name: giocatoreId
+          in: query
+          required: false
+          description: Filtra per UUID del giocatore
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          required: false
+          description: Numero di pagina (0-indexed)
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          description: Dimensione della pagina
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Pagina di partite recuperata con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PartitaDetailResponse'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  number:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /partite/{partitaId}:
+    get:
+      tags:
+        - "Gestione Partite"
+      summary: Dettaglio singola partita
+      description: Restituisce i dettagli completi di una partita identificata dal suo UUID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: partitaId
+          in: path
+          required: true
+          description: UUID della partita
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dettagli partita recuperati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartitaDetailResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /utenti:
+    get:
+      tags:
+        - "Gestione Utenti"
+      summary: Lista utenti registrati
+      description: Restituisce l'elenco completo di tutti gli utenti registrati nella piattaforma.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista utenti recuperata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UtenteResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /utenti/{utenteId}:
+    get:
+      tags:
+        - "Gestione Utenti"
+      summary: Dettaglio anagrafica e statistiche utente
+      description: Restituisce il dettaglio di un singolo utente con le sue statistiche di gioco aggregate (vittorie, win rate).
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: utenteId
+          in: path
+          required: true
+          description: UUID dell'utente
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dettaglio utente recuperato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtenteDetailResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /utenti/{utenteId}/partite:
+    get:
+      tags:
+        - "Gestione Utenti"
+      summary: Storico partite di un utente
+      description: Restituisce l'elenco paginato di tutte le partite giocate da uno specifico utente.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: utenteId
+          in: path
+          required: true
+          description: UUID dell'utente
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Pagina dello storico partite dell'utente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PartitaDetailResponse'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /tornei:
+    get:
+      tags:
+        - "Gestione Tornei"
+      summary: Ottieni la lista dei tornei
+      description: Restituisce l'elenco di tutti i tornei registrati sulla piattaforma, attivi o conclusi.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: stato
+          in: query
+          required: false
+          description: Filtra i tornei per stato (es. ATTIVO, CONCLUSO)
+          schema:
+            type: string
+            enum: [ATTIVO, CONCLUSO]
+      responses:
+        '200':
+          description: Lista dei tornei recuperata con successo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Torneo'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+    post:
+      tags:
+        - "Gestione Tornei"
+      summary: Crea un nuovo torneo
+      description: Permette la creazione di un torneo associato a un gioco e a vari locali (richiede ruolo admin_piattaforma o admin_locale).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TorneoCreateInput'
+      responses:
+        '200':
+          description: Torneo creato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Torneo'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /tornei/{torneoId}:
+    get:
+      tags:
+        - "Gestione Tornei"
+      summary: Recupera i dettagli di un singolo torneo
+      description: Restituisce le informazioni di un torneo specifico.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: torneoId
+          in: path
+          required: true
+          description: ID univoco del torneo
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dettagli torneo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Torneo'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+    delete:
+      tags:
+        - "Gestione Tornei"
+      summary: Cancella un torneo
+      description: Elimina un torneo esistente (richiede ruolo admin_piattaforma o admin_locale).
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: torneoId
+          in: path
+          required: true
+          description: ID univoco del torneo
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Torneo eliminato con successo (No Content)
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /tornei/{torneoId}/iscrizioni:
+    get:
+      tags:
+        - "Gestione Tornei"
+      summary: Ottieni iscritti al torneo
+      description: Restituisce la lista degli iscritti al torneo specificato.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: torneoId
+          in: path
+          required: true
+          description: ID univoco del torneo
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lista iscritti
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IscrizioneTorneoResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+    post:
+      tags:
+        - "Gestione Tornei"
+      summary: Iscrivi un giocatore al torneo
+      description: Permette l'iscrizione di un giocatore a un torneo attivo.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: torneoId
+          in: path
+          required: true
+          description: ID univoco del torneo
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IscrizioneInput'
+      responses:
+        '200':
+          description: Giocatore iscritto con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IscrizioneTorneoResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /tornei/{torneoId}/iscrizioni/{utenteId}:
+    delete:
+      tags:
+        - "Gestione Tornei"
+      summary: Disiscrivi un giocatore dal torneo
+      description: Rimuove l'iscrizione di uno specifico utente da un torneo.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: torneoId
+          in: path
+          required: true
+          description: ID del torneo
+          schema:
+            type: string
+            format: uuid
+        - name: utenteId
+          in: path
+          required: true
+          description: ID dell'utente da disiscrivere
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Iscrizione cancellata con successo (No Content)
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /tornei/{torneoId}/classifica:
+    get:
+      tags:
+        - "Gestione Tornei"
+      summary: Ottieni la classifica in tempo reale del torneo
+      description: |
+        Calcola live (lazy evaluation) la classifica aggregata del torneo sommando o normalizzando i punteggi
+        delle partite validate giocate nei diversi locali coinvolti.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: torneoId
+          in: path
+          required: true
+          description: ID univoco del torneo
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Classifica del torneo calcolata in tempo reale
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassificaTorneoResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /statistiche:
+    get:
+      tags:
+        - "Statistiche & Analytics"
+      summary: Dashboard delle statistiche globali della piattaforma
+      description: |
+        Restituisce un report aggregato calcolato in tempo reale per gli Amministratori di Piattaforma.
+        Include metriche di utilizzo complessivo (partite, giocatori, tornei attivi/conclusi, punti totali, durata media),
+        classifica Hall of Fame dei giocatori e popolarità dei locali e dei giochi.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Statistiche globali aggregate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticheGlobaliResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /statistiche/locali/{localeId}:
+    get:
+      tags:
+        - "Statistiche & Analytics"
+      summary: Statistiche analitiche di uno specifico locale
+      description: Restituisce le metriche aggregate di gioco relative a un locale specifico (partite totali, giocatori unici, gioco più popolare).
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: localeId
+          in: path
+          required: true
+          description: ID del locale (es. BAR_BELVEDERE)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Statistiche del locale recuperate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticheLocaleResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /statistiche/utenti/{utenteId}:
+    get:
+      tags:
+        - "Statistiche & Analytics"
+      summary: Statistiche analitiche di uno specifico utente
+      description: Restituisce il bilancio delle partite (vinte, perse, win rate %) e la partecipazione ai tornei di uno specifico utente.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: utenteId
+          in: path
+          required: true
+          description: UUID dell'utente
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Statistiche utente recuperate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticheUtenteResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Inserisci il token JWT rilasciato da Keycloak nell'header Authorization.
+
+  responses:
+    400BadRequest:
+      description: Richiesta non valida o parametri mancanti.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    401Unauthorized:
+      description: Token mancante, scaduto o non valido.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    403Forbidden:
+      description: Privilegi insufficienti per accedere alla risorsa.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    404NotFound:
+      description: Risorsa non trovata.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    500InternalError:
+      description: Errore interno del server durante l'elaborazione.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-08-12T09:17:00Z"
+        status:
+          type: integer
+          example: 401
+        error:
+          type: string
+          example: "Unauthorized"
+        message:
+          type: string
+          example: "Full authentication is required to access this resource"
+
+    PartitaSyncInput:
+      type: object
+      required:
+        - id
+        - giocoId
+        - punteggio1
+        - punteggio2
+        - dataInizio
+        - dataFine
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID univoco della partita generato a monte dall'Edge (fondamentale per garantire l'idempotenza).
+          example: "7e504c86-1d18-4e89-9a73-31f1dcce7780"
+        giocoId:
+          type: string
+          description: Identificativo del gioco installato nel locale (es. calciobalilla-1).
+          example: "calciobalilla-1"
+        giocatore1Id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID dell'utente Keycloak per il giocatore 1. Se NULL, identifica un giocatore Ospite (Guest Mode).
+          example: "a3b9cc22-38e2-4bf1-a06f-b1b7ef38f123"
+        giocatore2Id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID dell'utente Keycloak per il giocatore 2. Se NULL, identifica un giocatore Ospite (Guest Mode).
+          example: "e883df11-20f5-4c07-ba99-8cfc84381e44"
+        punteggio1:
+          type: integer
+          description: Punteggio finale ottenuto dal giocatore 1 o dal Team A.
+          example: 10
+        punteggio2:
+          type: integer
+          description: Punteggio finale ottenuto dal giocatore 2 o dal Team B.
+          example: 8
+        dataInizio:
+          type: string
+          format: date-time
+          description: Timestamp ISO-8601 UTC dell'inizio effettivo della partita.
+          example: "2026-08-12T09:00:00Z"
+        dataFine:
+          type: string
+          format: date-time
+          description: Timestamp ISO-8601 UTC della conclusione della partita.
+          example: "2026-08-12T09:15:00Z"
+        torneoId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Valorizzato solo se la partita faceva parte di un torneo ufficiale attivo al momento del gioco.
+          example: "b0000000-0000-0000-0000-000000000001"
+
+    SyncResultResponse:
+      type: object
+      required:
+        - salvate
+        - fallite
+      properties:
+        salvate:
+          type: array
+          description: Array contenente gli UUID delle partite sincronizzate e salvate con successo in PostgreSQL.
+          items:
+            type: string
+            format: uuid
+          example: ["7e504c86-1d18-4e89-9a73-31f1dcce7780"]
+        fallite:
+          type: array
+          description: Array delle partite che hanno riscontrato errori durante l'elaborazione.
+          items:
+            $ref: '#/components/schemas/SyncFailure'
+
+    SyncFailure:
+      type: object
+      required:
+        - id
+        - errore
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "bc34fe81-e009-41aa-8bc3-32f41ccfe999"
+        errore:
+          type: string
+          example: "Il punteggio inserito non rispetta le regole del gioco Calciobalilla"
+
+    GiocoInstallatoResponse:
+      type: object
+      required:
+        - id
+        - giocoId
+        - nomeGioco
+        - localeId
+        - statoAttivita
+      properties:
+        id:
+          type: string
+          example: "calciobalilla-1"
+        giocoId:
+          type: string
+          example: "calciobalilla"
+        nomeGioco:
+          type: string
+          example: "Calciobalilla"
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        statoAttivita:
+          type: string
+          example: "ATTIVO"
+
+    PartitaDetailResponse:
+      type: object
+      required:
+        - id
+        - installazioneId
+        - localeId
+        - giocoId
+        - punteggio1
+        - punteggio2
+        - dataInizio
+        - dataFine
+      properties:
+        id:
+          type: string
+          format: uuid
+        installazioneId:
+          type: string
+        localeId:
+          type: string
+        nomeLocale:
+          type: string
+        giocoId:
+          type: string
+        nomeGioco:
+          type: string
+        giocatore1Id:
+          type: string
+          format: uuid
+          nullable: true
+        giocatore1Username:
+          type: string
+          nullable: true
+        giocatore2Id:
+          type: string
+          format: uuid
+          nullable: true
+        giocatore2Username:
+          type: string
+          nullable: true
+        punteggio1:
+          type: integer
+        punteggio2:
+          type: integer
+        dataInizio:
+          type: string
+          format: date-time
+        dataFine:
+          type: string
+          format: date-time
+        torneoId:
+          type: string
+          format: uuid
+          nullable: true
+        nomeTorneo:
+          type: string
+          nullable: true
+
+    LocaleResponse:
+      type: object
+      required:
+        - id
+        - nome
+        - tipo
+        - indirizzo
+      properties:
+        id:
+          type: string
+          example: "BAR_BELVEDERE"
+        nome:
+          type: string
+          example: "Bar Belvedere"
+        tipo:
+          type: string
+          example: "PUBBLICO"
+        indirizzo:
+          type: string
+          example: "Via Roma 42, Alessandria"
+
+    UtenteResponse:
+      type: object
+      required:
+        - id
+        - username
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          nullable: true
+        dataRegistrazione:
+          type: string
+          format: date-time
+
+    UtenteDetailResponse:
+      type: object
+      required:
+        - id
+        - username
+        - totalePartiteGiocate
+        - totalePartiteVinte
+        - percentualeVittorie
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          nullable: true
+        totalePartiteGiocate:
+          type: integer
+        totalePartiteVinte:
+          type: integer
+        percentualeVittorie:
+          type: number
+          format: float
+
+    Torneo:
+      type: object
+      required:
+        - id
+        - nome
+        - giocoId
+        - giocoNome
+        - stato
+        - dataInizio
+        - dataFine
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "b0000000-0000-0000-0000-000000000001"
+        nome:
+          type: string
+          example: "Torneo Estivo Calciobalilla 2026"
+        giocoId:
+          type: string
+          example: "calciobalilla"
+        giocoNome:
+          type: string
+          example: "Calciobalilla"
+        stato:
+          type: string
+          enum: [ATTIVO, CONCLUSO]
+          example: "ATTIVO"
+        dataInizio:
+          type: string
+          format: date-time
+        dataFine:
+          type: string
+          format: date-time
+        localiIds:
+          type: array
+          items:
+            type: string
+          example: ["BAR_BELVEDERE", "SALA_GIOCHI_ROMA"]
+
+    TorneoCreateInput:
+      type: object
+      required:
+        - nome
+        - giocoId
+        - localiId
+        - dataInizio
+        - dataFine
+      properties:
+        nome:
+          type: string
+          example: "Campionato Nazionale 2026"
+        giocoId:
+          type: string
+          example: "calciobalilla"
+        localiId:
+          type: array
+          items:
+            type: string
+          example: ["BAR_BELVEDERE"]
+        dataInizio:
+          type: string
+          format: date-time
+        dataFine:
+          type: string
+          format: date-time
+
+    IscrizioneInput:
+      type: object
+      required:
+        - utenteId
+        - localeId
+      properties:
+        utenteId:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+
+    IscrizioneTorneoResponse:
+      type: object
+      required:
+        - torneoId
+        - utenteId
+        - utenteUsername
+        - dataIscrizione
+      properties:
+        torneoId:
+          type: string
+          format: uuid
+        utenteId:
+          type: string
+          format: uuid
+        utenteUsername:
+          type: string
+          example: "SuperMario"
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        localeNome:
+          type: string
+          example: "Bar Belvedere"
+        dataIscrizione:
+          type: string
+          format: date-time
+
+    ClassificaTorneoResponse:
+      type: object
+      required:
+        - torneoId
+        - torneoNome
+        - classificaLocali
+        - classificaGiocatori
+      properties:
+        torneoId:
+          type: string
+          format: uuid
+        torneoNome:
+          type: string
+        classificaLocali:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoceClassificaLocale'
+        classificaGiocatori:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoceClassificaGiocatore'
+
+    VoceClassificaLocale:
+      type: object
+      required:
+        - posizione
+        - localeId
+        - localeNome
+        - partiteGiocate
+        - partiteVinte
+        - percentualeVittorie
+        - metricaClassifica
+      properties:
+        posizione:
+          type: integer
+          example: 1
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        localeNome:
+          type: string
+          example: "Bar Belvedere"
+        partiteGiocate:
+          type: integer
+          example: 10
+        partiteVinte:
+          type: integer
+          example: 8
+        percentualeVittorie:
+          type: number
+          format: float
+          example: 80.0
+        metricaClassifica:
+          type: string
+          example: "8 vinte (80%)"
+
+    VoceClassificaGiocatore:
+      type: object
+      required:
+        - posizione
+        - utenteId
+        - username
+        - partiteGiocate
+        - partiteVinte
+        - percentualeVittorie
+        - metricaClassifica
+      properties:
+        posizione:
+          type: integer
+          example: 1
+        utenteId:
+          type: string
+          format: uuid
+        username:
+          type: string
+          example: "SuperMario"
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        localeNome:
+          type: string
+          example: "Bar Belvedere"
+        partiteGiocate:
+          type: integer
+          example: 5
+        partiteVinte:
+          type: integer
+          example: 4
+        percentualeVittorie:
+          type: number
+          format: float
+          example: 80.0
+        metricaClassifica:
+          type: string
+          example: "4 vinte (80%)"
+
+    StatisticheGlobaliResponse:
+      type: object
+      required:
+        - totalePartiteGiocate
+        - totaleGiocatoriAttivi
+        - totaleTorneiAttivi
+        - totaleTorneiConclusi
+        - totalePuntiSegnati
+        - durataMediaMinuti
+        - localiPiuAttivi
+        - giochiPiuUtilizzati
+        - topGiocatoriVittorie
+        - torneiStat
+      properties:
+        totalePartiteGiocate:
+          type: integer
+          example: 42
+        totaleGiocatoriAttivi:
+          type: integer
+          example: 10
+        totaleTorneiAttivi:
+          type: integer
+          example: 1
+        totaleTorneiConclusi:
+          type: integer
+          example: 1
+        totalePuntiSegnati:
+          type: integer
+          example: 384
+        durataMediaMinuti:
+          type: number
+          format: float
+          example: 14.5
+        localiPiuAttivi:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocaleStat'
+        giochiPiuUtilizzati:
+          type: array
+          items:
+            $ref: '#/components/schemas/GiocoStat'
+        topGiocatoriVittorie:
+          type: array
+          items:
+            $ref: '#/components/schemas/GiocatoreVittorieStat'
+        torneiStat:
+          type: array
+          items:
+            $ref: '#/components/schemas/TorneoStat'
+
+    LocaleStat:
+      type: object
+      required:
+        - localeId
+        - nomeLocale
+        - partiteGiocate
+      properties:
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        nomeLocale:
+          type: string
+          example: "Bar Belvedere"
+        partiteGiocate:
+          type: integer
+          example: 24
+
+    GiocoStat:
+      type: object
+      required:
+        - giocoTipo
+        - partiteGiocate
+      properties:
+        giocoTipo:
+          type: string
+          example: "Calciobalilla"
+        partiteGiocate:
+          type: integer
+          example: 30
+
+    GiocatoreVittorieStat:
+      type: object
+      required:
+        - utenteId
+        - username
+        - partiteGiocate
+        - partiteVinte
+        - percentualeVittorie
+      properties:
+        utenteId:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        username:
+          type: string
+          example: "SuperMario"
+        partiteGiocate:
+          type: integer
+          example: 10
+        partiteVinte:
+          type: integer
+          example: 8
+        percentualeVittorie:
+          type: number
+          format: float
+          example: 80.0
+
+    TorneoStat:
+      type: object
+      required:
+        - torneoId
+        - nome
+        - giocoNome
+        - stato
+        - iscrittiCount
+        - partiteGiocate
+      properties:
+        torneoId:
+          type: string
+          format: uuid
+          example: "b0000000-0000-0000-0000-000000000001"
+        nome:
+          type: string
+          example: "Torneo Estivo Calciobalilla 2026"
+        giocoNome:
+          type: string
+          example: "Calciobalilla"
+        stato:
+          type: string
+          example: "ATTIVO"
+        iscrittiCount:
+          type: integer
+          example: 6
+        partiteGiocate:
+          type: integer
+          example: 6
+
+    StatisticheLocaleResponse:
+      type: object
+      required:
+        - localeId
+        - partiteGiocate
+        - giocatoriAttivi
+        - giocoPiuPopolare
+        - ripartizioneGiochi
+        - torneiPartecipati
+        - torneiVinti
+      properties:
+        localeId:
+          type: string
+          example: "BAR_BELVEDERE"
+        partiteGiocate:
+          type: integer
+          example: 24
+        giocatoriAttivi:
+          type: integer
+          example: 8
+        giocoPiuPopolare:
+          type: string
+          example: "Calciobalilla"
+        ripartizioneGiochi:
+          type: array
+          items:
+            $ref: '#/components/schemas/GiocoStat'
+        torneiPartecipati:
+          type: integer
+          example: 3
+        torneiVinti:
+          type: integer
+          example: 2
+

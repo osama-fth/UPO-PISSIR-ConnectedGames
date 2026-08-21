@@ -1,81 +1,105 @@
 # 🎮 Connected Games Platform
 
-**Progetto di Laboratorio PISSIR - A.A. 2025/2026 - Università del Piemonte Orientale**
+**Progetto di Laboratorio PISSIR — A.A. 2025/2026 — Università del Piemonte Orientale**
 
-La **Connected Games Platform** è un'architettura distribuita basata su microservizi e nodi Edge per la gestione, il monitoraggio e la fruizione di giochi fisici (es. Calciobalilla, Freccette) distribuiti in locali geograficamente separati (Bar, Sale Giochi). L'infrastruttura unisce il mondo IoT (Sensori MQTT) a un solido sistema Cloud-based per il calcolo delle statistiche, tornei globali e l'autenticazione centralizzata.
-
----
-
-## 🏗 Architettura del Sistema
-
-Il progetto si articola su un'architettura ibrida **Edge-to-Cloud**, orchestrata interamente tramite Docker Compose. 
-
-### 1. Livello Centrale (Cloud / Platform)
-- **Service Gateway (Spring Boot 3 + Java 21)**: Punto di ingresso (API Gateway) per tutte le comunicazioni dall'Edge verso la piattaforma centrale.
-- **Partita Service & Torneo Service (Spring Boot 3 + Java 21)**: I motori di business. Gestiscono il salvataggio delle partite, la validazione, le statistiche e l'organizzazione dei tornei.
-- **Keycloak (Identity Provider)**: Gestore centralizzato delle identità (SSO) tramite protocollo OIDC (OpenID Connect). Gestisce i ruoli (`giocatore`, `admin_locale`, `admin_piattaforma`).
-- **PostgreSQL Database**: Sede di due database logici isolati: `platform_db` per il dominio di business e `keycloak_db` per la sicurezza.
-
-### 2. Livello Locale (Edge / Locali)
-I nodi Edge vengono installati fisicamente nei locali aderenti alla piattaforma. Nel nostro ambiente di sviluppo ne simuliamo due: **Bar Belvedere** (`edge-locale1`) e **Sala Giochi Roma** (`edge-locale2`).
-- **Edge Node (Node.js + Express)**: Espone la Dashboard interattiva per i giocatori e per gli amministratori locali. Interagisce con Keycloak tramite **Authorization Code Flow con PKCE** per garantire massima sicurezza (essendo un client pubblico). Bufferizza offline i dati su **SQLite** in caso di disconnessione dalla piattaforma centrale.
-- **Broker MQTT (Mosquitto)**: Raccoglie in tempo reale gli eventi generati dai sensori IoT hardware (es. sensori break-beam nelle porte del calciobalilla) e li inoltra all'Edge Node.
+### 👥 Membri del Gruppo (Autori)
+* **Foutih Osama**
+* **Bellotti Lorenzo**
+* **Riccardo Negrini**
 
 ---
 
-## 🚀 Come avviare il progetto (Stato Attuale)
+## 🏗️ Architettura di Sistema
 
-L'intero stack è containerizzato e facilmente avviabile con un solo comando.
+L'infrastruttura si sviluppa su **due reti isolati** orchestrate tramite Docker Compose:
 
-1. **Avvio dell'infrastruttura**
-   Assicurati di non avere porte occupate (3001, 3002, 9080, 5432, 1883, 1884) ed esegui:
-   ```bash
-   docker compose down -v  # (Opzionale: formatta vecchi dati)
-   docker compose up --build
-   ```
+### 1. Rete Backend Cloud (`platform-backend-tier`)
+Rete interna riservata ai servizi centrali ed alla persistenza:
+- **`service-gateway`**: Porta `8081` (API Gateway centralizzato)
+- **`keycloak`**: Porta `9080` (Server IdP OIDC — collegato anche alle reti dei locali)
+- **`partita-service`**: Porta `8082` (Microservizio interno gestione ed ingestion partite)
+- **`torneo-service`**: Porta `8083` (Microservizio interno gestione tornei ed iscrizioni)
+- **`statistiche-service`**: Porta `8084` (Microservizio interno ed erogatore dashboard centrale)
+- **`postgres-db`**: Porta `5432` (Database con schemi `platform_db` e `keycloak_db`)
 
-2. **Accesso alle Dashboard Locali (Edge)**
-   L'interfaccia utente è fornita dai nodi Edge. Apri il browser a:
-   - 📍 **Bar Belvedere:** [http://localhost:3001](http://localhost:3001)
-   - 📍 **Sala Giochi Roma:** [http://localhost:3002](http://localhost:3002)
-
-3. **Accesso alla Dashboard Amministrativa Centrale (Piattaforma)**
-   - 📊 **URL:** [http://localhost:8081/dashboard](http://localhost:8081/dashboard) *(Accetta solo utenti con ruolo `admin_piattaforma`, es. `admin_piattaforma` / `password`)*
-   - *Nota Architetturale:* Esposta dal Gateway in trasparenza da `statistiche-service`. Gestisce una sessione cookie-based OIDC per gli amministratori di piattaforma, affiancandosi al modello Bearer JWT utilizzato dalle API REST dei microservizi.
-
-4. **Accesso alla Console Keycloak (Piattaforma)**
-   - 🔐 **URL:** [http://localhost:9080](http://localhost:9080)
-   - **Credenziali Admin:** `admin` / `admin`
+### 2. Reti Locali Edge (`platform-locale1-tier` & `platform-locale2-tier`)
+Reti private dei locali fisici per il collegamento dei sensori IoT e la gestione offline:
+- **`edge-locale1` (Bar Belvedere)**: Porta `3001` (Node.js Express + SQLite local buffer)
+- **`edge-locale2` (Sala Giochi Roma)**: Porta `3002` (Node.js Express + SQLite local buffer)
+- **`mosquitto-locale1`**: Porta `8883` (Broker MQTTS TLS Locale 1)
+- **`mosquitto-locale2`**: Porta `8884` (Broker MQTTS TLS Locale 2)
+- **`keycloak`**: Porta `9080` (Ponte di rete per consentire l'autenticazione OIDC PKCE ai client locali)
 
 ---
 
-## 👥 Credenziali di Test (Hardcoded Seed)
+## 🚀 Come Avviare il Progetto
 
-Per facilitare lo sviluppo e testare la *Role-Based Dashboard*, il database (`postgres/init-db.sql`) e Keycloak (`realm-export.json`) sono pre-popolati con vari utenti fissi i cui UUID coincidono perfettamente tra le due piattaforme.
+### 1. Configurazione del file d'ambiente `.env`
+Prima di avviare l'infrastruttura, è **obbligatorio** creare il file `.env` copiandolo dal template `.env.example`:
 
-**La password per tutti gli account interattivi di test è:** `password` (mentre per `edge_sync_service` è `syncpassword`)
+```bash
+cp .env.example .env
+```
 
-| Username | Email | Ruolo Keycloak | Vista Dashboard |
+### 2. Avvio dei Container Docker
+Eseguire il comando di build ed avvio:
+
+```bash
+# Formatta eventuali container e volumi preesistenti (opzionale)
+docker compose down -v
+
+# Compila ed avvia l'intero stack in foreground
+docker compose up --build
+```
+
+---
+
+## 🌐 Endpoint Contattabili
+
+I principali punti di accesso ed interfacce web raggiungibili via browser sono:
+
+| URL Endpoint | Servizio / Componente | Descrizione del Contenuto |
+| :--- | :--- | :--- |
+| `http://localhost:3001` | **Edge Node 1 (Bar Belvedere)** | Dashboard web locale per i giocatori ed i gestori del Bar Belvedere. Permette il login SSO OIDC, la scansione QR per avvio partite e la consultazione dello stato dei tavoli. |
+| `http://localhost:3002` | **Edge Node 2 (Sala Giochi Roma)** | Dashboard web locale per i giocatori ed i gestori della Sala Giochi Roma. |
+| `http://localhost:9080` | **Keycloak Identity Provider** | Console di amministrazione dell'IdP centralizzato (OIDC/OAuth2) per la gestione di utenti, credenziali, ruoli (`giocatore`, `admin_locale`, `admin_piattaforma`) e realm. (Admin credentials: `admin` / `admin`). |
+| `http://localhost:8081/doc` | **Documentazione API Swagger UI** | Interfaccia Swagger/OpenAPI 3.0 interattiva per consultare, esplorare e collaudare gli endpoint REST esposti dal Service Gateway. |
+| `http://localhost:8081/dashboard` | **Dashboard Amministrazione Centrale** | Console web riservata agli amministratori di piattaforma (`admin_piattaforma`) per la supervisione globale del traffico, monitoraggio nodi Edge e statistiche generali. |
+
+---
+
+## 🔑 Credenziali di Test (Hardcoded Seed Data)
+
+La password per tutti gli account interattivi di test è: **`password`**  
+*(eccezione fatta per `edge_sync_service` la cui password è `syncpassword`)*.
+
+| Username | Email | Ruolo Keycloak | Vista Dashboard / Ambito Test |
 | :--- | :--- | :--- | :--- |
-| `SuperMario` | `mario.rossi@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
-| `Gigio` | `luigi.bianchi@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
-| `SantAnna` | `anna.verdi@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
-| `Paul` | `paolo.neri@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
-| `LukeSkywalker` | `luca.gialli@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
-| `Saretta` | `sara.viola@example.com` | `giocatore` | Area di scansione QR per avvio partite e storico vittorie. |
-| `admin_belvedere` | `admin.belvedere@example.com` | `admin_locale` | Console di monitoraggio e manutenzione tavoli (Bar Belvedere). |
-| `admin_roma` | `admin.roma@example.com` | `admin_locale` | Console di monitoraggio e manutenzione tavoli (Roma). |
-| `admin_piattaforma` | `admin.platform@example.com` | `admin_piattaforma` | Dashboard di supervisione globale (traffico MQTT, stato sink). |
-| `edge_sync_service` | `sync.service@example.com` | `admin_piattaforma` | Account di servizio interno per demone di sincronizzazione. |
+| `SuperMario` | `mario.rossi@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
+| `Gigio` | `luigi.bianchi@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
+| `SantAnna` | `anna.verdi@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
+| `Paul` | `paolo.neri@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
+| `LukeSkywalker` | `luca.gialli@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
+| `Saretta` | `sara.viola@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
+| `admin_belvedere` | `admin.belvedere@example.com` | `admin_locale` | Console di monitoraggio e manutenzione tavoli (Bar Belvedere - `http://localhost:3001`). |
+| `admin_roma` | `admin.roma@example.com` | `admin_locale` | Console di monitoraggio e manutenzione tavoli (Sala Giochi Roma - `http://localhost:3002`). |
+| `admin_piattaforma` | `admin.platform@example.com` | `admin_piattaforma` | Dashboard di supervisione globale piattaforma (`http://localhost:8081/dashboard`). |
 
-*(Per testare le varie Dashboard, fai semplicemente Login dall'Edge con gli username sopra elencati).*
 
----
-
-## 🧪 Esecuzione dei Test
-
-I test del sistema vengono eseguiti **in automatico** durante la fase di build dell'infrastruttura (con il comando `docker compose up --build`).
-
-Se uno qualsiasi dei test fallisce, **la build si ferma immediatamente e non continua**, impedendo la creazione e la distribuzione di container con codice difettoso.
+*(Per collaudare le varie Dashboard, è sufficiente effettuare il Login dall'Edge Node con uno degli username indicati).*
 
 ---
+
+## 📚 Documentazione Ufficiale di Progetto (PDF)
+
+Tutta la documentazione tecnica e formale prodotta per l'esame è disponibile in formato **PDF** nella cartella [`doc/`](/doc/):
+
+1. 🎮 [`DocumentoDiVisione.pdf`](/doc/DocumentoDiVisione.pdf)  
+   **Documento di Visione del Prodotto**: Descrizione del dominio, Glossario, Vincoli architetturali, Obiettivi di business, Stakeholders e Matrice di Valutazione dei Rischi.
+2. 📘 [`DocumentoDiProgettazione.pdf`](/doc/DocumentoDiProgettazione.pdf)  
+   **Documento di Specifica e Progettazione**: Modello dei Casi d'Uso, Tabelle descrittive formali (UC-01..UC-08), Diagramma UML delle Classi di Dominio, Modello Concettuale e Tabella delle Molteplicità.
+3. 🛠️ [`DocumentoDiImplementazione.pdf`](/doc/DocumentoDiImplementazione.pdf)  
+   **Documento di Implementazione Architetturale**: Diagramma di Deployment Docker con reti e porte, Diagramma dei Package, Diagramma delle Classi di Implementazione, 8 Diagrammi di Sequenza, Definizione API REST e Topic MQTT con sicurezza TLS ed ACL.
+4. 📄 [`openapi.yaml`](/doc/openapi.yaml)
+
+   **Specifica OpenAPI 3.0** eseguibile per Swagger UI.

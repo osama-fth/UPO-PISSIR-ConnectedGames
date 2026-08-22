@@ -1,4 +1,4 @@
-# Broker MQTTS Mosquitto custom con TLS ed ACL per isolamento locali.
+# Broker MQTTS Mosquitto con TLS ed ACL per isolamento locali.
 
 FROM eclipse-mosquitto:2.0
 

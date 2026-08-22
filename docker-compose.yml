@@ -37,8 +37,9 @@ services:
       KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-      - ./postgres/seed.sql:/docker-entrypoint-initdb.d/z-seed.sql:ro
+      - ./postgres/init-db.sh:/docker-entrypoint-initdb.d/01-init-db.sh:ro
+      - ./postgres/DDL.sql:/docker-entrypoint-initdb.d/02-DDL.sql:ro
+      - ./postgres/DML.sql:/docker-entrypoint-initdb.d/03-DML.sql:ro
     networks:
       - backend-tier
     healthcheck:
@@ -166,7 +167,40 @@ services:
       retries: 5
       start_period: 15s
 
-  # 4. MQTT BROKERS (MQTTS, certificati self-signed)
+  statistiche-service:
+    build:
+      context: ./statistiche-service
+      dockerfile: Dockerfile
+    image: connectedgames-statistiche-service
+    container_name: statistiche-service
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
+      - SPRING_DATASOURCE_USERNAME=${PLATFORM_DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${PLATFORM_DB_PASSWORD}
+      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${JWT_ISSUER_URI}
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=${JWT_JWK_SET_URI}
+      - GATEWAY_URL=http://localhost:8081
+    networks:
+      - backend-tier
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      service-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # 4. MQTT BROKERS 
   mosquitto-locale1:
     build:
       context: ./mosquitto
@@ -293,37 +327,3 @@ services:
     depends_on:
       mosquitto-locale2:
         condition: service_healthy
-
-  # 6. STATISTICHE SERVICE
-  statistiche-service:
-    build:
-      context: ./statistiche-service
-      dockerfile: Dockerfile
-    image: connectedgames-statistiche-service
-    container_name: statistiche-service
-    restart: unless-stopped
-    environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
-      - SPRING_DATASOURCE_USERNAME=${PLATFORM_DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${PLATFORM_DB_PASSWORD}
-      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
-      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${JWT_ISSUER_URI}
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=${JWT_JWK_SET_URI}
-      - GATEWAY_URL=http://localhost:8081
-    networks:
-      - backend-tier
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-      keycloak:
-        condition: service_healthy
-      service-gateway:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s

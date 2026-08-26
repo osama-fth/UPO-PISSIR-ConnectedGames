@@ -346,7 +346,17 @@
                             <div style="font-weight: 700; font-size: 1.25rem;"><%= g.count %></div>
                         </div>
                         <div>
-                            <div class="text-muted text-sm">Punteggio Medio</div>
+                            <div class="text-muted text-sm">
+                                <% if (g.gioco_id === 'calciobalilla') { %>
+                                    Media Gol
+                                <% } else if (g.gioco_id === 'freccette') { %>
+                                    Punti Medi Sottratti
+                                <% } else if (g.gioco_id === 'biliardo') { %>
+                                    Palle Imbucate Medie
+                                <% } else { %>
+                                    Punteggio Medio
+                                <% } %>
+                            </div>
                             <div style="font-weight: 700; font-size: 1.25rem;">
                                 <%= Math.round(g.avg_p1 * 10) / 10 %> — <%= Math.round(g.avg_p2 * 10) / 10 %>
                             </div>

@@ -60,7 +60,7 @@
 
     <!-- Match Details -->
     <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; text-align: left; max-width: 400px; margin: 0 auto;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: left; max-width: 550px; margin: 0 auto;">
             <div>
                 <div class="text-muted text-sm" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Gioco</div>
                 <div style="font-weight: 600;">
@@ -74,8 +74,24 @@
                 </div>
             </div>
             <div>
-                <div class="text-muted text-sm" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Installazione</div>
-                <div style="font-weight: 600;"><%= match.installazioneId %></div>
+                <div class="text-muted text-sm" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Locale</div>
+                <div style="font-weight: 600;"><i class="bi bi-geo-alt"></i> <%= localeId %></div>
+            </div>
+            <div>
+                <div class="text-muted text-sm" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Durata</div>
+                <div style="font-weight: 600;">
+                    <i class="bi bi-stopwatch"></i>
+                    <% if (match.dataInizio && match.dataFine) {
+                        var durMs = new Date(match.dataFine) - new Date(match.dataInizio);
+                        var durSec = Math.floor(durMs / 1000);
+                        var durMin = Math.floor(durSec / 60);
+                        var durSecRem = durSec % 60;
+                    %>
+                        <%= durMin %>m <%= durSecRem %>s
+                    <% } else { %>
+                        —
+                    <% } %>
+                </div>
             </div>
             <div>
                 <div class="text-muted text-sm" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Inizio</div>
@@ -85,6 +101,12 @@
                 <div class="text-muted text-sm" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Fine</div>
                 <div style="font-weight: 600;"><%= match.dataFine ? new Date(match.dataFine).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) : '—' %></div>
             </div>
+            <% if (match.torneoId) { %>
+            <div>
+                <div class="text-muted text-sm" style="text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Torneo</div>
+                <div style="font-weight: 600;"><i class="bi bi-trophy text-warning"></i> Partita di torneo</div>
+            </div>
+            <% } %>
         </div>
     </div>
 

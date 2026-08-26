@@ -260,16 +260,21 @@
     </div>
 </details>
 
-<!-- Match Ended Overlay (nascosto) — card vincitore + pulsante torna alla home -->
+<!-- Match Ended Overlay (nascosto) — card vincitore + pulsante torna alla home / vedi risultato -->
 <div id="match-ended-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
-    <div class="card" style="text-align: center; padding: 3rem; max-width: 500px; animation: fadeInUp 0.5s ease;">
+    <div class="card" style="text-align: center; padding: 3rem; max-width: 520px; animation: fadeInUp 0.5s ease;">
         <i class="bi bi-trophy" style="font-size: 4rem; color: var(--warning); margin-bottom: 1rem; display: block;"></i>
         <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem;">Partita Terminata!</h2>
         <p style="font-size: 1.2rem; color: var(--accent-primary); font-weight: 700; margin-bottom: 0.5rem;" id="winner-text"></p>
         <p class="text-muted" style="margin-bottom: 1.5rem;" id="final-score-text"></p>
-        <a href="/" class="btn btn-primary btn-lg" style="min-width: 220px;">
-            <i class="bi bi-house"></i> Torna alla Home
-        </a>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="/game/<%= match.id %>/result" class="btn btn-success btn-lg" style="min-width: 180px;">
+                <i class="bi bi-file-text"></i> Scheda Risultato
+            </a>
+            <a href="/" class="btn btn-primary btn-lg" style="min-width: 180px;">
+                <i class="bi bi-house"></i> Home
+            </a>
+        </div>
     </div>
 </div>
 

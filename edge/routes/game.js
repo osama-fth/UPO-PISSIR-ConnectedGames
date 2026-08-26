@@ -112,6 +112,19 @@ router.post('/start', async (req, res) => {
                         error: `Impossibile avviare la partita: "${nonIscritto}" non è iscritto a questo torneo.`
                     });
                 }
+
+                // Verifica che i due giocatori siano iscritti per locali diversi
+                const p1Iscrizione = iscrizioni.find(i => i.utenteId === giocatore1.id);
+                const p2Iscrizione = iscrizioni.find(i => i.utenteId === giocatore2.id);
+                if (p1Iscrizione && p2Iscrizione && p1Iscrizione.localeId && p2Iscrizione.localeId
+                    && p1Iscrizione.localeId === p2Iscrizione.localeId) {
+                    return res.status(403).render('game-select', {
+                        title: 'Seleziona Gioco',
+                        localeId: LOCALE_ID,
+                        torneiAttivi: await getTorneiAttiviLocale(req),
+                        error: `Impossibile avviare la partita: "${giocatore1.username}" e "${giocatore2.username}" sono iscritti per lo stesso locale (${p1Iscrizione.localeId}). Per una partita valida di torneo, i giocatori devono rappresentare locali diversi.`
+                    });
+                }
             } catch (torneoErr) {
                 return res.status(500).render('game-select', {
                     title: 'Seleziona Gioco',

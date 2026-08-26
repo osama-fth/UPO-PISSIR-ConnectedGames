@@ -119,7 +119,7 @@
                 <div class="card card-stat border-0 shadow-sm text-white bg-gradient-info-custom h-100 clickable-row" onclick="scrollToElement('section-giochi')">
                     <div class="card-body d-flex flex-column justify-content-center align-items-center p-3 text-center">
                         <i class="bi bi-bullseye fs-2 mb-1 text-cyan"></i>
-                        <span class="text-secondary small">Punti / Gol Totali</span>
+                        <span class="text-secondary small" id="kpiPuntiLabel">Punti / Gol Totali</span>
                         <h3 class="fw-bold mb-0 mt-1" id="kpiTotalePunti" th:text="${stats.totalePuntiSegnati}">0</h3>
                     </div>
                 </div>
@@ -634,6 +634,22 @@
                 document.getElementById('kpiTorneiConclusi').innerText = data.totaleTorneiConclusi || 0;
                 document.getElementById('kpiTotalePunti').innerText = data.totalePuntiSegnati || 0;
                 document.getElementById('kpiDurataMedia').innerText = data.durataMediaMinuti || 0;
+
+                // Aggiorna etichetta KPI punti in base al gioco selezionato
+                const giocoSelect = document.getElementById('giocoFilterSelect');
+                const selectedGioco = giocoSelect ? giocoSelect.value.toLowerCase() : '';
+                const puntiLabel = document.getElementById('kpiPuntiLabel');
+                if (puntiLabel) {
+                    if (selectedGioco.includes('calciobalilla')) {
+                        puntiLabel.innerText = 'Gol Totali';
+                    } else if (selectedGioco.includes('freccette')) {
+                        puntiLabel.innerText = 'Punti Sottratti Totali';
+                    } else if (selectedGioco.includes('biliardo')) {
+                        puntiLabel.innerText = 'Palle Imbucate Totali';
+                    } else {
+                        puntiLabel.innerText = 'Punti / Gol Totali';
+                    }
+                }
 
                 // Aggiorna Grafici
                 renderTrendChart(data.trendPartite || []);

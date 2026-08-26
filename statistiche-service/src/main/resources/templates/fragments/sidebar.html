@@ -21,6 +21,11 @@
                     <i class="bi bi-trophy me-2"></i> Tornei
                 </a>
             </li>
+            <li>
+                <a th:href="@{/servizi}" class="nav-link mb-2" th:classappend="${activeTab == 'servizi'} ? 'active' : ''">
+                    <i class="bi bi-cpu me-2"></i> Stato Sistema
+                </a>
+            </li>
         </ul>
         <hr style="border-color: var(--border-color);">
         <div class="text-muted text-center" style="font-size: 0.75rem;">

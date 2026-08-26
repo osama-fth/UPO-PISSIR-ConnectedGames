@@ -58,4 +58,13 @@ public class DashboardController {
         }
         return "tornei";
     }
+
+    @GetMapping("/servizi")
+    public String servizi(Model model, java.security.Principal principal, HttpSession session) {
+        if (principal != null) {
+            model.addAttribute("nomeUtente", principal.getName());
+            model.addAttribute("jwtToken", session.getAttribute("accessToken"));
+        }
+        return "servizi";
+    }
 }

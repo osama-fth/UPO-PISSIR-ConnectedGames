@@ -53,7 +53,7 @@ spring:
         - id: statistiche-ui
           uri: ${STATISTICHE_SERVICE_URL:http://statistiche-service:8084}
           predicates:
-            - Path=/, /dashboard, /utenti, /partite, /tornei, /auth/**, /css/**, /js/**, /images/**
+            - Path=/, /dashboard, /utenti, /partite, /tornei, /servizi, /auth/**, /css/**, /js/**, /images/**
 
       globalcors:
         cors-configurations:

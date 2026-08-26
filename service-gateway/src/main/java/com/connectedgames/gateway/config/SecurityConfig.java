@@ -41,7 +41,7 @@ public class SecurityConfig {
 
                 // Pagine UI del BFF cookie-based permessa a livello gateway
                 .matchers(ServerWebExchangeMatchers.pathMatchers(
-                    "/", "/dashboard", "/utenti", "/partite", "/tornei", "/auth/**", "/css/**", "/js/**", "/images/**"
+                    "/", "/dashboard", "/utenti", "/partite", "/tornei", "/servizi", "/auth/**", "/css/**", "/js/**", "/images/**"
                 )).permitAll()
 
                 // API statistiche limitate a admin_piattaforma

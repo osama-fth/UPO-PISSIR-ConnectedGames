@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stato Servizi - Connected Games Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin-theme.css}">
+    <style>
+        .main-content { margin-left: 250px; padding: 2rem; min-height: calc(100vh - 56px); }
+        .status-badge { font-size: 0.8rem; padding: 0.25em 0.6em; border-radius: 50rem; font-weight: 600; }
+        .pulse-indicator {
+            display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+            margin-right: 8px; vertical-align: middle;
+        }
+        .pulse-up { background-color: #22c55e; box-shadow: 0 0 6px #22c55e; }
+        .pulse-down { background-color: #ef4444; box-shadow: 0 0 6px #ef4444; }
+        .pulse-degraded { background-color: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+        .latency-tag { font-family: monospace; font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div th:replace="~{fragments/sidebar :: sidebar('servizi')}"></div>
+
+    <!-- Main Content -->
+    <div class="main-content flex-grow-1">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-25">
+            <h3 class="fw-bold mb-0"><i class="bi bi-cpu text-primary me-2"></i> Stato Servizi Centrali</h3>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm btn-outline-light" onclick="caricaStatoSistema()">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Aggiorna
+                </button>
+                <span id="lastUpdated" class="text-muted small">--:--:--</span>
+            </div>
+        </div>
+
+        <!-- Single Essential Table -->
+        <div class="card border-0 shadow-sm bg-dark-subtle">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="text-muted small">
+                                <th class="ps-3">SERVIZIO</th>
+                                <th>ENDPOINT</th>
+                                <th>STATO</th>
+                                <th class="pe-3 text-end">LATENZA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblCloudServices">
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                    Caricamento...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const jwtToken = /*[[${jwtToken}]]*/ '';
+
+    function getAuthHeaders() {
+        return jwtToken ? { 'Authorization': 'Bearer ' + jwtToken } : {};
+    }
+
+    async function caricaStatoSistema() {
+        try {
+            const res = await fetch('/api/v1/statistiche/stato-sistema', { headers: getAuthHeaders() });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            renderizzaStato(data);
+        } catch (err) {
+            console.error('Errore recupero stato:', err);
+            const tblCloud = document.getElementById('tblCloudServices');
+            tblCloud.innerHTML = `<tr><td colspan="4" class="text-center py-3 text-danger"><i class="bi bi-exclamation-triangle me-1"></i> ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderizzaStato(data) {
+        document.getElementById('lastUpdated').innerText = new Date(data.timestamp).toLocaleTimeString();
+
+        const tblCloud = document.getElementById('tblCloudServices');
+        tblCloud.innerHTML = data.serviziCloud.map(srv => {
+            const pulseClass = srv.stato === 'UP' ? 'pulse-up' : (srv.stato === 'DEGRADED' ? 'pulse-degraded' : 'pulse-down');
+            const badgeClass = srv.stato === 'UP' ? 'bg-success-subtle text-success border border-success-subtle' :
+                               (srv.stato === 'DEGRADED' ? 'bg-warning-subtle text-warning border border-warning-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle');
+            return `
+                <tr>
+                    <td class="fw-bold ps-3">
+                        <span class="pulse-indicator ${pulseClass}"></span>
+                        ${srv.nome}
+                    </td>
+                    <td><code class="text-light fs-7">${srv.url}</code></td>
+                    <td><span class="status-badge ${badgeClass}">${srv.stato}</span></td>
+                    <td class="pe-3 text-end"><span class="latency-tag">${srv.latenzaMs} ms</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        caricaStatoSistema();
+        setInterval(caricaStatoSistema, 10000);
+    });
+</script>
+
+</body>
+</html>

@@ -1,8 +1,10 @@
 package com.connectedgames.statistiche.controller;
 
+import com.connectedgames.statistiche.dto.HealthStatusResponse;
 import com.connectedgames.statistiche.dto.StatisticheGlobaliResponse;
 import com.connectedgames.statistiche.dto.StatisticheLocaleResponse;
 import com.connectedgames.statistiche.dto.StatisticheUtenteResponse;
+import com.connectedgames.statistiche.service.HealthCheckService;
 import com.connectedgames.statistiche.service.StatisticheBackendService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +16,11 @@ import java.util.UUID;
 public class StatisticheRestController {
 
     private final StatisticheBackendService statisticheService;
+    private final HealthCheckService healthCheckService;
 
-    public StatisticheRestController(StatisticheBackendService statisticheService) {
+    public StatisticheRestController(StatisticheBackendService statisticheService, HealthCheckService healthCheckService) {
         this.statisticheService = statisticheService;
+        this.healthCheckService = healthCheckService;
     }
 
     @GetMapping
@@ -34,5 +38,10 @@ public class StatisticheRestController {
     @GetMapping("/utenti/{utenteId}")
     public ResponseEntity<StatisticheUtenteResponse> getStatisticheUtente(@PathVariable UUID utenteId) {
         return ResponseEntity.ok(statisticheService.getStatistichePerUtente(utenteId));
+    }
+
+    @GetMapping("/stato-sistema")
+    public ResponseEntity<HealthStatusResponse> getStatoSistema() {
+        return ResponseEntity.ok(healthCheckService.getSystemHealth());
     }
 }

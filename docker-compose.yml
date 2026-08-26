@@ -179,8 +179,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/platform_db
       - SPRING_DATASOURCE_USERNAME=${PLATFORM_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PLATFORM_DB_PASSWORD}
-      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
-      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
+      - KEYCLOAK_URL=http://localhost:9080/realms/Connected-Games
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/Connected-Games
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=${JWT_ISSUER_URI}
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=${JWT_JWK_SET_URI}
       - GATEWAY_URL=http://localhost:8081
@@ -262,8 +262,8 @@ services:
       - LOCALE_ID=BAR_BELVEDERE
       - EDGE_PUBLIC_URL=http://localhost:${EDGE1_HOST_PORT}
       - CENTRAL_SERVER_URL=http://service-gateway:8081
-      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
-      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
+      - KEYCLOAK_URL=http://localhost:9080/realms/Connected-Games
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/Connected-Games
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - SESSION_SECRET=${SESSION_SECRET}
       - MQTT_BROKER_URL=mqtts://mosquitto-locale1:8883
@@ -303,8 +303,8 @@ services:
       - LOCALE_ID=SALA_GIOCHI_ROMA
       - EDGE_PUBLIC_URL=http://localhost:${EDGE2_HOST_PORT}
       - CENTRAL_SERVER_URL=http://service-gateway:8081
-      - KEYCLOAK_URL=http://localhost:9080/realms/pissir-realm
-      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/pissir-realm
+      - KEYCLOAK_URL=http://localhost:9080/realms/Connected-Games
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/Connected-Games
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - SESSION_SECRET=${SESSION_SECRET}
       - MQTT_BROKER_URL=mqtts://mosquitto-locale2:8883

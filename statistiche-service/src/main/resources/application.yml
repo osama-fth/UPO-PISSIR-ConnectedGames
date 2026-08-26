@@ -21,13 +21,13 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_URL:http://localhost:9080/realms/pissir-realm}
-          jwk-set-uri: ${KEYCLOAK_INTERNAL_URL:http://keycloak:8080/realms/pissir-realm}/protocol/openid-connect/certs
+          issuer-uri: ${KEYCLOAK_URL:http://localhost:9080/realms/Connected-Games}
+          jwk-set-uri: ${KEYCLOAK_INTERNAL_URL:http://keycloak:8080/realms/Connected-Games}/protocol/openid-connect/certs
 
 app:
   keycloak:
-    public-url: ${KEYCLOAK_URL:http://localhost:9080/realms/pissir-realm}
-    internal-url: ${KEYCLOAK_INTERNAL_URL:http://localhost:8080/realms/pissir-realm}
+    public-url: ${KEYCLOAK_URL:http://localhost:9080/realms/Connected-Games}
+    internal-url: ${KEYCLOAK_INTERNAL_URL:http://localhost:8080/realms/Connected-Games}
     client-id: platform-client
     redirect-uri: ${GATEWAY_URL:http://localhost:8081}/auth/callback
 

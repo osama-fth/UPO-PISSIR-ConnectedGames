@@ -5,8 +5,8 @@ const { Issuer, generators } = require('openid-client');
 let oidcClient = null;
 let oidcAvailable = false;
 
-const KEYCLOAK_INTERNAL_URL = process.env.KEYCLOAK_INTERNAL_URL || 'http://keycloak:8080/realms/pissir-realm';
-const KEYCLOAK_PUBLIC_URL = process.env.KEYCLOAK_URL || 'http://localhost:9080/realms/pissir-realm';
+const KEYCLOAK_INTERNAL_URL = process.env.KEYCLOAK_INTERNAL_URL || 'http://keycloak:8080/realms/Connected-Games';
+const KEYCLOAK_PUBLIC_URL = process.env.KEYCLOAK_URL || 'http://localhost:9080/realms/Connected-Games';
 const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || 'edge-client';
 const EDGE_PUBLIC_URL = process.env.EDGE_PUBLIC_URL || 'http://localhost:3001';
 

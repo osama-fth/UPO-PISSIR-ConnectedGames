@@ -1,6 +1,6 @@
 {
-  "id": "pissir-realm",
-  "realm": "pissir-realm",
+  "id": "Connected-Games",
+  "realm": "Connected-Games",
   "displayName": "Connected Games Platform",
   "enabled": true,
   "sslRequired": "external",
@@ -29,7 +29,7 @@
         "description": "Amministratore globale della piattaforma"
       },
       {
-        "name": "default-roles-pissir-realm",
+        "name": "default-roles-Connected-Games",
         "description": "${role_default-roles}",
         "composite": true,
         "composites": {
@@ -102,10 +102,10 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "redirectUris": [
-        "http://localhost:*"
+        "http://localhost:8081/*"
       ],
       "webOrigins": [
-        "*"
+        "http://localhost:8081"
       ],
       "protocolMappers": [
         {
@@ -331,10 +331,10 @@
     }
   ],
   "defaultRole": {
-    "name": "default-roles-pissir-realm",
+    "name": "default-roles-Connected-Games",
     "description": "${role_default-roles}",
     "composite": true,
     "clientRole": false,
-    "containerId": "pissir-realm"
+    "containerId": "Connected-Games"
   }
 }

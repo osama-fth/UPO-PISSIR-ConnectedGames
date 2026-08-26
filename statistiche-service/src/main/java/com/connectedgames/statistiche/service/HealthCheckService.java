@@ -36,7 +36,7 @@ public class HealthCheckService {
         cloudServices.add(checkCloudService("Partita Service", "Gestione & Bulk Sync Partite", "http://partita-service:8082/actuator/health"));
         cloudServices.add(checkCloudService("Torneo Service", "Gestione Tornei & Classifiche", "http://torneo-service:8083/actuator/health"));
         cloudServices.add(checkCloudService("Statistiche Service", "BFF Analytics & Super Admin UI", "http://127.0.0.1:8084/actuator/health"));
-        cloudServices.add(checkKeycloak("Keycloak IdP", "OAuth2 / OIDC Identity Provider", "http://keycloak:8080/realms/pissir-realm"));
+        cloudServices.add(checkKeycloak("Keycloak IdP", "OAuth2 / OIDC Identity Provider", "http://keycloak:8080/realms/Connected-Games"));
         cloudServices.add(checkPlatformDatabase());
         cloudServices.add(checkKeycloakDatabase());
 

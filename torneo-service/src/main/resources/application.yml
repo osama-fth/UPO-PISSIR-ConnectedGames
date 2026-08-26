@@ -32,8 +32,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${JWT_ISSUER_URI:http://localhost:9080/realms/pissir-realm}
-          jwk-set-uri: http://keycloak:8080/realms/pissir-realm/protocol/openid-connect/certs
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:9080/realms/Connected-Games}
+          jwk-set-uri: http://keycloak:8080/realms/Connected-Games/protocol/openid-connect/certs
 
 management:
   endpoints:

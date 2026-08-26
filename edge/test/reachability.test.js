@@ -4,7 +4,7 @@ const http = require('node:http');
 
 const PORT = process.env.PORT || 3001;
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
-const KEYCLOAK_INTERNAL_URL = process.env.KEYCLOAK_INTERNAL_URL || 'http://keycloak:8080/realms/pissir-realm';
+const KEYCLOAK_INTERNAL_URL = process.env.KEYCLOAK_INTERNAL_URL || 'http://keycloak:8080/realms/Connected-Games';
 
 function richiestaHttp(url) {
     return new Promise((resolve, reject) => {

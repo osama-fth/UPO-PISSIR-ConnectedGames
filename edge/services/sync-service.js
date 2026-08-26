@@ -15,6 +15,33 @@ let lastSyncTime = null;
 let lastSyncResult = null;
 let cronTimer = null;
 
+let cloudStatus = { status: 'unknown', lastCheck: null, serverUrl: CENTRAL_SERVER_URL };
+
+// Verifica la raggiungibilità del server centrale (Cloud)
+async function checkCloudStatus() {
+    try {
+        const res = await fetch(`${CENTRAL_SERVER_URL}/actuator/health`, {
+            signal: AbortSignal.timeout(5000)
+        });
+        cloudStatus = {
+            status: res.ok ? 'connected' : 'degraded',
+            lastCheck: new Date().toISOString(),
+            serverUrl: CENTRAL_SERVER_URL
+        };
+    } catch {
+        cloudStatus = {
+            status: 'disconnected',
+            lastCheck: new Date().toISOString(),
+            serverUrl: CENTRAL_SERVER_URL
+        };
+    }
+    return cloudStatus;
+}
+
+function getCloudStatus() {
+    return cloudStatus;
+}
+
 // Gestione cache del token JWT per il service account (Client Credentials con fallback Password Auth)
 async function getServiceAccountToken() {
     if (cachedServiceToken && Date.now() < cachedServiceTokenExpiresAt) {
@@ -159,5 +186,7 @@ function getSyncStatus() {
 module.exports = {
     sincronizzaAdesso,
     avviaCronSync,
-    getSyncStatus
+    getSyncStatus,
+    checkCloudStatus,
+    getCloudStatus
 };

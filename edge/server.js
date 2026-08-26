@@ -7,7 +7,7 @@ const path = require('path');
 const { initOidcClient } = require('./services/oidc-client');
 const { connectMqtt, getMqttStatus } = require('./services/mqtt-client');
 const { initDatabase } = require('./services/sqlite-db');
-const { avviaCronSync } = require('./services/sync-service');
+const { avviaCronSync, checkCloudStatus, getCloudStatus } = require('./services/sync-service');
 const { caricaPartiteAttiveDaDb, initInstallazioni } = require('./services/game-engine');
 const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
@@ -41,6 +41,7 @@ app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.localeId = LOCALE_ID;
     res.locals.mqttStatus = getMqttStatus();
+    res.locals.cloudStatus = getCloudStatus();
     next();
 });
 
@@ -97,6 +98,10 @@ async function start() {
 
     avviaCronSync();
     console.log(`[Edge ${LOCALE_ID}] Cron-job sincronizzazione avviato`);
+
+    // Check iniziale e periodico dello stato del cloud centrale
+    checkCloudStatus();
+    setInterval(() => checkCloudStatus(), 30000);
 
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`[Edge ${LOCALE_ID}] Server avviato su http://0.0.0.0:${PORT}`);

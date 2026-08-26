@@ -40,26 +40,48 @@
                 <span class="dot dot-danger"></span> Disconnesso
             <% } %>
         </div>
-        <p class="text-muted text-sm mt-1">
-            Topic: <code><%= mqttStatus.topic %></code>
-        </p>
     </div>
 
-    <!-- Locale Info -->
+    <!-- Cloud Centrale Status -->
     <div class="card">
-        <div class="card-subtitle">LOCALE</div>
+        <div class="card-subtitle">CLOUD CENTRALE</div>
         <div class="card-title" style="font-size: 1.25rem;">
-            <i class="bi bi-geo-alt"></i> <%= localeId %>
+            <% if (cloudStatus.status === 'connected') { %>
+                <span class="dot dot-success"></span> Raggiungibile
+            <% } else if (cloudStatus.status === 'degraded') { %>
+                <i class="bi bi-exclamation-triangle" style="color: var(--warning);"></i> Degradato
+            <% } else if (cloudStatus.status === 'unknown') { %>
+                <i class="bi bi-question-circle" style="color: var(--text-muted);"></i> Verifica...
+            <% } else { %>
+                <span class="dot dot-danger"></span> Non raggiungibile
+            <% } %>
         </div>
-        <p class="text-muted text-sm mt-1">
-            <strong><%= stats.totalePartite %></strong> partite giocate ·
-            <strong><%= stats.inAttesaDiSync %></strong> in coda sync
-        </p>
+        <% if (cloudStatus.lastCheck) { %>
+            <p class="text-muted text-sm mt-1">
+                Ultimo check: <%= new Date(cloudStatus.lastCheck).toLocaleTimeString('it-IT') %>
+            </p>
+        <% } %>
     </div>
     <% } %>
 </div>
 
 <% if (isAdmin) { %>
+    <div class="grid-3 mb-3" style="gap: 1rem;">
+    <!-- Locale Info -->
+    <div class="card" style="text-align: center;">
+        <div class="card-subtitle">LOCALE</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--accent-primary);"><%= localeId %></div>
+    </div>
+    <div class="card" style="text-align: center;">
+        <div class="card-subtitle">PARTITE GIOCATE</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--accent-secondary);"><%= stats.totalePartite %></div>
+    </div>
+    <div class="card" style="text-align: center;">
+        <div class="card-subtitle">IN CODA SYNC</div>
+        <div style="font-size: 2rem; font-weight: 800; color: <%= stats.inAttesaDiSync > 0 ? 'var(--warning)' : 'var(--success)' %>;"><%= stats.inAttesaDiSync %></div>
+    </div>
+    </div>
+
     <!-- ============================================== -->
     <!-- PANNELLO AMMINISTRATORE & SYNC PARTITE -->
     <!-- ============================================== -->
@@ -72,24 +94,6 @@
                     <i class="bi bi-gear"></i> Console Admin Locale
                 <% } %>
             </h2>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="grid-3" style="gap: 1rem; margin-bottom: 1.5rem;">
-            <div class="card" style="background: var(--bg-secondary); text-align: center;">
-                <div class="card-subtitle">PARTITE TOTALI</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-primary);"><%= stats.totalePartite %></div>
-            </div>
-            <div class="card" style="background: var(--bg-secondary); text-align: center;">
-                <div class="card-subtitle">IN CODA SYNC</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: <%= stats.inAttesaDiSync > 0 ? 'var(--warning)' : 'var(--success)' %>;">
-                    <%= stats.inAttesaDiSync %>
-                </div>
-            </div>
-            <div class="card" style="background: var(--bg-secondary); text-align: center;">
-                <div class="card-subtitle">SINCRONIZZATE</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: var(--success);"><%= stats.sincronizzate %></div>
-            </div>
         </div>
 
         <!-- Sync Action -->
@@ -454,7 +458,7 @@
                 status.style.color = 'var(--warning)';
             }
         } catch (err) {
-            status.innerHTML = '<i class="bi bi-x-circle"></i> Errore di rete: ' + err.message;
+            status.innerHTML = '<i class="bi bi-x-circle"></i> Errore: servizio cloud non disponibile al momento';
             status.style.color = 'var(--danger)';
         } finally {
             btn.disabled = false;

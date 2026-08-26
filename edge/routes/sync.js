@@ -28,13 +28,35 @@ router.post('/now', requireAuth, requireAdminAccess, async (req, res) => {
                 dettagliFallite: result.dettagliFallite || []
             });
         } else {
-            return res.status(500).json({
-                error: result.error || 'Errore durante la sincronizzazione'
+            // Controlla se l'errore è dovuto a problemi di connettività
+            const isNetworkError = result.error && (
+                result.error.includes('fetch failed') ||
+                result.error.includes('ECONNREFUSED') ||
+                result.error.includes('ENOTFOUND') ||
+                result.error.includes('ETIMEDOUT') ||
+                result.error.includes('timeout') ||
+                result.error.includes('network')
+            );
+            const userMessage = isNetworkError
+                ? 'Errore: servizio cloud non disponibile al momento'
+                : (result.error || 'Errore durante la sincronizzazione');
+            return res.status(isNetworkError ? 503 : 500).json({
+                error: userMessage
             });
         }
     } catch (err) {
         console.error(`[Sync ${LOCALE_ID}] Errore sync manuale:`, err.message);
-        return res.status(500).json({ error: err.message });
+        const isNetworkError = err.message && (
+            err.message.includes('fetch failed') ||
+            err.message.includes('ECONNREFUSED') ||
+            err.message.includes('ENOTFOUND') ||
+            err.message.includes('ETIMEDOUT')
+        );
+        return res.status(isNetworkError ? 503 : 500).json({
+            error: isNetworkError
+                ? 'Errore: servizio cloud non disponibile al momento'
+                : err.message
+        });
     }
 });
 

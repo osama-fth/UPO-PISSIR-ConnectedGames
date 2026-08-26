@@ -335,10 +335,6 @@ public class TorneoService {
         Torneo torneo = torneoRepo.findById(torneoId)
             .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
 
-        if (!"NON_ATTIVO".equals(calcolaStatoLazy(torneo))) {
-            throw new IllegalStateException("Il torneo può essere cancellato solo se non è ancora iniziato");
-        }
-
         iscrizioneRepo.deleteByTorneoId(torneoId);
         torneoRepo.delete(torneo);
     }
@@ -347,10 +343,6 @@ public class TorneoService {
     public void disiscriviGiocatore(UUID torneoId, UUID utenteId) {
         Torneo torneo = torneoRepo.findById(torneoId)
             .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
-
-        if (!"NON_ATTIVO".equals(calcolaStatoLazy(torneo))) {
-            throw new IllegalStateException("La disiscrizione è possibile solo se il torneo non è ancora iniziato");
-        }
 
         if (!iscrizioneRepo.existsByIdTorneoIdAndIdUtenteId(torneoId, utenteId)) {
             throw new ResourceNotFoundException("Iscrizione", utenteId.toString());

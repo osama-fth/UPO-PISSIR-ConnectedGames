@@ -223,12 +223,13 @@ class TorneoServiceTest {
     }
 
     @Test
-    @DisplayName("Cancellazione torneo attivo lancia eccezione")
-    void testCancellaTorneoAttivoLanciaEccezione() {
+    @DisplayName("Cancellazione torneo elimina iscrizioni e torneo dal repository")
+    void testCancellaTorneo() {
         when(torneoRepo.findById(torneoId)).thenReturn(Optional.of(mockTorneo));
 
-        assertThatThrownBy(() -> torneoService.cancellaTorneo(torneoId))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("solo se non è ancora iniziato");
+        torneoService.cancellaTorneo(torneoId);
+
+        verify(iscrizioneRepo).deleteByTorneoId(torneoId);
+        verify(torneoRepo).delete(mockTorneo);
     }
 }

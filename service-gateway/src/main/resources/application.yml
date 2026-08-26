@@ -31,11 +31,11 @@ spring:
             - Path=/api/v1/locali/{localeId}/giochi
             - Method=GET
 
-        # Partite e Utenti (UI API)
+        # Partite, Locali e Utenti (UI API)
         - id: partita-service-api
           uri: ${PARTITA_SERVICE_URL:http://partita-service:8082}
           predicates:
-            - Path=/api/v1/utenti, /api/v1/utenti/**, /api/v1/partite, /api/v1/partite/**
+            - Path=/api/v1/utenti, /api/v1/utenti/**, /api/v1/locali, /api/v1/locali/**, /api/v1/partite, /api/v1/partite/**
 
         # Gestione Tornei
         - id: tornei-service-routes
@@ -59,7 +59,7 @@ spring:
         cors-configurations:
           '[/**]':
             allowedOriginPatterns: "http://localhost:3001, http://localhost:3002, http://localhost:8081"
-            allowedMethods: "GET, POST, PUT, OPTIONS"
+            allowedMethods: "GET, POST, PUT, DELETE, OPTIONS"
             allowedHeaders: "*"
             allowCredentials: false
 

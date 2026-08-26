@@ -100,6 +100,7 @@
                                         <th>Locale Iscrizione</th>
                                         <th class="text-center">Giocate</th>
                                         <th class="text-end">Metrica</th>
+                                        <th class="text-center">Azione</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -116,7 +117,7 @@
 <div class="modal fade" id="iscrizioneModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header border-bottom">
+            <div class="modal-header border-bottom border-secondary">
                 <h5 class="modal-title"><i class="bi bi-person-plus text-success"></i> Iscrivi Giocatore a un Locale</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -128,8 +129,10 @@
                         <input type="text" id="iscrizTorneoNome" class="form-control bg-dark text-white border-secondary" readonly>
                     </div>
                     <div class="mb-3">
-                        <label for="iscrizUtenteId" class="form-label text-white">UUID Utente / Giocatore</label>
-                        <input type="text" id="iscrizUtenteId" class="form-control bg-dark text-white border-secondary" required placeholder="es. f47ac10b-58cc-4372-a567-0e02b2c3d479">
+                        <label for="iscrizUtenteId" class="form-label text-white">Giocatore da Iscrivere</label>
+                        <select id="iscrizUtenteId" class="form-select bg-dark text-white border-secondary" required>
+                            <option value="">Caricamento giocatori...</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="iscrizLocaleId" class="form-label text-white">Locale di Appartenenza</label>
@@ -148,13 +151,84 @@
     </div>
 </div>
 
+<!-- Modal Conferma Eliminazione -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-danger shadow">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title fw-bold text-danger" id="confirmDeleteModalTitle">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Conferma Eliminazione
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4" id="confirmDeleteModalBody">
+                Sei sicuro di voler procedere?
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-danger fw-bold" id="confirmDeleteModalBtn">
+                    <i class="bi bi-trash-fill me-1"></i> Elimina
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Esito / Notifica -->
+<div class="modal fade" id="noticeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-dark text-white border-secondary shadow">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title fw-bold" id="noticeModalTitle">Notifica</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4" id="noticeModalBody">
+            </div>
+            <div class="modal-footer border-top border-secondary justify-content-center">
+                <button type="button" class="btn btn-outline-light btn-sm px-4" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const token = "[[${jwtToken}]]";
 
+    const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+    const noticeModal = new bootstrap.Modal(document.getElementById('noticeModal'));
+
+    function showNotice(title, message, isError = false) {
+        document.getElementById('noticeModalTitle').innerText = title;
+        document.getElementById('noticeModalBody').innerHTML = `
+            <div class="fs-1 mb-2 ${isError ? 'text-danger' : 'text-success'}">
+                <i class="bi ${isError ? 'bi-x-circle-fill' : 'bi-check-circle-fill'}"></i>
+            </div>
+            <div>${message}</div>
+        `;
+        noticeModal.show();
+    }
+
+    function askConfirmDelete(title, bodyText, onConfirm) {
+        document.getElementById('confirmDeleteModalTitle').innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i> ${title}`;
+        document.getElementById('confirmDeleteModalBody').textContent = bodyText;
+
+        const oldBtn = document.getElementById('confirmDeleteModalBtn');
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+        newBtn.onclick = () => {
+            confirmDeleteModal.hide();
+            onConfirm();
+        };
+
+        confirmDeleteModal.show();
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         caricaTornei();
         caricaLocali();
+        caricaUtenti();
     });
 
     function caricaLocali() {
@@ -183,6 +257,32 @@
             });
     }
 
+    function caricaUtenti() {
+        fetch('/api/v1/utenti?ruolo=giocatore', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+            .then(res => res.json())
+            .then(utenti => {
+                const select = document.getElementById("iscrizUtenteId");
+                select.innerHTML = "";
+                if (!utenti || utenti.length === 0) {
+                    select.innerHTML = '<option value="">Nessun giocatore disponibile</option>';
+                    return;
+                }
+                utenti.forEach(u => {
+                    const opt = document.createElement("option");
+                    opt.value = u.id;
+                    opt.textContent = u.username + (u.email ? ' (' + u.email + ')' : '');
+                    select.appendChild(opt);
+                });
+            })
+            .catch(err => {
+                console.error("Errore caricamento utenti:", err);
+                const select = document.getElementById("iscrizUtenteId");
+                select.innerHTML = '<option value="">Errore caricamento giocatori</option>';
+            });
+    }
+
     function caricaTornei() {
         fetch('/api/v1/tornei', {
             headers: { 'Authorization': 'Bearer ' + token }
@@ -207,6 +307,9 @@
                             <i class="bi bi-person-plus-fill me-1"></i> Iscrivi
                         </button>`;
                     }
+                    let btnElimina = `<button class="btn btn-sm btn-outline-danger ms-1 fw-bold" onclick="eliminaTorneo('${t.id}', '${t.nome}')">
+                        <i class="bi bi-trash-fill me-1"></i> Elimina
+                    </button>`;
 
                     tr.innerHTML = `
                         <td class="fw-bold">${t.nome}</td>
@@ -219,6 +322,7 @@
                                 <i class="bi bi-trophy-fill me-1"></i> Classifica
                             </button>
                             ${btnIscrizione}
+                            ${btnElimina}
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -236,7 +340,7 @@
         const tbodyLocali = document.querySelector("#classificaLocaliTable tbody");
         const tbodyGiocatori = document.querySelector("#classificaGiocatoriTable tbody");
         tbodyLocali.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Caricamento classifica locali...</td></tr>';
-        tbodyGiocatori.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Caricamento classifica giocatori...</td></tr>';
+        tbodyGiocatori.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Caricamento classifica giocatori...</td></tr>';
         
         classificaModal.show();
 
@@ -268,16 +372,23 @@
                 }
 
                 if (listGiocatori.length === 0) {
-                    tbodyGiocatori.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nessun giocatore iscritto o in classifica.</td></tr>';
+                    tbodyGiocatori.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Nessun giocatore iscritto o in classifica.</td></tr>';
                 } else {
                     listGiocatori.forEach(row => {
                         const tr = document.createElement("tr");
+                        let btnDisiscrivi = '';
+                        if (row.utenteId) {
+                            btnDisiscrivi = `<button class="btn btn-xs btn-outline-danger" onclick="disiscriviGiocatore('${id}', '${row.utenteId}', '${row.username || 'Giocatore'}')">
+                                <i class="bi bi-trash"></i> Disiscrivi
+                            </button>`;
+                        }
                         tr.innerHTML = `
                             <td><strong class="text-warning">#${row.posizione}</strong></td>
                             <td class="fw-bold"><i class="bi bi-person-circle text-info me-1"></i> ${row.username}</td>
                             <td><span class="badge bg-secondary">${row.localeNome || row.localeId || 'N/A'}</span></td>
                             <td class="text-center">${row.partiteGiocate}</td>
                             <td class="text-end"><span class="badge bg-info text-dark fs-6">${row.metricaClassifica}</span></td>
+                            <td class="text-center">${btnDisiscrivi}</td>
                         `;
                         tbodyGiocatori.appendChild(tr);
                     });
@@ -295,7 +406,6 @@
     window.apriModalIscrizione = (torneoId, nomeTorneo) => {
         document.getElementById('iscrizTorneoId').value = torneoId;
         document.getElementById('iscrizTorneoNome').value = nomeTorneo;
-        document.getElementById('iscrizUtenteId').value = "";
         document.getElementById('iscrizioneResultAlert').classList.add('d-none');
         iscrizioneModal.show();
     };
@@ -303,8 +413,16 @@
     window.submitIscrizione = (e) => {
         e.preventDefault();
         const torneoId = document.getElementById('iscrizTorneoId').value;
-        const utenteId = document.getElementById('iscrizUtenteId').value.trim();
+        const utenteId = document.getElementById('iscrizUtenteId').value;
         const localeId = document.getElementById('iscrizLocaleId').value;
+
+        if (!utenteId || !localeId) {
+            const alertBox = document.getElementById('iscrizioneResultAlert');
+            alertBox.className = 'alert alert-danger mt-2';
+            alertBox.textContent = "Seleziona sia un giocatore che un locale.";
+            alertBox.classList.remove('d-none');
+            return;
+        }
 
         const alertBox = document.getElementById('iscrizioneResultAlert');
         alertBox.className = 'alert alert-info mt-2';
@@ -323,7 +441,7 @@
             .then(resObj => {
                 if (resObj.status === 200 || resObj.status === 201) {
                     alertBox.className = 'alert alert-success mt-2';
-                    alertBox.textContent = "Giocatore iscritto con successo a nome di " + localeId + "!";
+                    alertBox.textContent = "Giocatore iscritto con successo!";
                     setTimeout(() => iscrizioneModal.hide(), 1500);
                 } else {
                     alertBox.className = 'alert alert-danger mt-2';
@@ -334,6 +452,55 @@
                 alertBox.className = 'alert alert-danger mt-2';
                 alertBox.textContent = "Errore di connessione: " + err.message;
             });
+    };
+
+    window.eliminaTorneo = (torneoId, nome) => {
+        askConfirmDelete(
+            'Elimina Torneo',
+            `Sei sicuro di voler eliminare il torneo "${nome}"? L'operazione rimuoverà il torneo e tutte le iscrizioni collegate.`,
+            () => {
+                fetch(`/api/v1/tornei/${torneoId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                })
+                    .then(res => {
+                        if (res.ok || res.status === 204) {
+                            showNotice('Torneo Eliminato', `Il torneo "${nome}" è stato eliminato con successo.`);
+                            caricaTornei();
+                        } else {
+                            return res.json().then(d => { throw new Error(d.message || "Errore eliminazione torneo"); });
+                        }
+                    })
+                    .catch(err => {
+                        showNotice('Errore Eliminazione', err.message, true);
+                    });
+            }
+        );
+    };
+
+    window.disiscriviGiocatore = (torneoId, utenteId, username) => {
+        askConfirmDelete(
+            'Disiscrivi Giocatore',
+            `Sei sicuro di voler disiscrivere "${username}" da questo torneo?`,
+            () => {
+                fetch(`/api/v1/tornei/${torneoId}/iscrizioni/${utenteId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                })
+                    .then(res => {
+                        if (res.ok || res.status === 204) {
+                            showNotice('Giocatore Disiscritto', `L'iscrizione di "${username}" è stata cancellata.`);
+                            showClassifica(torneoId, document.getElementById('modalTorneoNome').textContent);
+                            caricaTornei();
+                        } else {
+                            return res.json().then(d => { throw new Error(d.message || "Errore durante la disiscrizione"); });
+                        }
+                    })
+                    .catch(err => {
+                        showNotice('Errore Disiscrizione', err.message, true);
+                    });
+            }
+        );
     };
 </script>
 </body>

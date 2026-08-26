@@ -49,9 +49,9 @@ public class SecurityConfig {
                 .hasRole("ADMIN_PIATTAFORMA")
 
                 // Operazioni amministrative sui tornei
-                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei"))
+                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei", "/api/v1/tornei/**"))
                 .hasAnyRole("ADMIN_PIATTAFORMA", "ADMIN_LOCALE")
-                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tornei/*"))
+                .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tornei", "/api/v1/tornei/**"))
                 .hasAnyRole("ADMIN_PIATTAFORMA", "ADMIN_LOCALE")
 
                 // Tutte le REST API (/api/v1/**) richiedono JWT Bearer valido

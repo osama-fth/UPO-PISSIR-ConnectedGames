@@ -569,6 +569,7 @@
                                         <th>Locale Iscrizione</th>
                                         <th class="text-center">Giocate</th>
                                         <th class="text-end">Metrica</th>
+                                        <th class="text-center">Azione</th>
                                     </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -1025,15 +1026,23 @@
                         else if (idx === 1) rankBadge = '🥈';
                         else if (idx === 2) rankBadge = '🥉';
 
+                        let btnDisiscrivi = '';
+                        if (row.utenteId) {
+                            btnDisiscrivi = `<button class="btn btn-xs btn-outline-danger" onclick="disiscriviGiocatoreDaDashboard('${id}', '${row.utenteId}', '${row.username || 'Giocatore'}')">
+                                <i class="bi bi-trash"></i> Disiscrivi
+                            </button>`;
+                        }
+
                         tr.innerHTML = '<td><span class="fw-bold fs-5">' + rankBadge + '</span></td>' +
                             '<td><strong><i class="bi bi-person-circle me-1 text-info"></i> ' + (row.username || 'Anonimo') + '</strong></td>' +
                             '<td><span class="badge bg-secondary">' + (row.localeNome || row.localeId || 'N/A') + '</span></td>' +
                             '<td class="text-center">' + (row.partiteGiocate || 0) + '</td>' +
-                            '<td class="text-end"><span class="badge bg-info text-dark font-monospace fs-6">' + (row.metricaClassifica || '0 vinte') + '</span></td>';
+                            '<td class="text-end"><span class="badge bg-info text-dark font-monospace fs-6">' + (row.metricaClassifica || '0 vinte') + '</span></td>' +
+                            '<td class="text-center">' + btnDisiscrivi + '</td>';
                         tbodyGiocatori.appendChild(tr);
                     });
                 } else {
-                    tbodyGiocatori.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Nessun giocatore iscritto o partite giocate.</td></tr>';
+                    tbodyGiocatori.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Nessun giocatore iscritto o partite giocate.</td></tr>';
                 }
 
                 document.getElementById('modalTorneoLoading').classList.add('d-none');
@@ -1041,6 +1050,25 @@
             })
             .catch(err => {
                 document.getElementById('modalTorneoLoading').innerHTML = '<p class="text-danger">Impossibile caricare la classifica del torneo (' + err.message + ')</p>';
+            });
+    }
+
+    function disiscriviGiocatoreDaDashboard(torneoId, utenteId, username) {
+        if (!confirm(`Sei sicuro di voler disiscrivere "${username}" da questo torneo?`)) return;
+
+        fetch(`/api/v1/tornei/${torneoId}/iscrizioni/${utenteId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        })
+            .then(res => {
+                if (res.ok || res.status === 204) {
+                    apriModalTorneo(torneoId, document.getElementById('modalTorneoTitle').innerText.replace('Classifica Torneo — ', ''));
+                } else {
+                    return res.json().then(d => { throw new Error(d.message || "Errore durante la disiscrizione"); });
+                }
+            })
+            .catch(err => {
+                alert("Errore durante la disiscrizione: " + err.message);
             });
     }
 </script>

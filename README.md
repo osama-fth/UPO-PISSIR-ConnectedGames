@@ -97,8 +97,8 @@ I principali punti di accesso ed interfacce web raggiungibili via browser sono:
 
 ## 🔑 Credenziali di Test (Hardcoded Seed Data)
 
-La password per tutti gli account interattivi di test è: **`password`**  
-*(eccezione fatta per `edge_sync_service` la cui password è `syncpassword`)*.
+La password per tutti gli account interattivi di test è: **`password`**.  
+*(La sincronizzazione bulk dai nodi Edge al Cloud utilizza il Service Account Client Credentials `edge-sync-client` con segreto `edge-sync-secret-12345`)*.
 
 | Username | Email | Ruolo Keycloak | Vista Dashboard / Ambito Test |
 | :--- | :--- | :--- | :--- |

@@ -5,7 +5,7 @@ const router = express.Router();
 const { requireAuth, requireAdminAccess, canAdminCurrentLocale } = require('../middleware/auth');
 const { getStatsLocale } = require('../services/sqlite-db');
 const { getActiveMatches, getInstallazioni } = require('../services/game-engine');
-const { directPasswordAuth, clientCredentialsAuth } = require('../services/oidc-client');
+const { clientCredentialsAuth } = require('../services/oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
@@ -37,7 +37,7 @@ async function getGatewayAuthHeaders(req) {
     let token = req?.session?.tokenSet?.accessToken;
     if (!token) {
         try {
-            const auth = await clientCredentialsAuth().catch(() => directPasswordAuth('edge_sync_service', 'syncpassword'));
+            const auth = await clientCredentialsAuth();
             token = auth.accessToken;
         } catch (err) {
             console.error(`[Dashboard ${LOCALE_ID}] Impossibile ottenere token per Gateway:`, err.message);
@@ -107,8 +107,8 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         let tokenToUse = req.session.tokenSet?.accessToken;
         if (!tokenToUse) {
             try {
-                const serviceUser = await directPasswordAuth('edge_sync_service', 'syncpassword');
-                tokenToUse = serviceUser.accessToken;
+                const serviceAuth = await clientCredentialsAuth();
+                tokenToUse = serviceAuth.accessToken;
             } catch (authErr) {
                 console.error(`[Dashboard ${LOCALE_ID}] Impossibile ottenere token per fetch partite centrali:`, authErr.message);
             }

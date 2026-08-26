@@ -13,7 +13,7 @@ async function getGatewayAuthHeaders(req) {
     let token = req?.session?.tokenSet?.accessToken;
     if (!token) {
         try {
-            const auth = await clientCredentialsAuth().catch(() => directPasswordAuth('edge_sync_service', 'syncpassword'));
+            const auth = await clientCredentialsAuth();
             token = auth.accessToken;
         } catch (err) {
             console.error(`[Game ${LOCALE_ID}] Impossibile ottenere token per Gateway:`, err.message);

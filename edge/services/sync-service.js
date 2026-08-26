@@ -1,7 +1,7 @@
 // Servizio di sincronizzazione delle partite dal buffer SQLite locale al Server Centrale (Spring Boot).
 
 const { getPartiteNonSincronizzate, segnaComeSincronizzate } = require('./sqlite-db');
-const { directPasswordAuth, clientCredentialsAuth } = require('./oidc-client');
+const { clientCredentialsAuth } = require('./oidc-client');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
@@ -42,21 +42,14 @@ function getCloudStatus() {
     return cloudStatus;
 }
 
-// Gestione cache del token JWT per il service account (Client Credentials con fallback Password Auth)
+// Gestione cache del token JWT per il service account (Client Credentials)
 async function getServiceAccountToken() {
     if (cachedServiceToken && Date.now() < cachedServiceTokenExpiresAt) {
         return cachedServiceToken;
     }
 
-    try {
-        const serviceAuth = await clientCredentialsAuth();
-        cachedServiceToken = serviceAuth.accessToken;
-    } catch {
-        const serviceUser = process.env.SYNC_SERVICE_USER || 'edge_sync_service';
-        const servicePassword = process.env.SYNC_SERVICE_PASSWORD || 'syncpassword';
-        const serviceAuth = await directPasswordAuth(serviceUser, servicePassword);
-        cachedServiceToken = serviceAuth.accessToken;
-    }
+    const serviceAuth = await clientCredentialsAuth();
+    cachedServiceToken = serviceAuth.accessToken;
 
     try {
         const payloadBase64 = cachedServiceToken.split('.')[1];

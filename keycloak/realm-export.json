@@ -252,25 +252,7 @@
         "admin_piattaforma"
       ]
     },
-    {
-      "id": "e28a4c10-9b3f-4e61-a572-8d9e03f1b4c7",
-      "username": "edge_sync_service",
-      "firstName": "Edge",
-      "lastName": "Sync Service",
-      "email": "sync.service@example.com",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "syncpassword",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "admin_piattaforma"
-      ]
-    },
+
     {
       "id": "5a3b7c89-2e1f-4d60-9842-6e71d09f3b5a",
       "username": "SantAnna",

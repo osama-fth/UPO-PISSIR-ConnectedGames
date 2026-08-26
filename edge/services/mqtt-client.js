@@ -83,12 +83,7 @@ function connectMqtt() {
     clientSub.on('message', (topic, message) => {
         try {
             const payload = JSON.parse(message.toString());
-            // Arricchisce il payload con i metadati estratti dal topic
             const { giocoId, tipoEvento } = parseTopic(topic);
-            if (giocoId && tipoEvento) {
-                payload._giocoIdFromTopic = giocoId;
-                payload._tipoEventoFromTopic = tipoEvento;
-            }
             console.log(`[MQTT SUB] Messaggio ricevuto su ${topic}:`, payload);
             mqttEvents.emit('evento', { topic, payload, giocoId, tipoEvento });
         } catch (err) {

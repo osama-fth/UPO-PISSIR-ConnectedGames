@@ -60,6 +60,7 @@ function initDatabase() {
 }
 
 function salvaPartitaAttiva(match) {
+    if (!db) return;
     const stmt = db.prepare(`
         INSERT INTO partite_attive (id, state_json, updated_at)
         VALUES (?, ?, datetime('now'))
@@ -69,11 +70,13 @@ function salvaPartitaAttiva(match) {
 }
 
 function rimuoviPartitaAttiva(matchId) {
+    if (!db) return;
     const stmt = db.prepare(`DELETE FROM partite_attive WHERE id = ?`);
     stmt.run(matchId);
 }
 
 function getPartiteAttiveSalvate() {
+    if (!db) return [];
     const stmt = db.prepare(`SELECT state_json FROM partite_attive`);
     const rows = stmt.all();
     return rows.map(r => JSON.parse(r.state_json));
@@ -81,6 +84,7 @@ function getPartiteAttiveSalvate() {
 
 // Inserisce una partita terminata nel buffer offline SQLite
 function salvaPartita(partita) {
+    if (!db) return partita;
     const stmt = db.prepare(`
         INSERT INTO partite_buffer 
             (id, installazione_id, locale_id, gioco_id, 
@@ -110,6 +114,7 @@ function salvaPartita(partita) {
 }
 
 function getPartiteNonSincronizzate() {
+    if (!db) return [];
     const stmt = db.prepare(`
         SELECT * FROM partite_buffer WHERE sincronizzata = 0 ORDER BY created_at ASC
     `);
@@ -117,7 +122,7 @@ function getPartiteNonSincronizzate() {
 }
 
 function segnaComeSincronizzate(ids) {
-    if (!ids || ids.length === 0) return 0;
+    if (!db || !ids || ids.length === 0) return 0;
 
     const placeholders = ids.map(() => '?').join(',');
     const stmt = db.prepare(`
@@ -130,6 +135,9 @@ function segnaComeSincronizzate(ids) {
 }
 
 function getStatsLocale() {
+    if (!db) {
+        return { totalePartite: 0, inAttesaDiSync: 0, sincronizzate: 0, perGioco: [], ultimePartite: [] };
+    }
     const totale = db.prepare(`SELECT COUNT(*) as count FROM partite_buffer`).get();
     const nonSync = db.prepare(`SELECT COUNT(*) as count FROM partite_buffer WHERE sincronizzata = 0`).get();
     const sincronizzate = db.prepare(`SELECT COUNT(*) as count FROM partite_buffer WHERE sincronizzata = 1`).get();

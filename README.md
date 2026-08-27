@@ -100,20 +100,17 @@ I principali punti di accesso ed interfacce web raggiungibili via browser sono:
 La password per tutti gli account interattivi di test è: **`password`**.  
 *(La sincronizzazione bulk dai nodi Edge al Cloud utilizza il Service Account Client Credentials `edge-sync-client` con segreto `edge-sync-secret-12345`)*.
 
-| Username | Email | Ruolo Keycloak | Vista Dashboard / Ambito Test |
-| :--- | :--- | :--- | :--- |
-| `SuperMario` | `mario.rossi@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
-| `Gigio` | `luigi.bianchi@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
-| `SantAnna` | `anna.verdi@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
-| `Paul` | `paolo.neri@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
-| `LukeSkywalker` | `luca.gialli@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
-| `Saretta` | `sara.viola@example.com` | `giocatore` | Area scansione QR avvio partite e storico vittorie. |
-| `admin_belvedere` | `admin.belvedere@example.com` | `admin_locale` | Console di monitoraggio e manutenzione tavoli (Bar Belvedere - `http://localhost:3001`). |
-| `admin_roma` | `admin.roma@example.com` | `admin_locale` | Console di monitoraggio e manutenzione tavoli (Sala Giochi Roma - `http://localhost:3002`). |
-| `admin_piattaforma` | `admin.platform@example.com` | `admin_piattaforma` | Dashboard di supervisione globale piattaforma (`http://localhost:8081/dashboard`). |
-
-
-*(Per collaudare le varie Dashboard, è sufficiente effettuare il Login dall'Edge Node con uno degli username indicati).*
+| Username | Email | Ruolo Keycloak |
+| :--- | :--- | :--- |
+| `SuperMario` | `mario.rossi@example.com` | `giocatore` |
+| `Gigio` | `luigi.bianchi@example.com` | `giocatore` |
+| `SantAnna` | `anna.verdi@example.com` | `giocatore` |
+| `Paul` | `paolo.neri@example.com` | `giocatore` |
+| `LukeSkywalker` | `luca.gialli@example.com` | `giocatore` |
+| `Saretta` | `sara.viola@example.com` | `giocatore` |
+| `admin_belvedere` | `admin.belvedere@example.com` | `admin_locale` |
+| `admin_roma` | `admin.roma@example.com` | `admin_locale` |
+| `admin_piattaforma` | `admin.platform@example.com` | `admin_piattaforma` |
 
 ---
 

@@ -247,7 +247,7 @@ services:
       retries: 3
       start_period: 5s
 
-  # 5. EDGE GATEWAYS
+  # 5. EDGE
   edge-locale1:
     build:
       context: ./edge

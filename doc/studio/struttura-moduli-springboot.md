@@ -79,7 +79,8 @@ partita-service/
     │   ├── controller/
     │   │   ├── PartitaController.java                 # Endpoint REST per la sincronizzazione bulk e la ricerca partite
     │   │   ├── UtenteController.java                  # Endpoint REST per la consultazione degli utenti e dello storico personale
-    │   │   └── GiocoController.java                   # Endpoint REST per i giochi installati nei locali
+    │   │   ├── GiocoController.java                   # Endpoint REST per i giochi installati nei locali
+    │   │   └── LocaleController.java                  # Endpoint REST per la consultazione e ricerca dei locali
     │   ├── service/
     │   │   ├── PartitaService.java                    # Logica di business: verifica idempotenza, auto-registrazione utente, validazione torneo e salvataggio
     │   │   ├── UtenteService.java                     # Calcolo aggregato delle statistiche utente (vittorie/sconfitte)
@@ -104,6 +105,7 @@ partita-service/
     │   │   ├── UtenteResponse.java                    # DTO base per la lista utenti
     │   │   ├── UtenteDetailResponse.java              # DTO con statistiche aggregate utente
     │   │   ├── GiocoInstallatoResponse.java           # DTO per la lista dei giochi presenti in un locale
+    │   │   ├── LocaleResponse.java                    # DTO per la rappresentazione JSON di un locale
     │   │   └── ErrorResponse.java                     # DTO per il formato di errore normalizzato
     │   └── exception/
     │       ├── GlobalExceptionHandler.java            # Gestione centralizzata delle eccezioni HTTP (@RestControllerAdvice)
@@ -197,16 +199,19 @@ statistiche-service/
     │   │   ├── StatisticheRestController.java         # Controller REST (@RestController) per le API JSON delle statistiche
     │   │   └── AuthController.java                    # Gestione del flusso OIDC web (Login Keycloak, Callback, Token Exchange e Logout)
     │   ├── service/
-    │   │   └── StatisticheBackendService.java         # Servizio applicativo per l'aggregazione delle metriche di dashboard, locali ed utenti
+    │   │   ├── StatisticheBackendService.java         # Servizio applicativo per l'aggregazione delle metriche di dashboard, locali ed utenti
+    │   │   └── HealthCheckService.java                # Servizio per il monitoraggio dello stato di salute di tutti i componenti cloud e database
     │   ├── repository/
     │   │   └── StatisticheRepository.java             # Query SQL native ad alte prestazioni tramite Spring JdbcTemplate
     │   └── dto/
     │       ├── StatisticheGlobaliResponse.java        # DTO contenente le metriche generali della piattaforma (totale partite, utenti attivi, punti, ecc.)
     │       ├── StatisticheLocaleResponse.java         # DTO per le statistiche di un singolo locale (giochi più usati, utenti distinti)
-    │       ├── StatisticheUtenteResponse.java          # DTO per il dettaglio delle prestazioni del singolo giocatore (vittorie, sconfitte, win rate)
+    │       ├── StatisticheUtenteResponse.java         # DTO per il dettaglio delle prestazioni del singolo giocatore (vittorie, sconfitte, win rate)
+    │       ├── HealthStatusResponse.java              # DTO per lo stato di salute globale del sistema (servizi cloud e database)
     │       ├── GiocatoreVittorieStat.java             # DTO di supporto per la classifica dei migliori giocatori
     │       ├── GiocoStat.java                         # DTO di supporto per la ripartizione dei giochi utilizzati
     │       ├── LocaleStat.java                        # DTO di supporto per la classifica dei locali più attivi
+    │       ├── PartiteTempoStat.java                  # DTO di supporto per le statistiche temporali delle partite
     │       └── TorneoStat.java                        # DTO di supporto per le metriche sintetiche dei tornei
     └── resources/
         ├── application.yml                            # Configurazione porta 8084, datasource PostgreSQL e credenziali OIDC
@@ -215,7 +220,8 @@ statistiche-service/
             ├── utenti.html                            # Vista HTML dedicata alla lista e ricerca utenti
             ├── partite.html                           # Vista HTML per la consultazione dello storico partite
             ├── tornei.html                            # Vista HTML per la lista dei tornei e classifiche
-            └── fragments/                             # Componenti HTML Thymeleaf riutilizzabili (header, navbar, footer)
+            ├── servizi.html                           # Vista HTML per il monitoraggio dello stato di salute dei servizi cloud
+            └── fragments/                             # Componenti HTML Thymeleaf riutilizzabili (navbar, sidebar)
 ```
 
 ### Dettaglio Cartelle e Componenti:

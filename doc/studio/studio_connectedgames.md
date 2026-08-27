@@ -2,17 +2,18 @@
 
 > Documento generato dall'analisi completa della codebase.
 > Progetto universitario PISSIR — Architettura a microservizi con IoT, MQTT, JWT e Docker.
+> Realm Keycloak: `Connected-Games`.
 
 ---
 
 ## Indice
 1. [Panoramica generale — cosa fa il progetto](#1-panoramica-generale)
 2. [Architettura a strati e reti Docker](#2-architettura-a-strati-e-reti-docker)
-3. [Cosè MQTT e come viene usato](#3-cosè-mqtt-e-come-viene-usato)
-4. [Cosè Keycloak e cosa fa nel progetto](#4-cosè-keycloak-e-cosa-fa-nel-progetto)
-5. [Cosè JWT e perché è centrale](#5-cosè-jwt-e-perché-è-centrale)
+3. [Cos'è MQTT e come viene usato](#3-cosè-mqtt-e-come-viene-usato)
+4. [Cos'è Keycloak e cosa fa nel progetto](#4-cosè-keycloak-e-cosa-fa-nel-progetto)
+5. [Cos'è JWT e perché è centrale](#5-cosè-jwt-e-perché-è-centrale)
 6. [Cosa fa Spring Boot — i microservizi Java](#6-cosa-fa-spring-boot--i-microservizi-java)
-7. [Cosè un Edge Node e cosa fa](#7-cosè-un-edge-node-e-cosa-fa)
+7. [Cos'è un Edge Node e cosa fa](#7-cosè-un-edge-node-e-cosa-fa)
 8. [Il database PostgreSQL](#8-il-database-postgresql)
 9. [entrypoint.sh — cosa fa e perché esiste](#9-entrypointsh--cosa-fa-e-perché-esiste)
 10. [Porte aperte e porte private in Docker](#10-porte-aperte-e-porte-private-in-docker)
@@ -83,9 +84,9 @@ Docker Compose definisce **3 reti virtuali** separabili. Questo è fondamentale 
 
 ---
 
-## 3. Cosè MQTT e come viene usato
+## 3. Cos'è MQTT e come viene usato
 
-### Cosè MQTT
+### Cos'è MQTT
 
 **MQTT** (Message Queuing Telemetry Transport) è un protocollo di messaggistica **leggero, publish/subscribe**, progettato per dispositivi IoT con banda limitata.
 
@@ -128,7 +129,7 @@ Il progetto usa **MQTTS** (MQTT over TLS, porta **8883** invece di 1883). Questo
 
 #### Il codice nell'Edge Node
 
-Nel file [`mqtt-client.js`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/edge/services/mqtt-client.js):
+Nel file [`mqtt-client.js`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/edge/services/mqtt-client.js):
 - Si creano **due client MQTT separati**: uno subscriber e uno publisher
 - Il subscriber si iscrive con pattern wildcard: `locale/{LOCALE_ID}/+/+`
 - Quando arriva un messaggio, viene parsato il topic per estrarre `giocoId` e `tipoEvento`
@@ -136,9 +137,9 @@ Nel file [`mqtt-client.js`](file:///c:/Users/bello/OneDrive/Documenti/Universit�
 
 ---
 
-## 4. Cosè Keycloak e cosa fa nel progetto
+## 4. Cos'è Keycloak e cosa fa nel progetto
 
-### Cosè Keycloak
+### Cos'è Keycloak
 
 **Keycloak** è un **Identity Provider** (IdP) open source di Red Hat. È un server dedicato interamente alla gestione di:
 - Autenticazione (login degli utenti)
@@ -150,11 +151,11 @@ Implementa lo standard **OpenID Connect (OIDC)** che è un layer di identità so
 
 ### Il Realm: `pissir-realm`
 
-In Keycloak, un **realm** è uno spazio isolato con i propri utenti, client e configurazioni. Il progetto usa il realm `pissir-realm`.
+In Keycloak, un **realm** è uno spazio isolato con i propri utenti, client e configurazioni. Il progetto usa il realm `Connected-Games`.
 
 ### I ruoli definiti nel realm
 
-Definiti in [`realm-export.json`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/keycloak/realm-export.json):
+Definiti in [`realm-export.json`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/keycloak/realm-export.json):
 
 | Ruolo | Descrizione |
 |-------|-------------|
@@ -184,7 +185,7 @@ Keycloak è accessibile con **due URL diverse**:
 
 Il problema: quando il browser reindirizza al login di Keycloak, deve usare un URL raggiungibile dall'utente (`localhost:9080`). Ma quando il server vuole validare un token, deve usare l'URL Docker interna per non uscire dalla rete.
 
-Il codice in [`oidc-client.js`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/edge/services/oidc-client.js) gestisce questo con la tecnica dello "split-brain":
+Il codice in [`oidc-client.js`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/edge/services/oidc-client.js) gestisce questo con la tecnica dello "split-brain":
 
 ```js
 // Scarica la config OIDC dall'URL interna (Docker)...
@@ -197,9 +198,9 @@ metadata.authorization_endpoint = metadata.authorization_endpoint
 
 ---
 
-## 5. Cosè JWT e perché è centrale
+## 5. Cos'è JWT e perché è centrale
 
-### Cosè JWT
+### Cos'è JWT
 
 **JWT** (JSON Web Token) è un formato standard per trasmettere informazioni in modo **sicuro e verificabile**.
 Un JWT è una stringa con 3 parti separate da `.`:
@@ -240,8 +241,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9080/realms/pissir-realm   # verifica claim "iss"
-          jwk-set-uri: http://keycloak:8080/realms/pissir-realm/protocol/openid-connect/certs
+          issuer-uri: http://localhost:9080/realms/Connected-Games   # verifica claim "iss"
+          jwk-set-uri: http://keycloak:8080/realms/Connected-Games/protocol/openid-connect/certs
 ```
 
 **Edge Node** — decodifica manuale del JWT per estrarre ruoli e `locale_id`:
@@ -275,7 +276,7 @@ localeId = accessClaims.locale_id || null;
 Gestisce tutto ciò che riguarda le partite e la struttura dei dati.
 
 File principali:
-- [`PartitaController.java`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/partita-service/src/main/java/com/connectedgames/core/controller/PartitaController.java) — endpoint REST per leggere partite, ricevere bulk sync
+- [`PartitaController.java`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/partita-service/src/main/java/com/connectedgames/core/controller/PartitaController.java) — endpoint REST per leggere partite, ricevere bulk sync
 - `PartitaService.java` — logica di business (validazione, salvataggio)
 - `PartitaRepository.java` — interfaccia JPA per accedere al database
 - `SecurityConfig.java` — configura quali endpoint richiedono JWT e quali no
@@ -326,7 +327,7 @@ E' il **punto di ingresso unico** al backend. Non contiene logica di business, m
 
 Usa **Spring Cloud Gateway** (reattivo, basato su WebFlux — non il classico MVC).
 
-**Routing configurato in** [`application.yml`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/service-gateway/src/main/resources/application.yml):
+**Routing configurato in** [`application.yml`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/service-gateway/src/main/resources/application.yml):
 
 | Path | Destinazione |
 |------|-------------|
@@ -355,7 +356,7 @@ PostgreSQL
 
 ---
 
-## 7. Cosè un Edge Node e cosa fa
+## 7. Cos'è un Edge Node e cosa fa
 
 ### Il concetto di "Edge Computing"
 
@@ -368,7 +369,7 @@ Nell'IoT, **edge computing** significa portare parte dell'elaborazione vicino al
 
 L'Edge Node è un'applicazione **Node.js + Express** che gira in ogni locale fisico.
 
-I suoi servizi interni in [`/edge/services/`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/edge/services):
+I suoi servizi interni in [`/edge/services/`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/edge/services):
 
 | Servizio | File | Cosa fa |
 |---------|------|---------|
@@ -391,14 +392,14 @@ Le route HTTP in `/edge/routes/`:
 
 Quando una partita termina, i dati vengono salvati in un database **SQLite locale** (un singolo file). SQLite è leggero, non richiede un server, ed è perfetto per edge.
 
-Tabelle SQLite nel file [`sqlite-db.js`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/edge/services/sqlite-db.js):
+Tabelle SQLite nel file [`sqlite-db.js`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/edge/services/sqlite-db.js):
 - `partite_attive` — stato in memoria delle partite in corso (persiste tra restart)
 - `partite_buffer` — partite terminate in attesa di sync, con flag `sincronizzata`
 - `installazioni_cache` — cache locale dei giochi installati
 
 ### Il cron di sincronizzazione
 
-Ogni **2 minuti**, il [`sync-service.js`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/edge/services/sync-service.js) automaticamente:
+Ogni **2 minuti**, il [`sync-service.js`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/edge/services/sync-service.js) automaticamente:
 1. Legge dalla tabella `partite_buffer` tutte le partite con `sincronizzata = 0`
 2. Ottiene un token JWT (da service account Keycloak)
 3. Manda tutte le partite al Gateway con `POST /api/v1/locali/{LOCALE_ID}/partite/sincronizza`
@@ -423,7 +424,7 @@ Questo è **isolamento della sicurezza**: Keycloak non può accedere ai dati del
 
 ### Il `init-db.sh`
 
-Lo script [`postgres/init-db.sh`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/postgres/init-db.sh) viene eseguito **automaticamente al primo avvio** di PostgreSQL (viene copiato in `/docker-entrypoint-initdb.d/`). Crea:
+Lo script [`postgres/init-db.sh`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/postgres/init-db.sh) viene eseguito **automaticamente al primo avvio** di PostgreSQL (viene copiato in `/docker-entrypoint-initdb.d/`). Crea:
 - I due database
 - I due utenti con le relative password (lette dalle variabili d'ambiente)
 - I permessi corretti su schema e tabelle
@@ -439,7 +440,7 @@ Il server PostgreSQL **non ha porte esposte** verso l'host. Vive solo nella rete
 
 ## 9. `entrypoint.sh` — cosa fa e perché esiste
 
-L'[`entrypoint.sh`](file:///c:/Users/bello/OneDrive/Documenti/Università/terzo%20anno/PISSIR/connectedgames/mosquitto/entrypoint.sh) è lo script che viene eseguito **all'avvio del container Mosquitto**, prima del broker stesso.
+L'[`entrypoint.sh`](file:///Users/osamafoutih/Desktop/Università/3anno/pissir/progetto/connectedgames/mosquitto/entrypoint.sh) è lo script che viene eseguito **all'avvio del container Mosquitto**, prima del broker stesso.
 
 ### Il problema che risolve
 
@@ -639,7 +640,7 @@ A: L'Edge accumula le partite terminate in SQLite con flag `sincronizzata=0`. Un
 **Q: Perché due utenti MQTT separati (simulator e edge-client)?**
 A: Principio del least privilege: il simulatore (che genera gli eventi) può solo **scrivere** (publish). L'Edge può solo **leggere** (subscribe). Se un componente venisse compromesso, non potrebbe fare più di quanto previsto.
 
-**Q: Cosè il TenantVerificationGatewayFilterFactory?**
+**Q: Cos'è il TenantVerificationGatewayFilterFactory?**
 A: Un filtro custom del Gateway che verifica che il `localeId` nell'URL della richiesta corrisponda al `locale_id` presente nel JWT dell'utente. Evita che un Edge Node del locale 1 possa sincronizzare partite spacciandosi per il locale 2 (sicurezza multi-tenant).
 
 **Q: Perché i broker MQTT non sono esposti sull'host?**
@@ -650,4 +651,4 @@ A: L'Edge Node parte comunque (il fallimento OIDC è gestito con `try/catch` —
 
 ---
 
-*Fine documento — generato il 24/08/2026*
+*Fine documento — generato il 27/08/2026*

@@ -686,8 +686,8 @@
           <li><b>Iscrizione per Conto del Locale:</b> Un giocatore si iscrive ad un torneo associandosi al proprio locale principale, ma può disputare le partite valide per il torneo presso <u>qualsiasi altro locale della rete</u>.</li>
           <li><b>Doppia Classifica Live:</b>
             <ol style="margin-top: 6px;">
-              <td>🏆 <b>Classifica Locali (Vincitore Ufficiale):</b> Calcolata sommando le vittorie complessive degli iscritti di ciascun locale. Il torneo viene vinto dal locale con la somma vittorie più alta.</td>
-              <td>👤 <b>Classifica Giocatori:</b> Classifica individuale per utente basata su win-rate e totale partite giocate.</td>
+              <li>🏆 <b>Classifica Locali (Vincitore Ufficiale):</b> Calcolata sommando le vittorie complessive degli iscritti di ciascun locale. Il torneo viene vinto dal locale con la somma vittorie più alta.</li>
+              <li>👤 <b>Classifica Giocatori:</b> Classifica individuale per utente basata su win-rate e totale partite giocate.</li>
             </ol>
           </li>
         </ul>
@@ -852,7 +852,7 @@ const NODES = {
     bisogno: ['Volume dati persistente `postgres_data`.'],
     interfaccia: 'Connessioni JDBC segregate su porta 5432: platform_user -> platform_db, keycloak_user -> keycloak_db.'
   },
-  keycloak: { x:840, y:370, w:170, type:'id', kicker:'keycloak 24 (oidc)', name:'Keycloak IdP',
+  keycloak: { x:840, y:370, w:170, type:'id', kicker:'keycloak 26 (oidc)', name:'Keycloak IdP',
     cosaFa: 'Server di Autenticazione ed Identity Provider centralizzato. Gestisce l\'autenticazione diretta via browser (PKCE) e rilascia i JWT Token. Espone le chiavi pubbliche JWK per permettere al Service Gateway di verificare la validità dei JWT.',
     bisogno: ['PostgreSQL (`keycloak_db`) per il salvataggio dei realm e degli utenti.'],
     interfaccia: 'HTTP/OIDC su porta host 9080 (interna 8080). Endpoint `/realms/pissir-realm/protocol/openid-connect/auth`, `/token` e `/certs`.'

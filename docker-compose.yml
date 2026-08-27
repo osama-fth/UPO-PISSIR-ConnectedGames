@@ -56,7 +56,7 @@ services:
       postgres-db:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'" ]
+      test: [ "CMD-SHELL", "echo > /dev/tcp/localhost/9000" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -79,7 +79,9 @@ services:
     networks:
       - backend-tier
     depends_on:
-      service-gateway:
+      postgres-db:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1" ]
@@ -104,7 +106,9 @@ services:
     networks:
       - backend-tier
     depends_on:
-      service-gateway:
+      postgres-db:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8083/actuator/health || exit 1" ]
@@ -163,7 +167,9 @@ services:
     networks:
       - backend-tier
     depends_on:
-      service-gateway:
+      postgres-db:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1" ]
@@ -195,7 +201,7 @@ services:
     networks:
       - locale1-tier
     healthcheck:
-      test: [ "CMD-SHELL", "mosquitto_sub -h localhost -p 8883 --cafile /mosquitto/config/server.crt -t 'test/ping' -C 1 -W 2 || exit 0" ]
+      test: [ "CMD-SHELL", "mosquitto_pub -h localhost -p 8883 --cafile /mosquitto/data/server.crt --insecure -u $${MQTT_PUB_USER} -P $${MQTT_PUB_PASSWORD} -t 'health/ping' -m 'ping' -q 0" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -223,7 +229,7 @@ services:
     networks:
       - locale2-tier
     healthcheck:
-      test: [ "CMD-SHELL", "mosquitto_sub -h localhost -p 8883 --cafile /mosquitto/config/server.crt -t 'test/ping' -C 1 -W 2 || exit 0" ]
+      test: [ "CMD-SHELL", "mosquitto_pub -h localhost -p 8883 --cafile /mosquitto/data/server.crt --insecure -u $${MQTT_PUB_USER} -P $${MQTT_PUB_PASSWORD} -t 'health/ping' -m 'ping' -q 0" ]
       interval: 10s
       timeout: 5s
       retries: 3

@@ -3,17 +3,100 @@
 **Progetto di Laboratorio PISSIR — A.A. 2025/2026 — Università del Piemonte Orientale**
 
 ### 👥 Membri del Gruppo (Autori)
-* **Foutih Osama 20054809**
-* **Bellotti Lorenzo 20054630**
-* **Riccardo Negrini 20054675**
+| Nome | Matricola |
+| :--- | :--- |
+| Foutih Osama | 20054809 |
+| Bellotti Lorenzo | 20054630 |
+| Negrini Riccardo | 20054675 |
 
 ---
 
-## 🏗️ Architettura di Sistema
+## 📑 Indice
 
-L'infrastruttura si sviluppa su **due reti isolati** orchestrate tramite Docker Compose:
+1. [Introduzione](#1--introduzione)
+2. [Prerequisiti](#2--prerequisiti)
+3. [Avvio del Progetto](#3--avvio-del-progetto)
+4. [Architettura di Sistema](#4-%EF%B8%8F-architettura-di-sistema)
+5. [Ordine di Avvio dei Container](#5--ordine-di-avvio-dei-container)
+6. [Endpoint Contattabili](#6--endpoint-contattabili)
+7. [Credenziali di Test](#7--credenziali-di-test)
+8. [Documentazione di Progetto](#8--documentazione-di-progetto)
 
-### 1. Rete Backend Cloud (`platform-backend-tier`)
+---
+
+## 1. 📖 Introduzione
+
+Connected Games Platform è una piattaforma IoT distribuita per la gestione di partite da tavolo in tempo reale all'interno di locali fisici (bar, sale giochi).
+
+Il sistema adotta un'architettura **edge-cloud ibrida** composta da:
+- **Nodi Edge** (Node.js + SQLite) installati nei locali fisici, che ricevono eventi IoT via **MQTT over TLS** dai tavoli da gioco e li bufferizzano localmente, garantendo il funzionamento **offline-first**.
+- **Backend Cloud** (Spring Boot microservizi + PostgreSQL) raggiungibile tramite un API Gateway centralizzato, responsabile della persistenza, delle statistiche aggregate e della gestione dei tornei.
+- **Keycloak** come Identity Provider OIDC per l'autenticazione SSO con flusso PKCE sia sui nodi locali sia sulla dashboard centrale.
+
+La comunicazione avviene tramite **sincronizzazione periodica** (bulk REST) dagli edge verso il cloud, con resilienza automatica in caso di disconnessione.
+
+L'intera infrastruttura è orchestrata con **Docker Compose** e si avvia con un singolo comando.
+
+---
+
+## 2. 📋 Prerequisiti
+
+| Requisito | Versione Minima | Note |
+| :--- | :--- | :--- |
+| **Docker** | 24.x+ | Necessario per il build e l'esecuzione dei container |
+| **Docker Compose** | v2.x+ | Integrato in Docker Desktop |
+| **Git** | 2.x+ | Per clonare il repository |
+
+---
+
+## 3. 🚀 Avvio del Progetto
+
+**1. Clonare il repository:**
+
+```bash
+git clone <url-del-repository>
+cd connectedgames
+```
+
+**2. Creare il file di ambiente:**
+
+```bash
+cp .env.example .env
+```
+
+> [!NOTE]
+> Il file `.env.example` contiene già valori di default funzionanti per l'ambiente di sviluppo. Personalizzarli solo se necessario.
+
+**3. Avviare l'infrastruttura:**
+
+```bash
+# Build ed avvio di tutti i container
+docker compose up --build
+```
+
+Per avviare in background (modalità detached):
+
+```bash
+docker compose up --build -d
+```
+
+**4. Fermare l'infrastruttura:**
+
+```bash
+# Stop e rimozione dei container
+docker compose down
+
+# Stop, rimozione dei container E dei volumi (reset completo dei dati)
+docker compose down -v
+```
+
+---
+
+## 4. 🏗️ Architettura di Sistema
+
+L'infrastruttura si sviluppa su **due reti isolate** orchestrate tramite Docker Compose:
+
+### Rete Backend Cloud (`platform-backend-tier`)
 Rete interna riservata ai servizi centrali ed alla persistenza:
 - **`service-gateway`**: Porta `8081` (API Gateway centralizzato)
 - **`keycloak`**: Porta `9080` (Server IdP OIDC — collegato anche alle reti dei locali)
@@ -22,7 +105,7 @@ Rete interna riservata ai servizi centrali ed alla persistenza:
 - **`statistiche-service`**: Porta `8084` (Microservizio interno ed erogatore dashboard centrale)
 - **`postgres-db`**: Porta `5432` (Database con schemi `platform_db` e `keycloak_db`)
 
-### 2. Reti Locali Edge (`platform-locale1-tier` & `platform-locale2-tier`)
+### Reti Locali Edge (`platform-locale1-tier` & `platform-locale2-tier`)
 Reti private dei locali fisici per il collegamento dei sensori IoT e la gestione offline:
 - **`edge-locale1` (Bar Belvedere)**: Porta `3001` (Node.js Express + SQLite local buffer)
 - **`edge-locale2` (Sala Giochi Roma)**: Porta `3002` (Node.js Express + SQLite local buffer)
@@ -32,36 +115,15 @@ Reti private dei locali fisici per il collegamento dei sensori IoT e la gestione
 
 ---
 
-## 🚀 Come Avviare il Progetto
+## 5. 🔄 Ordine di Avvio dei Container
 
-### 1. Configurazione del file d'ambiente `.env`
-Prima di avviare l'infrastruttura, è **obbligatorio** creare il file `.env` copiandolo dal template `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-### 2. Avvio dei Container Docker
-Eseguire il comando di build ed avvio:
-
-```bash
-# Formatta eventuali container e volumi preesistenti (opzionale)
-docker compose down -v
-
-# Compila ed avvia l'intero stack in foreground
-docker compose up --build
-```
-
----
-
-## 🔄 Ordine di Avvio ed Operazioni dei Container
-
-L'avvio dell'intera piattaforma tramite `docker compose up --build` segue un ordine strettamente regolato dalle dipendenze (`depends_on`) e dallo stato di salute (`healthcheck`) di ciascun container:
+L'avvio dell'intera piattaforma tramite `docker compose up --build` segue un ordine regolato dalle dipendenze (`depends_on`) e dallo stato di salute (`healthcheck`) di ciascun container:
 
 ```
-[1. postgres-db] ──► [2. keycloak] ──► [3. service-gateway] ──┬──► [4. partita-service]
-                                                               ├──► [4. torneo-service]
-                                                               └──► [4. statistiche-service]
+[1. postgres-db] ──► [2. keycloak] ──┬──► [3. service-gateway]
+                                     ├──► [3. partita-service]
+                                     ├──► [3. torneo-service]
+                                     └──► [3. statistiche-service]
 
 [1. mosquitto-locale1 / locale2] ──► [2. edge-locale1 / locale2]
 ```
@@ -76,15 +138,15 @@ L'avvio dell'intera piattaforma tramite `docker compose up --build` segue un ord
 | **1** | **`postgres-db`** | Database PostgreSQL 15 | • Inizializza il motore DB sulla porta `5432`.<br>• Esegue `01-init-db.sh`: crea i database `platform_db` e `keycloak_db` ed imposta gli utenti e le password lette da `.env`.<br>• Esegue `02-DDL.sql`: definisce lo schema, le tabelle e gli indici.<br>• Esegue `03-DML.sql`: inserisce i dati di base e le partite seed.<br>• Risponde `healthy` tramite `pg_isready`. |
 | **2** | **`keycloak`** | IdP OIDC / Keycloak 26.1.0 | • Si connette a `keycloak_db` su PostgreSQL tramite JDBC.<br>• Importa il realm `Connected-Games` da `realm-export.json`.<br>• Registra utenti, ruoli (`giocatore`, `admin_locale`, `admin_piattaforma`) e client OIDC PKCE.<br>• Espone la console IdP sulla porta `9080` (healthcheck su `/health/ready`). |
 | **3** | **`service-gateway`** | Spring Cloud Gateway | • Agisce da API Gateway / Reverse Proxy centrale sulla porta `8081`.<br>• Applica la verifica dei token OIDC e il filtro `TenantVerificationGatewayFilterFactory` per il controllo dell'header/claim `locale_id`.<br>• Inoltra il traffico verso `partita-service` e `torneo-service`.<br>• Espone la documentazione **Swagger UI** (`/doc`) e la **Dashboard Centrale** (`/dashboard`). |
-| **4** | **`partita-service`** | Microservizio Spring Boot | • Si connette a `platform_db` via Spring Data JPA.<br>• Scarica le chiavi pubbliche JWK da Keycloak per validare i token JWT.<br>• Espone le API REST interne di ingestion e ricerca partite sulla porta `8082`. |
-| **4** | **`torneo-service`** | Microservizio Spring Boot | • Si connette a `platform_db` via Spring Data JPA.<br>• Configura le regole di sicurezza OAuth2 Resource Server con Keycloak.<br>• Espone le API REST interne per gestione tornei, iscrizioni e classifiche sulla porta `8083`. |
-| **4** | **`statistiche-service`** | Microservizio Spring Boot | • Agisce da Backend-For-Frontend (BFF) per la dashboard di super amministrazione.<br>• Esegue query analitiche aggregate su `platform_db` e valida le chiamate tramite Keycloak.<br>• Espone gli endpoint di reportistica e telemetria sulla porta `8084`. |
-| **1** | **`mosquitto-locale1`<br>`mosquitto-locale2`** | Broker MQTTS Mosquitto | • Esegue `mosquitto/entrypoint.sh`.<br>• Genera il file password cifrato per gli utenti `simulator` (WRITE) ed `edge-client` (READ).<br>• Genera i certificati TLS X.509 self-signed dedicati al locale via OpenSSL.<br>• Avvia il servizio MQTTS sicuro sulla porta `8883` applicando le regole ACL. |
-| **2** | **`edge-locale1`<br>`edge-locale2`** | Gateway Edge Node.js | • Inizializza il database locale SQLite (`edge.sqlite3`) in modalità WAL (`partite_attive` e `partite_buffer`).<br>• Si connette in MQTTS TLS al broker Mosquitto locale ascoltando gli eventi IoT del locale.<br>• Sincronizza dinamicamente la cache delle installazioni dal `service-gateway`.<br>• Avvia il cron-job che ogni 2 minuti invia in *bulk* le partite bufferizzate al Cloud via REST.<br>• Espone le dashboard locali su `http://localhost:3001` (Belvedere) e `http://localhost:3002` (Roma). |
+| **3** | **`partita-service`** | Microservizio Spring Boot | • Si connette a `platform_db` via Spring Data JPA.<br>• Scarica le chiavi pubbliche JWK da Keycloak per validare i token JWT.<br>• Espone le API REST interne di ingestion e ricerca partite sulla porta `8082`. |
+| **3** | **`torneo-service`** | Microservizio Spring Boot | • Si connette a `platform_db` via Spring Data JPA.<br>• Configura le regole di sicurezza OAuth2 Resource Server con Keycloak.<br>• Espone le API REST interne per gestione tornei, iscrizioni e classifiche sulla porta `8083`. |
+| **3** | **`statistiche-service`** | Microservizio Spring Boot | • Agisce da Backend-For-Frontend (BFF) per la dashboard di super amministrazione.<br>• Esegue query analitiche aggregate su `platform_db` e valida le chiamate tramite Keycloak.<br>• Espone gli endpoint di reportistica e telemetria sulla porta `8084`. |
+| **1** | **`mosquitto-locale1`**<br>`mosquitto-locale2` | Broker MQTTS Mosquitto | • Esegue `mosquitto/entrypoint.sh`.<br>• Genera il file password cifrato per gli utenti `simulator` (WRITE) ed `edge-client` (READ).<br>• Genera i certificati TLS X.509 self-signed dedicati al locale via OpenSSL.<br>• Avvia il servizio MQTTS sicuro sulla porta `8883` applicando le regole ACL. |
+| **2** | **`edge-locale1`**<br>`edge-locale2` | Gateway Edge Node.js | • Inizializza il database locale SQLite (`edge.sqlite3`) in modalità WAL (`partite_attive` e `partite_buffer`).<br>• Si connette in MQTTS TLS al broker Mosquitto locale ascoltando gli eventi IoT del locale.<br>• Sincronizza dinamicamente la cache delle installazioni dal `service-gateway`.<br>• Avvia il cron-job che ogni 2 minuti invia in *bulk* le partite bufferizzate al Cloud via REST.<br>• Espone le dashboard locali su `http://localhost:3001` (Belvedere) e `http://localhost:3002` (Roma). |
 
 ---
 
-## 🌐 Endpoint Contattabili
+## 6. 🌐 Endpoint Contattabili
 
 I principali punti di accesso ed interfacce web raggiungibili via browser sono:
 
@@ -98,7 +160,7 @@ I principali punti di accesso ed interfacce web raggiungibili via browser sono:
 
 ---
 
-## 🔑 Credenziali di Test (Hardcoded Seed Data)
+## 7. 🔑 Credenziali di Test
 
 La password per tutti gli account interattivi di test è: **`password`**.  
 *(La sincronizzazione bulk dai nodi Edge al Cloud utilizza il Service Account Client Credentials `edge-sync-client` con segreto `edge-sync-secret-12345`)*.
@@ -117,7 +179,7 @@ La password per tutti gli account interattivi di test è: **`password`**.
 
 ---
 
-## 📚 Documentazione Ufficiale di Progetto (PDF)
+## 8. 📚 Documentazione di Progetto
 
 Tutta la documentazione tecnica e formale prodotta per l'esame è disponibile in formato **PDF** nella cartella [`doc/`](/doc/):
 
@@ -127,6 +189,5 @@ Tutta la documentazione tecnica e formale prodotta per l'esame è disponibile in
    **Documento di Specifica e Progettazione**: Modello dei Casi d'Uso, Tabelle descrittive formali (UC-01..UC-08), Diagramma UML delle Classi di Dominio, Modello Concettuale e Tabella delle Molteplicità.
 3. 🛠️ [`DocumentoDiImplementazione.pdf`](/doc/DocumentoDiImplementazione.pdf)  
    **Documento di Implementazione Architetturale**: Diagramma di Deployment Docker con reti e porte, Diagramma dei Package, Diagramma delle Classi di Implementazione, 8 Diagrammi di Sequenza, Definizione API REST e Topic MQTT con sicurezza TLS ed ACL.
-4. 📄 [`DocumentoOpenApi.yaml`](/doc/DocumentoOpenApi.yaml)
-
+4. 📄 [`DocumentoOpenApi.yaml`](/doc/DocumentoOpenApi.yaml)  
    **Specifica OpenAPI 3.0** eseguibile per Swagger UI.

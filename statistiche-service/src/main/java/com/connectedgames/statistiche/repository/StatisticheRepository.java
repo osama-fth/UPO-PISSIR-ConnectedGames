@@ -45,7 +45,6 @@ public class StatisticheRepository {
     }
 
     public long countTotaleGiocatoriAttivi(Integer giorni, String giocoId) {
-        // Conta tassativamente SOLO i giocatori con ruolo 'giocatore'
         StringBuilder sql = new StringBuilder("""
             SELECT COUNT(DISTINCT player_id) FROM (
                 SELECT p.giocatore_1_id as player_id 
@@ -219,7 +218,6 @@ public class StatisticheRepository {
     }
 
     public List<GiocatoreVittorieStat> getTopGiocatoriVittorie(int limit, Integer giorni, String giocoId) {
-        // Tassativamente solo per utenti con ruolo 'giocatore'
         StringBuilder sql = new StringBuilder("""
             SELECT u.id as utente_id, u.username,
                    COUNT(p.id) as giocate,
@@ -390,7 +388,6 @@ public class StatisticheRepository {
         String sqlCheckRuolo = "SELECT ruolo FROM platform_db.utente WHERE id = ?";
         List<String> ruoli = jdbcTemplate.query(sqlCheckRuolo, (rs, rowNum) -> rs.getString("ruolo"), utenteId);
         if (ruoli.isEmpty() || !"giocatore".equalsIgnoreCase(ruoli.get(0))) {
-            // Se l'utente non esiste o ha un ruolo diverso da 'giocatore', restituiamo dati azzerati
             return new StatisticheUtenteResponse(utenteId, 0, 0, 0, 0.0, 0);
         }
 

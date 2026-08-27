@@ -6,7 +6,6 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-// Repository JPA per le partite associate ai tornei in torneo-service
 @Repository
 public interface PartitaRepository extends JpaRepository<Partita, UUID> {
 

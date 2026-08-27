@@ -14,7 +14,6 @@ import java.net.HttpURLConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Test d'integrazione e raggiungibilità per Statistiche Service
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class StatisticheServiceReachabilityIntegrationTest {
 
@@ -32,7 +31,6 @@ class StatisticheServiceReachabilityIntegrationTest {
     @Test
     @DisplayName("Test 2: Verifica reindirizzamento per l'endpoint protetto /dashboard (302 Found)")
     void testReindirizzamentoDashboardNonAutenticata() {
-        // Disabilitiamo il redirect automatico per catturare la risposta 302 diretta
         restTemplate.getRestTemplate().setRequestFactory(new SimpleClientHttpRequestFactory() {
             @Override
             protected void prepareConnection(HttpURLConnection connection, String httpMethod) throws IOException {

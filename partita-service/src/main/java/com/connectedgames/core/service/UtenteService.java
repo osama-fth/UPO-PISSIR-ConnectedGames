@@ -3,7 +3,6 @@ package com.connectedgames.core.service;
 import com.connectedgames.core.dto.UtenteDetailResponse;
 import com.connectedgames.core.dto.UtenteResponse;
 import com.connectedgames.core.entity.Utente;
-import com.connectedgames.core.exception.ResourceNotFoundException;
 import com.connectedgames.core.repository.PartitaRepository;
 import com.connectedgames.core.repository.UtenteRepository;
 import java.util.List;
@@ -23,17 +22,18 @@ public class UtenteService {
     }
 
     /**
-     * Recupera tutti gli utenti registrati in platform_db, eventualmente filtrati per ruolo.
+     * Recupera tutti gli utenti registrati in platform_db, eventualmente filtrati
+     * per ruolo.
      */
     @Transactional(readOnly = true)
     public List<UtenteResponse> getAllUtenti(String ruolo) {
         List<Utente> lista = (ruolo != null && !ruolo.isBlank())
-            ? utenteRepo.findByRuolo(ruolo)
-            : utenteRepo.findAll();
+                ? utenteRepo.findByRuolo(ruolo)
+                : utenteRepo.findAll();
 
         return lista.stream()
-            .map(UtenteResponse::from)
-            .toList();
+                .map(UtenteResponse::from)
+                .toList();
     }
 
     /**

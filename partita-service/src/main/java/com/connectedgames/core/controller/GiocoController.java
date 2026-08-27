@@ -19,6 +19,10 @@ public class GiocoController {
         this.giocoService = giocoService;
     }
 
+    /**
+     * GET /api/v1/locali/{localeId}/giochi
+     * Lista dei giochi installati presso un specifico locale.
+     */
     @GetMapping
     public ResponseEntity<List<GiocoInstallatoResponse>> getGiochiByLocale(
             @PathVariable String localeId) {

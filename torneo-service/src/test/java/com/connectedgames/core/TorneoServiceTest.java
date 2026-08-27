@@ -157,7 +157,6 @@ class TorneoServiceTest {
 
         ClassificaTorneoResponse classifica = torneoService.getClassifica(torneoId);
 
-        // Locali
         assertThat(classifica.classificaLocali()).hasSize(2);
         VoceClassificaLocale primoLocale = classifica.classificaLocali().get(0);
         assertThat(primoLocale.posizione()).isEqualTo(1);
@@ -169,7 +168,6 @@ class TorneoServiceTest {
         assertThat(secondoLocale.localeId()).isEqualTo("SALA_GIOCHI_ROMA");
         assertThat(secondoLocale.percentualeVittorie()).isEqualTo(0.0);
 
-        // Giocatori
         assertThat(classifica.classificaGiocatori()).hasSize(2);
         VoceClassificaGiocatore primoGiocatore = classifica.classificaGiocatori().get(0);
         assertThat(primoGiocatore.posizione()).isEqualTo(1);

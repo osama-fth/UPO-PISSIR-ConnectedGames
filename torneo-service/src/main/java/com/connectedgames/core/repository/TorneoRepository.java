@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-// Repository JPA per la ricerca e gestione dei tornei in torneo-service
 @Repository
 public interface TorneoRepository extends JpaRepository<Torneo, UUID> {
 

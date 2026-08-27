@@ -31,6 +31,10 @@ public class TorneoController {
         this.torneoService = torneoService;
     }
 
+    /**
+     * GET /api/v1/tornei
+     * Lista di tutti i tornei con filtro opzionale per stato.
+     */
     @GetMapping
     public ResponseEntity<List<TorneoResponse>> getTornei(
             @RequestParam(required = false) String stato) {
@@ -38,6 +42,10 @@ public class TorneoController {
         return ResponseEntity.ok(tornei);
     }
 
+    /**
+     * GET /api/v1/tornei/{torneoId}/classifica
+     * Classifica live del torneo per locali e giocatori.
+     */
     @GetMapping("/{torneoId}/classifica")
     public ResponseEntity<ClassificaTorneoResponse> getClassifica(
             @PathVariable UUID torneoId) {
@@ -45,18 +53,30 @@ public class TorneoController {
         return ResponseEntity.ok(classifica);
     }
 
+    /**
+     * POST /api/v1/tornei
+     * Creazione di un nuovo torneo.
+     */
     @PostMapping
     public ResponseEntity<TorneoResponse> creaTorneo(@Valid @RequestBody TorneoCreateInput input) {
         TorneoResponse response = torneoService.creaTorneo(input);
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * GET /api/v1/tornei/{torneoId}
+     * Dettaglio di un singolo torneo.
+     */
     @GetMapping("/{torneoId}")
     public ResponseEntity<TorneoResponse> getTorneoById(@PathVariable UUID torneoId) {
         TorneoResponse response = torneoService.getTorneoById(torneoId);
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * POST /api/v1/tornei/{torneoId}/iscrizioni
+     * Iscrizione di un utente a un torneo a nome di un locale.
+     */
     @PostMapping("/{torneoId}/iscrizioni")
     public ResponseEntity<IscrizioneTorneoResponse> iscriviGiocatore(
             @PathVariable UUID torneoId,
@@ -65,6 +85,10 @@ public class TorneoController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * GET /api/v1/tornei/{torneoId}/iscrizioni
+     * Lista degli utenti iscritti al torneo.
+     */
     @GetMapping("/{torneoId}/iscrizioni")
     public ResponseEntity<List<IscrizioneTorneoResponse>> getIscritti(
             @PathVariable UUID torneoId) {
@@ -72,12 +96,20 @@ public class TorneoController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * DELETE /api/v1/tornei/{torneoId}
+     * Cancellazione di un torneo.
+     */
     @DeleteMapping("/{torneoId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cancellaTorneo(@PathVariable UUID torneoId) {
         torneoService.cancellaTorneo(torneoId);
     }
 
+    /**
+     * DELETE /api/v1/tornei/{torneoId}/iscrizioni/{utenteId}
+     * Disiscrizione di un utente da un torneo.
+     */
     @DeleteMapping("/{torneoId}/iscrizioni/{utenteId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void disiscriviGiocatore(

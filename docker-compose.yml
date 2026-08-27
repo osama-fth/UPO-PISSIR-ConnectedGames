@@ -21,6 +21,10 @@ volumes:
     driver: local
   edge-locale2-data:
     driver: local
+  mosquitto-locale1-data:
+    driver: local
+  mosquitto-locale2-data:
+    driver: local
 
 services:
   # 1. DATABASE
@@ -216,6 +220,12 @@ services:
       - MQTT_PUB_PASSWORD=${MQTT1_PUBLISH_PASSWORD}
       - MQTT_SUB_USER=${MQTT1_SUBSCRIBE_USER}
       - MQTT_SUB_PASSWORD=${MQTT1_SUBSCRIBE_PASSWORD}
+    volumes:
+      - mosquitto-locale1-data:/mosquitto/data
+      - mosquitto-locale1-data:/mosquitto/log
+      - ./mosquitto/locale1/mosquitto.conf:/mosquitto/config/mosquitto-locale1.conf:ro
+      - ./mosquitto/locale1/acl.conf:/mosquitto/config/acl-locale1.conf:ro
+      - ./mosquitto/entrypoint.sh:/mosquitto/config/entrypoint.sh:ro
     networks:
       - locale1-tier
     healthcheck:
@@ -238,6 +248,12 @@ services:
       - MQTT_PUB_PASSWORD=${MQTT2_PUBLISH_PASSWORD}
       - MQTT_SUB_USER=${MQTT2_SUBSCRIBE_USER}
       - MQTT_SUB_PASSWORD=${MQTT2_SUBSCRIBE_PASSWORD}
+    volumes:
+      - mosquitto-locale2-data:/mosquitto/data
+      - mosquitto-locale2-data:/mosquitto/log
+      - ./mosquitto/locale2/mosquitto.conf:/mosquitto/config/mosquitto-locale2.conf:ro
+      - ./mosquitto/locale2/acl.conf:/mosquitto/config/acl-locale2.conf:ro
+      - ./mosquitto/entrypoint.sh:/mosquitto/config/entrypoint.sh:ro
     networks:
       - locale2-tier
     healthcheck:

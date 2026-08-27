@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-// Configurazione di sicurezza reattiva (WebFlux) del Gateway: rotta API REST protette da JWT e UI/Docs aperte
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -32,29 +31,19 @@ public class SecurityConfig {
             .authorizeExchange(exchange -> exchange
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/actuator/health", "/actuator/health/**"))
                 .permitAll()
-
-                // Swagger UI & OpenAPI spec
                 .matchers(ServerWebExchangeMatchers.pathMatchers(
                     "/docs", "/docs/**", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**", "/openapi-spec.yaml", 
                     "/swagger-resources/**", "/configuration/ui", "/configuration/security"
                 )).permitAll()
-
-                // Pagine UI del BFF cookie-based permessa a livello gateway
                 .matchers(ServerWebExchangeMatchers.pathMatchers(
                     "/", "/dashboard", "/utenti", "/partite", "/tornei", "/servizi", "/auth/**", "/css/**", "/js/**", "/images/**"
                 )).permitAll()
-
-                // API statistiche limitate a admin_piattaforma
                 .matchers(ServerWebExchangeMatchers.pathMatchers("/api/v1/statistiche/**"))
                 .hasRole("ADMIN_PIATTAFORMA")
-
-                // Operazioni amministrative sui tornei
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tornei", "/api/v1/tornei/**"))
                 .hasAnyRole("ADMIN_PIATTAFORMA", "ADMIN_LOCALE")
                 .matchers(ServerWebExchangeMatchers.pathMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tornei", "/api/v1/tornei/**"))
                 .hasAnyRole("ADMIN_PIATTAFORMA", "ADMIN_LOCALE")
-
-                // Tutte le REST API (/api/v1/**) richiedono JWT Bearer valido
                 .anyExchange()
                 .authenticated()
             )
@@ -71,7 +60,6 @@ public class SecurityConfig {
         return new ReactiveJwtAuthenticationConverterAdapter(jwtAuthenticationConverter);
     }
 
-    // Convertitore dei ruoli realm di Keycloak nel prefisso Spring ROLE_
     static class GrantedAuthoritiesExtractor implements Converter<Jwt, Collection<GrantedAuthority>> {
         @Override
         public Collection<GrantedAuthority> convert(Jwt jwt) {

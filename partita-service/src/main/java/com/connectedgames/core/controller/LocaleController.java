@@ -18,6 +18,10 @@ public class LocaleController {
         this.localeRepo = localeRepo;
     }
 
+    /**
+     * GET /api/v1/locali
+     * Lista di tutti i locali appartenenti alla piattaforma.
+     */
     @GetMapping
     public ResponseEntity<List<LocaleResponse>> getAllLocali() {
         List<LocaleResponse> locali = localeRepo.findAll().stream()

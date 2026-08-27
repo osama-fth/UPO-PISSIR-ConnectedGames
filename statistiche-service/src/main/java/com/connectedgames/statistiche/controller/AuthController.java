@@ -67,7 +67,6 @@ public class AuthController {
         }
         session.removeAttribute("oidcState");
 
-        // Scambio del codice per il token sulla rete interna di Docker
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
@@ -87,7 +86,6 @@ public class AuthController {
                 String accessToken = (String) body.get("access_token");
                 String idToken = (String) body.get("id_token");
 
-                // Decodifica manuale per estrarre il profilo
                 String[] parts = accessToken.split("\\.");
                 if (parts.length > 1) {
                     String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
@@ -109,7 +107,6 @@ public class AuthController {
                         preferredUsername = (String) claims.get("sub");
                     }
 
-                    // Creazione manuale della sessione di Spring Security
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             preferredUsername, null, authorities);
                     

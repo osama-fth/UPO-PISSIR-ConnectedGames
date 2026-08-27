@@ -46,8 +46,8 @@ public class TorneoService {
     private final IscrizioneTorneoRepository iscrizioneRepo;
 
     public TorneoService(TorneoRepository torneoRepo, PartitaRepository partitaRepo,
-                         GiocoRepository giocoRepo, LocaleRepository localeRepo,
-                         UtenteRepository utenteRepo, IscrizioneTorneoRepository iscrizioneRepo) {
+            GiocoRepository giocoRepo, LocaleRepository localeRepo,
+            UtenteRepository utenteRepo, IscrizioneTorneoRepository iscrizioneRepo) {
         this.torneoRepo = torneoRepo;
         this.partitaRepo = partitaRepo;
         this.giocoRepo = giocoRepo;
@@ -71,31 +71,29 @@ public class TorneoService {
         }
 
         return tornei.stream()
-            .map(t -> TorneoResponse.of(
-                t.getId(),
-                t.getNome(),
-                t.getGioco().getNome().toUpperCase(),
-                calcolaStatoLazy(t),
-                t.getDataInizio(),
-                t.getDataFine(),
-                t.getLocali() != null
-                    ? t.getLocali().stream().map(l -> l.getId()).toList()
-                    : List.of()
-            ))
-            .toList();
+                .map(t -> TorneoResponse.of(
+                        t.getId(),
+                        t.getNome(),
+                        t.getGioco().getNome().toUpperCase(),
+                        calcolaStatoLazy(t),
+                        t.getDataInizio(),
+                        t.getDataFine(),
+                        t.getLocali() != null
+                                ? t.getLocali().stream().map(l -> l.getId()).toList()
+                                : List.of()))
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public TorneoResponse getTorneoById(UUID torneoId) {
         Torneo t = torneoRepo.findById(torneoId)
-            .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
         List<String> localiIds = t.getLocali() != null
-            ? t.getLocali().stream().map(l -> l.getId()).toList()
-            : List.of();
+                ? t.getLocali().stream().map(l -> l.getId()).toList()
+                : List.of();
         return TorneoResponse.of(
-            t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(),
-            calcolaStatoLazy(t), t.getDataInizio(), t.getDataFine(), localiIds
-        );
+                t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(),
+                calcolaStatoLazy(t), t.getDataInizio(), t.getDataFine(), localiIds);
     }
 
     @Transactional
@@ -108,14 +106,14 @@ public class TorneoService {
         t.setDataFine(input.dataFine());
 
         Gioco gioco = giocoRepo.findById(input.giocoId())
-            .orElseThrow(() -> new IllegalArgumentException("Gioco non trovato"));
+                .orElseThrow(() -> new IllegalArgumentException("Gioco non trovato"));
         t.setGioco(gioco);
 
         Set<Locale> locali = new HashSet<>();
         if (input.localiId() != null && !input.localiId().isEmpty()) {
             for (String locId : input.localiId()) {
                 Locale loc = localeRepo.findById(locId)
-                    .orElseThrow(() -> new IllegalArgumentException("Locale non trovato: " + locId));
+                        .orElseThrow(() -> new IllegalArgumentException("Locale non trovato: " + locId));
                 locali.add(loc);
             }
         } else {
@@ -126,42 +124,45 @@ public class TorneoService {
         torneoRepo.save(t);
 
         List<String> localiIds = t.getLocali() != null
-            ? t.getLocali().stream().map(l -> l.getId()).toList()
-            : List.of();
-        return TorneoResponse.of(t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(), t.getStato(), t.getDataInizio(), t.getDataFine(), localiIds);
+                ? t.getLocali().stream().map(l -> l.getId()).toList()
+                : List.of();
+        return TorneoResponse.of(t.getId(), t.getNome(), t.getGioco().getNome().toUpperCase(), t.getStato(),
+                t.getDataInizio(), t.getDataFine(), localiIds);
     }
 
-    // Iscrive un utente al torneo a nome di un locale con auto-registrazione automatica in platform_db se non ancora presente
+    // Iscrive un utente al torneo a nome di un locale con auto-registrazione
+    // automatica in platform_db se non ancora presente
     @Transactional
     public IscrizioneTorneoResponse iscriviGiocatore(UUID torneoId, UUID utenteId, String localeId) {
         Torneo torneo = torneoRepo.findById(torneoId)
-            .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
 
         Utente utente = utenteRepo.findById(utenteId)
-            .orElseGet(() -> {
-                String username = null;
-                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                if (auth instanceof JwtAuthenticationToken jwtAuth) {
-                    Jwt jwt = jwtAuth.getToken();
-                    username = jwt.getClaimAsString("preferred_username");
-                    if (username == null) {
-                        username = jwt.getClaimAsString("username");
+                .orElseGet(() -> {
+                    String username = null;
+                    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                    if (auth instanceof JwtAuthenticationToken jwtAuth) {
+                        Jwt jwt = jwtAuth.getToken();
+                        username = jwt.getClaimAsString("preferred_username");
+                        if (username == null) {
+                            username = jwt.getClaimAsString("username");
+                        }
                     }
-                }
-                if (username == null || username.isBlank()) {
-                    username = "user_" + utenteId.toString().substring(0, 8);
-                }
-                Utente nuovo = new Utente();
-                nuovo.setId(utenteId);
-                nuovo.setUsername(username);
-                nuovo.setDataRegistrazione(OffsetDateTime.now());
-                return utenteRepo.saveAndFlush(nuovo);
-            });
+                    if (username == null || username.isBlank()) {
+                        username = "user_" + utenteId.toString().substring(0, 8);
+                    }
+                    Utente nuovo = new Utente();
+                    nuovo.setId(utenteId);
+                    nuovo.setUsername(username);
+                    nuovo.setDataRegistrazione(OffsetDateTime.now());
+                    return utenteRepo.saveAndFlush(nuovo);
+                });
 
         Locale locale = localeRepo.findById(localeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Locale", localeId));
+                .orElseThrow(() -> new ResourceNotFoundException("Locale", localeId));
 
-        if (torneo.getLocali() != null && !torneo.getLocali().isEmpty() && torneo.getLocali().stream().noneMatch(l -> l.getId().equals(localeId))) {
+        if (torneo.getLocali() != null && !torneo.getLocali().isEmpty()
+                && torneo.getLocali().stream().noneMatch(l -> l.getId().equals(localeId))) {
             throw new IllegalArgumentException("Il locale " + localeId + " non partecipa a questo torneo");
         }
 
@@ -191,15 +192,15 @@ public class TorneoService {
             throw new ResourceNotFoundException("Torneo", torneoId.toString());
         }
         return iscrizioneRepo.findByTorneoId(torneoId).stream()
-            .map(IscrizioneTorneoResponse::from)
-            .toList();
+                .map(IscrizioneTorneoResponse::from)
+                .toList();
     }
 
     // Calcola live la classifica del torneo per Locali e per Giocatori
     @Transactional(readOnly = true)
     public ClassificaTorneoResponse getClassifica(UUID torneoId) {
         Torneo torneo = torneoRepo.findById(torneoId)
-            .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
 
         List<IscrizioneTorneo> iscritti = iscrizioneRepo.findByTorneoId(torneoId);
         Map<UUID, IscrizioneTorneo> iscrizioniMap = new HashMap<>();
@@ -246,13 +247,15 @@ public class TorneoService {
                     Stat ps = playerStats.get(g1Id);
                     if (ps != null) {
                         ps.giocate++;
-                        if (g1Win) ps.vinte++;
+                        if (g1Win)
+                            ps.vinte++;
                     }
                     if (isc1.getLocale() != null) {
                         String locId = isc1.getLocale().getId();
                         Stat ls = localeStats.computeIfAbsent(locId, k -> new Stat());
                         ls.giocate++;
-                        if (g1Win) ls.vinte++;
+                        if (g1Win)
+                            ls.vinte++;
                     }
                 }
             }
@@ -264,19 +267,20 @@ public class TorneoService {
                     Stat ps = playerStats.get(g2Id);
                     if (ps != null) {
                         ps.giocate++;
-                        if (g2Win) ps.vinte++;
+                        if (g2Win)
+                            ps.vinte++;
                     }
                     if (isc2.getLocale() != null) {
                         String locId = isc2.getLocale().getId();
                         Stat ls = localeStats.computeIfAbsent(locId, k -> new Stat());
                         ls.giocate++;
-                        if (g2Win) ls.vinte++;
+                        if (g2Win)
+                            ls.vinte++;
                     }
                 }
             }
         }
 
-        // 1. Classifica Locali
         List<ClassificaTorneoResponse.VoceClassificaLocale> listLocali = new ArrayList<>();
         for (Map.Entry<String, Stat> entry : localeStats.entrySet()) {
             String locId = entry.getKey();
@@ -286,20 +290,22 @@ public class TorneoService {
             double perc = s.giocate > 0 ? (double) s.vinte / s.giocate * 100 : 0.0;
             double roundedPerc = Math.round(perc * 100.0) / 100.0;
             String metrica = s.vinte + " vinte (" + Math.round(roundedPerc) + "%)";
-            listLocali.add(new ClassificaTorneoResponse.VoceClassificaLocale(0, locId, nomeLocale, s.giocate, s.vinte, roundedPerc, metrica));
+            listLocali.add(new ClassificaTorneoResponse.VoceClassificaLocale(0, locId, nomeLocale, s.giocate, s.vinte,
+                    roundedPerc, metrica));
         }
 
-        listLocali.sort(Comparator.comparingDouble(ClassificaTorneoResponse.VoceClassificaLocale::percentualeVittorie).reversed()
-            .thenComparingInt(ClassificaTorneoResponse.VoceClassificaLocale::partiteVinte).reversed()
-            .thenComparingLong(ClassificaTorneoResponse.VoceClassificaLocale::partiteGiocate).reversed());
+        listLocali.sort(Comparator.comparingDouble(ClassificaTorneoResponse.VoceClassificaLocale::percentualeVittorie)
+                .reversed()
+                .thenComparingInt(ClassificaTorneoResponse.VoceClassificaLocale::partiteVinte).reversed()
+                .thenComparingLong(ClassificaTorneoResponse.VoceClassificaLocale::partiteGiocate).reversed());
 
         List<ClassificaTorneoResponse.VoceClassificaLocale> classificaLocali = new ArrayList<>();
         for (int i = 0; i < listLocali.size(); i++) {
             ClassificaTorneoResponse.VoceClassificaLocale v = listLocali.get(i);
-            classificaLocali.add(new ClassificaTorneoResponse.VoceClassificaLocale(i + 1, v.localeId(), v.localeNome(), v.partiteGiocate(), v.partiteVinte(), v.percentualeVittorie(), v.metricaClassifica()));
+            classificaLocali.add(new ClassificaTorneoResponse.VoceClassificaLocale(i + 1, v.localeId(), v.localeNome(),
+                    v.partiteGiocate(), v.partiteVinte(), v.percentualeVittorie(), v.metricaClassifica()));
         }
 
-        // 2. Classifica Giocatori
         List<ClassificaTorneoResponse.VoceClassificaGiocatore> listGiocatori = new ArrayList<>();
         for (IscrizioneTorneo i : iscritti) {
             UUID uId = i.getUtente().getId();
@@ -309,31 +315,34 @@ public class TorneoService {
             String metrica = s.vinte + " vinte (" + Math.round(roundedPerc) + "%)";
             String locId = i.getLocale() != null ? i.getLocale().getId() : null;
             String locNome = i.getLocale() != null ? i.getLocale().getNome() : null;
-            listGiocatori.add(new ClassificaTorneoResponse.VoceClassificaGiocatore(0, uId, i.getUtente().getUsername(), locId, locNome, s.giocate, s.vinte, roundedPerc, metrica));
+            listGiocatori.add(new ClassificaTorneoResponse.VoceClassificaGiocatore(0, uId, i.getUtente().getUsername(),
+                    locId, locNome, s.giocate, s.vinte, roundedPerc, metrica));
         }
 
-        listGiocatori.sort(Comparator.comparingDouble(ClassificaTorneoResponse.VoceClassificaGiocatore::percentualeVittorie).reversed()
-            .thenComparingInt(ClassificaTorneoResponse.VoceClassificaGiocatore::partiteVinte).reversed()
-            .thenComparingLong(ClassificaTorneoResponse.VoceClassificaGiocatore::partiteGiocate).reversed());
+        listGiocatori.sort(Comparator
+                .comparingDouble(ClassificaTorneoResponse.VoceClassificaGiocatore::percentualeVittorie).reversed()
+                .thenComparingInt(ClassificaTorneoResponse.VoceClassificaGiocatore::partiteVinte).reversed()
+                .thenComparingLong(ClassificaTorneoResponse.VoceClassificaGiocatore::partiteGiocate).reversed());
 
         List<ClassificaTorneoResponse.VoceClassificaGiocatore> classificaGiocatori = new ArrayList<>();
         for (int i = 0; i < listGiocatori.size(); i++) {
             ClassificaTorneoResponse.VoceClassificaGiocatore v = listGiocatori.get(i);
-            classificaGiocatori.add(new ClassificaTorneoResponse.VoceClassificaGiocatore(i + 1, v.utenteId(), v.username(), v.localeId(), v.localeNome(), v.partiteGiocate(), v.partiteVinte(), v.percentualeVittorie(), v.metricaClassifica()));
+            classificaGiocatori.add(new ClassificaTorneoResponse.VoceClassificaGiocatore(i + 1, v.utenteId(),
+                    v.username(), v.localeId(), v.localeNome(), v.partiteGiocate(), v.partiteVinte(),
+                    v.percentualeVittorie(), v.metricaClassifica()));
         }
 
         return ClassificaTorneoResponse.of(
-            torneoId.toString(),
-            torneo.getNome(),
-            classificaLocali,
-            classificaGiocatori
-        );
+                torneoId.toString(),
+                torneo.getNome(),
+                classificaLocali,
+                classificaGiocatori);
     }
 
     @Transactional
     public void cancellaTorneo(UUID torneoId) {
         Torneo torneo = torneoRepo.findById(torneoId)
-            .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
 
         iscrizioneRepo.deleteByTorneoId(torneoId);
         torneoRepo.delete(torneo);
@@ -341,9 +350,6 @@ public class TorneoService {
 
     @Transactional
     public void disiscriviGiocatore(UUID torneoId, UUID utenteId) {
-        Torneo torneo = torneoRepo.findById(torneoId)
-            .orElseThrow(() -> new ResourceNotFoundException("Torneo", torneoId.toString()));
-
         if (!iscrizioneRepo.existsByIdTorneoIdAndIdUtenteId(torneoId, utenteId)) {
             throw new ResourceNotFoundException("Iscrizione", utenteId.toString());
         }
@@ -351,7 +357,8 @@ public class TorneoService {
         iscrizioneRepo.deleteByTorneoIdAndUtenteId(torneoId, utenteId);
     }
 
-    // Calcola dinamica del valore di stato (NON_ATTIVO, ATTIVO, CONCLUSO) rispetto all'ora corrente
+    // Calcola dinamica del valore di stato (NON_ATTIVO, ATTIVO, CONCLUSO) rispetto
+    // all'ora corrente
     private String calcolaStatoLazy(Torneo torneo) {
         OffsetDateTime now = OffsetDateTime.now();
         if (now.isBefore(torneo.getDataInizio())) {

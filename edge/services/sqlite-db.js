@@ -51,7 +51,8 @@ function initDatabase() {
         CREATE TABLE IF NOT EXISTS installazioni_cache (
             id TEXT PRIMARY KEY,
             gioco_id TEXT NOT NULL,
-            nome TEXT NOT NULL
+            nome TEXT NOT NULL,
+            stato TEXT NOT NULL DEFAULT 'ATTIVO'
         )
     `);
 
@@ -163,24 +164,72 @@ function getStatsLocale() {
 
 function salvaInstallazioniCache(list) {
     if (!db || !list) return;
-    const deleteStmt = db.prepare(`DELETE FROM installazioni_cache`);
-    deleteStmt.run();
-    const insertStmt = db.prepare(`
-        INSERT INTO installazioni_cache (id, gioco_id, nome) VALUES (?, ?, ?)
-    `);
-    const transaction = db.transaction((items) => {
-        for (const item of items) {
-            insertStmt.run(item.id, item.giocoId || item.tipoGioco.toLowerCase(), item.nome || item.tipoGioco);
-        }
-    });
-    transaction(list);
-    console.log(`[SQLite ${LOCALE_ID}] Cache installazioni aggiornata (${list.length} giochi)`);
+    try {
+        const attuali = db.prepare(`SELECT id, gioco_id, stato FROM installazioni_cache`).all();
+        const statiMap = new Map();
+        attuali.forEach(r => {
+            if (r.id) statiMap.set(r.id, r.stato);
+            if (r.gioco_id) statiMap.set(r.gioco_id, r.stato);
+        });
+
+        const deleteStmt = db.prepare(`DELETE FROM installazioni_cache`);
+        deleteStmt.run();
+
+        const insertStmt = db.prepare(`
+            INSERT INTO installazioni_cache (id, gioco_id, nome, stato) VALUES (?, ?, ?, ?)
+        `);
+        const transaction = db.transaction((items) => {
+            for (const item of items) {
+                const id = item.id;
+                const giocoId = item.giocoId || item.tipoGioco.toLowerCase();
+                const nome = item.nome || item.tipoGioco;
+                const stato = item.stato || statiMap.get(id) || statiMap.get(giocoId) || 'ATTIVO';
+                insertStmt.run(id, giocoId, nome, stato);
+            }
+        });
+        transaction(list);
+        console.log(`[SQLite ${LOCALE_ID}] Cache installazioni aggiornata (${list.length} giochi)`);
+    } catch (err) {
+        console.error(`[SQLite ${LOCALE_ID}] Errore salvataggio installazioni cache:`, err.message);
+    }
 }
 
 function getInstallazioniCache() {
     if (!db) return [];
-    const stmt = db.prepare(`SELECT id, gioco_id as giocoId, nome FROM installazioni_cache`);
-    return stmt.all();
+    try {
+        const stmt = db.prepare(`SELECT id, gioco_id as giocoId, nome, stato FROM installazioni_cache`);
+        return stmt.all();
+    } catch {
+        return [];
+    }
+}
+
+function getStatoGioco(giocoId) {
+    if (!db || !giocoId) return 'ATTIVO';
+    try {
+        const row = db.prepare(`SELECT stato FROM installazioni_cache WHERE id = ? OR gioco_id = ?`).get(giocoId, giocoId);
+        return row ? row.stato : 'ATTIVO';
+    } catch {
+        return 'ATTIVO';
+    }
+}
+
+function setStatoGioco(giocoId, nuovoStato) {
+    if (!db || !giocoId) return false;
+    const statoNorm = (nuovoStato === 'DISATTIVATO') ? 'DISATTIVATO' : 'ATTIVO';
+    try {
+        const count = db.prepare(`SELECT COUNT(*) as cnt FROM installazioni_cache WHERE id = ? OR gioco_id = ?`).get(giocoId, giocoId).cnt;
+        if (count > 0) {
+            db.prepare(`UPDATE installazioni_cache SET stato = ? WHERE id = ? OR gioco_id = ?`).run(statoNorm, giocoId, giocoId);
+        } else {
+            db.prepare(`INSERT INTO installazioni_cache (id, gioco_id, nome, stato) VALUES (?, ?, ?, ?)`).run(giocoId, giocoId, giocoId, statoNorm);
+        }
+        console.log(`[SQLite ${LOCALE_ID}] Stato gioco '${giocoId}' aggiornato a '${statoNorm}'`);
+        return true;
+    } catch (err) {
+        console.error(`[SQLite ${LOCALE_ID}] Errore aggiornamento stato gioco:`, err.message);
+        return false;
+    }
 }
 
 module.exports = {
@@ -193,5 +242,7 @@ module.exports = {
     segnaComeSincronizzate,
     getStatsLocale,
     salvaInstallazioniCache,
-    getInstallazioniCache
+    getInstallazioniCache,
+    getStatoGioco,
+    setStatoGioco
 };

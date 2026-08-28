@@ -167,11 +167,17 @@ async function directPasswordAuth(username, password) {
         scope: 'openid profile email'
     });
 
-    const response = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString()
-    });
+    let response;
+    try {
+        response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        });
+    } catch (netErr) {
+        console.error(`[OIDC] Errore connessione a Keycloak (${KEYCLOAK_INTERNAL_URL}):`, netErr.message);
+        throw new Error('KEYCLOAK_UNREACHABLE');
+    }
 
     if (!response.ok) {
         throw new Error(`Credenziali non valide per ${username}`);

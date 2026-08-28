@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth, requireAdminAccess, canAdminCurrentLocale } = require('../middleware/auth');
-const { getStatsLocale } = require('../services/sqlite-db');
+const { getStatsLocale, setStatoGioco } = require('../services/sqlite-db');
 const { getActiveMatches, getInstallazioni } = require('../services/game-engine');
 const { clientCredentialsAuth } = require('../services/oidc-client');
 
@@ -389,6 +389,23 @@ router.post(['/tornei/crea', '/dashboard/tornei/crea'], requireAuth, requireAdmi
         }
     } catch (err) {
         res.status(500).json({ error: 'Errore di connessione al server centrale.' });
+    }
+});
+
+// Toggle dello stato di un gioco/installazione (Feature Flag locale) riservato agli amministratori del locale
+router.post(['/installazioni/toggle', '/dashboard/installazioni/toggle'], requireAuth, requireAdminAccess, (req, res) => {
+    try {
+        const { giocoId, stato } = req.body;
+        if (!giocoId) {
+            return res.status(400).json({ error: 'ID gioco obbligatorio.' });
+        }
+        const ok = setStatoGioco(giocoId, stato);
+        if (ok) {
+            return res.json({ success: true, giocoId, stato });
+        }
+        return res.status(500).json({ error: 'Impossibile aggiornare lo stato del gioco.' });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 });
 

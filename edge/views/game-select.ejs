@@ -20,6 +20,19 @@
         </div>
     </div>
 
+    <% 
+        const getStatoInst = function(gId) {
+            if (typeof installazioni !== 'undefined' && Array.isArray(installazioni)) {
+                const item = installazioni.find(i => (i.giocoId || '').toLowerCase() === gId.toLowerCase());
+                if (item && item.stato) return item.stato;
+            }
+            return 'ATTIVO';
+        };
+        const cbDisattivato = getStatoInst('calciobalilla') === 'DISATTIVATO';
+        const fcDisattivato = getStatoInst('freccette') === 'DISATTIVATO';
+        const biDisattivato = getStatoInst('biliardo') === 'DISATTIVATO';
+    %>
+
     <% if (typeof error !=='undefined' && error) { %>
         <div class="alert alert-danger" style="margin-bottom: 1.5rem;">
             <i class="bi bi-exclamation-triangle"></i>
@@ -33,10 +46,13 @@
                 <div
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <!-- Calciobalilla Card -->
-                    <label class="card game-card"
-                        style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;"
+                    <label class="card game-card <%= cbDisattivato ? 'disabled-game-card' : '' %>"
+                        style="cursor: <%= cbDisattivato ? 'not-allowed' : 'pointer' %>; position: relative; text-align: center; transition: all 0.3s ease; <%= cbDisattivato ? 'opacity: 0.45; filter: grayscale(80%);' : '' %>"
                         id="card-calciobalilla">
-                        <input type="radio" name="giocoId" value="calciobalilla" style="display: none;">
+                        <input type="radio" name="giocoId" value="calciobalilla" style="display: none;" <%= cbDisattivato ? 'disabled' : '' %>>
+                        <% if (cbDisattivato) { %>
+                            <span class="badge badge-danger" style="position: absolute; top: 12px; left: 12px;"><i class="bi bi-slash-circle"></i> Non Disponibile</span>
+                        <% } %>
                         <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: var(--accent-primary);"><i
                                 class="bi bi-dribbble"></i></div>
                         <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Calciobalilla</h3>
@@ -52,10 +68,13 @@
                     </label>
 
                     <!-- Freccette Card -->
-                    <label class="card game-card"
-                        style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;"
+                    <label class="card game-card <%= fcDisattivato ? 'disabled-game-card' : '' %>"
+                        style="cursor: <%= fcDisattivato ? 'not-allowed' : 'pointer' %>; position: relative; text-align: center; transition: all 0.3s ease; <%= fcDisattivato ? 'opacity: 0.45; filter: grayscale(80%);' : '' %>"
                         id="card-freccette">
-                        <input type="radio" name="giocoId" value="freccette" style="display: none;">
+                        <input type="radio" name="giocoId" value="freccette" style="display: none;" <%= fcDisattivato ? 'disabled' : '' %>>
+                        <% if (fcDisattivato) { %>
+                            <span class="badge badge-danger" style="position: absolute; top: 12px; left: 12px;"><i class="bi bi-slash-circle"></i> Non Disponibile</span>
+                        <% } %>
                         <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: var(--danger);"><i
                                 class="bi bi-bullseye"></i></div>
                         <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Freccette</h3>
@@ -71,10 +90,13 @@
                     </label>
 
                     <!-- Biliardo Card -->
-                    <label class="card game-card"
-                        style="cursor: pointer; position: relative; text-align: center; transition: all 0.3s ease;"
+                    <label class="card game-card <%= biDisattivato ? 'disabled-game-card' : '' %>"
+                        style="cursor: <%= biDisattivato ? 'not-allowed' : 'pointer' %>; position: relative; text-align: center; transition: all 0.3s ease; <%= biDisattivato ? 'opacity: 0.45; filter: grayscale(80%);' : '' %>"
                         id="card-biliardo">
-                        <input type="radio" name="giocoId" value="biliardo" style="display: none;">
+                        <input type="radio" name="giocoId" value="biliardo" style="display: none;" <%= biDisattivato ? 'disabled' : '' %>>
+                        <% if (biDisattivato) { %>
+                            <span class="badge badge-danger" style="position: absolute; top: 12px; left: 12px;"><i class="bi bi-slash-circle"></i> Non Disponibile</span>
+                        <% } %>
                         <div style="font-size: 3.5rem; margin-bottom: 0.75rem; color: #10b981;"><i
                                 class="bi bi-8-circle"></i></div>
                         <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Biliardo 8-Ball</h3>
@@ -352,7 +374,12 @@
                 // Game card selection — aggiorna la select tornei filtrandoli rigorosamente e abilita il pulsante
                 document.querySelectorAll('.game-card').forEach(card => {
                     const radio = card.querySelector('input[type="radio"]');
-                    card.addEventListener('click', () => {
+                    card.addEventListener('click', (e) => {
+                        if (card.classList.contains('disabled-game-card') || (radio && radio.disabled)) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return false;
+                        }
                         document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
                         card.classList.add('selected');
                         radio.checked = true;
@@ -422,7 +449,11 @@
                 }
 
                 // Inizializza lo stato dei campi required e del pulsante
-                switchMode('auth');
+                <% if ((typeof keycloakUnreachable !== 'undefined' && keycloakUnreachable) || (typeof error !== 'undefined' && error && error.includes('non raggiungibile'))) { %>
+                    switchMode('guest');
+                <% } else { %>
+                    switchMode('auth');
+                <% } %>
                 updateStartButtonState();
             </script>
 

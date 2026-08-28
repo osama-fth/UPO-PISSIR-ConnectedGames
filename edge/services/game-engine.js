@@ -8,7 +8,8 @@ const {
     rimuoviPartitaAttiva,
     getPartiteAttiveSalvate,
     salvaInstallazioniCache,
-    getInstallazioniCache
+    getInstallazioniCache,
+    getStatoGioco
 } = require('./sqlite-db');
 const { clientCredentialsAuth } = require('./oidc-client');
 
@@ -73,8 +74,16 @@ async function initInstallazioni() {
 
 function getInstallazioni() {
     const list = [];
-    installazioniLocaleMap.forEach((instId, giocoId) => {
-        list.push({ id: instId, giocoId, nome: giocoId.charAt(0).toUpperCase() + giocoId.slice(1) });
+    const games = ['calciobalilla', 'freccette', 'biliardo'];
+    games.forEach(gId => {
+        const instId = installazioniLocaleMap.get(gId) || `${gId}-${getInstSuffix()}`;
+        const stato = getStatoGioco(gId);
+        list.push({
+            id: instId,
+            giocoId: gId,
+            nome: gId.charAt(0).toUpperCase() + gId.slice(1),
+            stato
+        });
     });
     return list;
 }
@@ -82,6 +91,12 @@ function getInstallazioni() {
 function creaPartita(giocoId, giocatore1, giocatore2, torneoId = null) {
     const matchId = uuidv4();
     const key = normalizzaGiocoId(giocoId);
+
+    const stato = getStatoGioco(key);
+    if (stato === 'DISATTIVATO') {
+        throw new Error(`Il gioco "${giocoId}" è temporaneamente disattivato in questo locale.`);
+    }
+
     const installazioneId = installazioniLocaleMap.get(key) || `${key}-${getInstSuffix()}`;
 
     if (!installazioneId) {

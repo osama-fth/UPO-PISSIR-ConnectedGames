@@ -2,8 +2,9 @@
 
 const express = require('express');
 const router = express.Router();
-const { directPasswordAuth, clientCredentialsAuth } = require('../services/oidc-client');
-const { creaPartita, pubblicaEventoMqtt, getMatch, removeMatch } = require('../services/game-engine');
+const { directPasswordAuth, clientCredentialsAuth, checkKeycloakHealth } = require('../services/oidc-client');
+const { creaPartita, pubblicaEventoMqtt, getMatch, removeMatch, getInstallazioni } = require('../services/game-engine');
+const { getStatoGioco } = require('../services/sqlite-db');
 
 const LOCALE_ID = process.env.LOCALE_ID || 'LOCALE_SCONOSCIUTO';
 const CENTRAL_SERVER_URL = process.env.CENTRAL_SERVER_URL || 'http://service-gateway:8081';
@@ -48,10 +49,21 @@ router.post('/start', async (req, res) => {
             });
         }
 
+        if (getStatoGioco(giocoId) === 'DISATTIVATO') {
+            return res.status(400).render('game-select', {
+                title: 'Seleziona Gioco',
+                localeId: LOCALE_ID,
+                installazioni: getInstallazioni(),
+                torneiAttivi: await getTorneiAttiviLocale(req),
+                error: `Il gioco "${giocoId}" è temporaneamente disattivato in questo locale.`
+            });
+        }
+
         if (!player1Username || !player1Password || !player2Username || !player2Password) {
             return res.status(400).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
+                installazioni: getInstallazioni(),
                 torneiAttivi: await getTorneiAttiviLocale(req),
                 error: 'Inserisci le credenziali per entrambi i giocatori.'
             });
@@ -62,11 +74,18 @@ router.post('/start', async (req, res) => {
             giocatore1 = await directPasswordAuth(player1Username, player1Password);
             giocatore2 = await directPasswordAuth(player2Username, player2Password);
         } catch (authErr) {
+            const isUnreachable = authErr.message === 'KEYCLOAK_UNREACHABLE' || (authErr.message && authErr.message.includes('fetch failed'));
+            const errorMsg = isUnreachable
+                ? 'Servizio di autenticazione non raggiungibile. È possibile giocare in modalità ospite.'
+                : `Autenticazione fallita: ${authErr.message}`;
+
             return res.status(401).render('game-select', {
                 title: 'Seleziona Gioco',
                 localeId: LOCALE_ID,
+                installazioni: getInstallazioni(),
                 torneiAttivi: await getTorneiAttiviLocale(req),
-                error: `Autenticazione fallita: ${authErr.message}`
+                error: errorMsg,
+                keycloakUnreachable: isUnreachable
             });
         }
 
@@ -155,6 +174,15 @@ router.post('/start-guest', (req, res) => {
             return res.status(400).render('error', {
                 title: 'Errore',
                 message: 'Gioco non valido. Scegli tra calciobalilla, freccette o biliardo.'
+            });
+        }
+
+        if (getStatoGioco(giocoId) === 'DISATTIVATO') {
+            return res.status(400).render('game-select', {
+                title: 'Seleziona Gioco',
+                localeId: LOCALE_ID,
+                installazioni: getInstallazioni(),
+                error: `Il gioco "${giocoId}" è temporaneamente disattivato in questo locale.`
             });
         }
 

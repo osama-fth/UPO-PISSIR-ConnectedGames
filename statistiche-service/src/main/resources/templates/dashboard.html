@@ -220,9 +220,9 @@
                                     onclick="apriModalUtente(this.getAttribute('data-id'), this.getAttribute('data-username'))">
                                     <td>
                                         <span class="fw-bold" th:switch="${iterStat.count}">
-                                            <span th:case="1" class="text-warning fs-5">🥇</span>
-                                            <span th:case="2" class="text-light fs-5">🥈</span>
-                                            <span th:case="3" class="text-danger fs-5">🥉</span>
+                                            <span th:case="1" class="text-warning fs-5"><i class="bi bi-trophy-fill"></i></span>
+                                            <span th:case="2" class="text-light fs-5"><i class="bi bi-award-fill"></i></span>
+                                            <span th:case="3" class="text-danger fs-5"><i class="bi bi-award-fill"></i></span>
                                             <span th:case="*" th:text="${iterStat.count}">4</span>
                                         </span>
                                     </td>
@@ -337,10 +337,15 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header pt-3 pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <h5 class="card-title fw-bold mb-0"><i class="bi bi-trophy-fill text-info me-2"></i> Panoramica Tornei</h5>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-light active" id="filter-all" onclick="filterTornei('ALL')">Tutti</button>
-                            <button type="button" class="btn btn-outline-light" id="filter-attivo" onclick="filterTornei('ATTIVO')">Attivi</button>
-                            <button type="button" class="btn btn-outline-light" id="filter-concluso" onclick="filterTornei('CONCLUSO')">Conclusi</button>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="/tornei" class="btn btn-sm btn-success fw-bold">
+                                <i class="bi bi-plus-circle me-1"></i> Crea Torneo
+                            </a>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-light active" id="filter-all" onclick="filterTornei('ALL')">Tutti</button>
+                                <button type="button" class="btn btn-outline-light" id="filter-attivo" onclick="filterTornei('ATTIVO')">Attivi</button>
+                                <button type="button" class="btn btn-outline-light" id="filter-concluso" onclick="filterTornei('CONCLUSO')">Conclusi</button>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -853,9 +858,9 @@
             tr.onclick = () => apriModalUtente(player.utenteId, player.username);
 
             let rankBadge = (idx + 1);
-            if (idx === 0) rankBadge = '<span class="text-warning fs-5">🥇</span>';
-            else if (idx === 1) rankBadge = '<span class="text-light fs-5">🥈</span>';
-            else if (idx === 2) rankBadge = '<span class="text-danger fs-5">🥉</span>';
+            if (idx === 0) rankBadge = '<span class="text-warning fs-5"><i class="bi bi-trophy-fill"></i></span>';
+            else if (idx === 1) rankBadge = '<span class="text-light fs-5"><i class="bi bi-award-fill"></i></span>';
+            else if (idx === 2) rankBadge = '<span class="text-danger fs-5"><i class="bi bi-award-fill"></i></span>';
 
             tr.innerHTML = `
                 <td><span class="fw-bold">${rankBadge}</span></td>
@@ -1003,9 +1008,9 @@
                     listLocali.forEach((row, idx) => {
                         const tr = document.createElement('tr');
                         let rankBadge = (idx + 1);
-                        if (idx === 0) rankBadge = '🥇';
-                        else if (idx === 1) rankBadge = '🥈';
-                        else if (idx === 2) rankBadge = '🥉';
+                        if (idx === 0) rankBadge = '<i class="bi bi-trophy-fill text-warning"></i>';
+                        else if (idx === 1) rankBadge = '<i class="bi bi-award-fill text-light"></i>';
+                        else if (idx === 2) rankBadge = '<i class="bi bi-award-fill text-danger"></i>';
 
                         tr.innerHTML = '<td><span class="fw-bold fs-5">' + rankBadge + '</span></td>' +
                             '<td><strong><i class="bi bi-shop me-1 text-warning"></i> ' + (row.localeNome || row.localeId) + '</strong></td>' +
@@ -1022,9 +1027,9 @@
                     listGiocatori.forEach((row, idx) => {
                         const tr = document.createElement('tr');
                         let rankBadge = (idx + 1);
-                        if (idx === 0) rankBadge = '🥇';
-                        else if (idx === 1) rankBadge = '🥈';
-                        else if (idx === 2) rankBadge = '🥉';
+                        if (idx === 0) rankBadge = '<i class="bi bi-trophy-fill text-warning"></i>';
+                        else if (idx === 1) rankBadge = '<i class="bi bi-award-fill text-light"></i>';
+                        else if (idx === 2) rankBadge = '<i class="bi bi-award-fill text-danger"></i>';
 
                         let btnDisiscrivi = '';
                         if (row.utenteId) {

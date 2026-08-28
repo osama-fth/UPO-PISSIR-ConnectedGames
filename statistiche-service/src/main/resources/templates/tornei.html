@@ -21,7 +21,12 @@
     <div class="main-content flex-grow-1">
         <div class="row mb-4 align-items-center">
             <div class="col">
-                <h2 class="fw-bold"><i class="bi bi-trophy text-warning"></i> Tornei &amp; Classifiche Locali</h2>
+                <h2 class="fw-bold mb-0"><i class="bi bi-trophy text-warning"></i> Tornei &amp; Classifiche Locali</h2>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-success fw-bold" onclick="apriModalCreaTorneo()">
+                    <i class="bi bi-plus-circle me-1"></i> Crea Torneo
+                </button>
             </div>
         </div>
 
@@ -186,6 +191,53 @@
             </div>
             <div class="modal-footer border-top border-secondary justify-content-center">
                 <button type="button" class="btn btn-outline-light btn-sm px-4" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crea Torneo -->
+<div class="modal fade" id="creaTorneoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white border-success shadow">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title fw-bold text-success">
+                    <i class="bi bi-plus-circle me-2"></i> Crea Nuovo Torneo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCreaTorneo" onsubmit="submitCreaTorneo(event)">
+                    <div class="mb-3">
+                        <label for="creaNome" class="form-label text-white fw-semibold">Nome Torneo</label>
+                        <input type="text" id="creaNome" class="form-control bg-dark text-white border-secondary" placeholder="es. Torneo Estivo 2026" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="creaGiocoId" class="form-label text-white fw-semibold">Gioco</label>
+                        <select id="creaGiocoId" class="form-select bg-dark text-white border-secondary" required>
+                            <option value="calciobalilla">Calciobalilla</option>
+                            <option value="freccette">Freccette</option>
+                            <option value="biliardo">Biliardo 8-Ball</option>
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="creaDataInizio" class="form-label text-white fw-semibold">Data e Ora Inizio</label>
+                            <input type="datetime-local" id="creaDataInizio" class="form-control bg-dark text-white border-secondary" required style="color-scheme: dark;">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="creaDataFine" class="form-label text-white fw-semibold">Data e Ora Fine</label>
+                            <input type="datetime-local" id="creaDataFine" class="form-control bg-dark text-white border-secondary" required style="color-scheme: dark;">
+                        </div>
+                    </div>
+                    <div id="creaTorneoResultAlert" class="alert d-none"></div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                        <button type="submit" class="btn btn-success fw-bold">
+                            <i class="bi bi-plus-circle me-1"></i> Crea Torneo
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -501,6 +553,80 @@
                     });
             }
         );
+    };
+
+    const creaTorneoModal = new bootstrap.Modal(document.getElementById('creaTorneoModal'));
+
+    window.apriModalCreaTorneo = () => {
+        document.getElementById('formCreaTorneo').reset();
+        document.getElementById('creaTorneoResultAlert').classList.add('d-none');
+        creaTorneoModal.show();
+    };
+
+    function formatRomeIso(dateStr) {
+        if (!dateStr) return null;
+        let cleanStr = dateStr.trim();
+        if (cleanStr.length === 10) cleanStr += 'T00:00:00';
+        else if (cleanStr.length === 16) cleanStr += ':00';
+
+        const testDate = new Date(cleanStr + 'Z');
+        const year = testDate.getUTCFullYear();
+        const mar31 = new Date(Date.UTC(year, 2, 31));
+        const startDst = new Date(Date.UTC(year, 2, 31 - mar31.getUTCDay(), 1, 0, 0));
+        const oct31 = new Date(Date.UTC(year, 9, 31));
+        const endDst = new Date(Date.UTC(year, 9, 31 - oct31.getUTCDay(), 1, 0, 0));
+        const isDst = testDate >= startDst && testDate < endDst;
+        const offset = isDst ? '+02:00' : '+01:00';
+
+        return `${cleanStr}${offset}`;
+    }
+
+    window.submitCreaTorneo = (e) => {
+        e.preventDefault();
+        const alertBox = document.getElementById('creaTorneoResultAlert');
+        alertBox.className = 'alert alert-info mt-2';
+        alertBox.textContent = "Creazione torneo in corso...";
+        alertBox.classList.remove('d-none');
+
+        const nome = document.getElementById('creaNome').value;
+        const giocoId = document.getElementById('creaGiocoId').value;
+        const dataInizioRaw = document.getElementById('creaDataInizio').value;
+        const dataFineRaw = document.getElementById('creaDataFine').value;
+
+        const payload = {
+            nome: nome,
+            giocoId: giocoId,
+            dataInizio: formatRomeIso(dataInizioRaw),
+            dataFine: formatRomeIso(dataFineRaw),
+            localiId: null
+        };
+
+        fetch('/api/v1/tornei', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json().then(d => ({ status: res.status, body: d })))
+        .then(resObj => {
+            if (resObj.status === 200 || resObj.status === 201) {
+                alertBox.className = 'alert alert-success mt-2';
+                alertBox.textContent = "Torneo creato con successo!";
+                setTimeout(() => {
+                    creaTorneoModal.hide();
+                    caricaTornei();
+                }, 1200);
+            } else {
+                alertBox.className = 'alert alert-danger mt-2';
+                alertBox.textContent = resObj.body.message || "Errore durante la creazione del torneo.";
+            }
+        })
+        .catch(err => {
+            alertBox.className = 'alert alert-danger mt-2';
+            alertBox.textContent = "Errore di connessione: " + err.message;
+        });
     };
 </script>
 </body>

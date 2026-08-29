@@ -152,7 +152,7 @@
                                     style="flex: 1; background: transparent; border: none; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer;">
                                     <option value="">Amichevole (non conta in classifica)</option>
                                     <% if (typeof torneiAttivi !=='undefined' ) { torneiAttivi.forEach(function(t) { %>
-                                        <option value="<%= t.id %>" data-gioco="<%= t.tipoGioco.toLowerCase() %>">
+                                        <option value="<%= t.id %>" data-gioco="<%= (t.tipoGioco || '').toLowerCase() %>">
                                             <%= t.nome %> (<%= t.tipoGioco %>)
                                         </option>
                                         <% }); } %>
@@ -340,7 +340,11 @@
 
                     torneoSelect.innerHTML = '';
                     allTorneoOptions.forEach(item => {
-                        if (item.value === '' || item.gioco === (selectedGame || '').toLowerCase()) {
+                        const targetGame = (selectedGame || '').toLowerCase();
+                        const isMatchingGame = item.gioco === targetGame ||
+                                             item.gioco.includes(targetGame) ||
+                                             targetGame.includes(item.gioco);
+                        if (item.value === '' || isMatchingGame) {
                             const opt = document.createElement('option');
                             opt.value = item.value;
                             opt.textContent = item.text;

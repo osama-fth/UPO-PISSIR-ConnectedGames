@@ -252,13 +252,6 @@
 <% } %>
 
 
-<!-- Event Log -->
-<details class="mt-2" style="color: var(--text-muted); font-size: 0.75rem;">
-    <summary style="cursor: pointer; user-select: none;"><i class="bi bi-journal-text"></i> Log Eventi</summary>
-    <div class="card mt-1" style="font-family: monospace; font-size: 0.7rem; max-height: 200px; overflow-y: auto;" id="event-log">
-        <div class="text-muted">In attesa di eventi...</div>
-    </div>
-</details>
 
 
 
@@ -406,18 +399,15 @@
                     const ballEl = document.getElementById('ball-' + evento.palla);
                     if (ballEl) ballEl.classList.remove('sinking');
                 }
-                logEvent('Errore: ' + (data.error || 'Sconosciuto'));
+                console.error('Errore:', data.error || 'Sconosciuto');
                 return;
             }
-
-            logEvent(formatEvent(evento));
-
         } catch (err) {
             if (evento.palla) {
                 const ballEl = document.getElementById('ball-' + evento.palla);
                 if (ballEl) ballEl.classList.remove('sinking');
             }
-            logEvent('Errore di rete: ' + err.message);
+            console.error('Errore di rete:', err.message);
         } finally {
             isProcessing = false;
         }
@@ -494,31 +484,7 @@
         }
     }
 
-    // Formatta un evento per il log
-    function formatEvent(evento) {
-        const ts = new Date().toLocaleTimeString('it-IT');
-        if (evento.tipo === 'GOAL') {
-            return ts + ' — GOL Team ' + evento.team + ' (in attesa di MQTT)';
-        } else if (evento.tipo === 'TIRO') {
-            const val = evento.settore === 'BULL' ? '25' : evento.settore === 'DBULL' ? '50' : (evento.settore + '×' + evento.moltiplicatore);
-            return ts + ' — Tiro: ' + val + ' (in attesa di MQTT)';
-        } else if (evento.tipo === 'IMBUCATA') {
-            return ts + ' — Palla ' + evento.palla + ' imbucata';
-        } else if (evento.tipo === 'FALLO') {
-            return ts + ' — FALLO: cambio turno';
-        }
-        return ts + ' — Evento inviato: ' + JSON.stringify(evento);
-    }
 
-    // Aggiungi un messaggio al log eventi
-    function logEvent(msg) {
-        const log = document.getElementById('event-log');
-        const line = document.createElement('div');
-        line.textContent = msg;
-        line.style.padding = '4px 0';
-        line.style.borderBottom = '1px solid var(--border-color)';
-        log.prepend(line);
-    }
 
     // Polling dello stato per sincronizzazione asincrona (ricezione via MQTT)
     let pollInterval = setInterval(async () => {
